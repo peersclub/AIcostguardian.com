@@ -373,7 +373,7 @@ export function getClaudeAdminClient(userId?: string, apiKey?: string, organizat
   return new ClaudeAdminClient(key, orgId)
 }
 
-// Mock data for development/demo
+// Mock data for development/demo - only used as fallback when real API is not available
 export const mockClaudeAdminData = {
   users: [
     {

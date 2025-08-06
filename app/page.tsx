@@ -1,275 +1,477 @@
+'use client'
+
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { motion } from 'framer-motion'
+import { 
+  Shield, TrendingDown, Brain, Lock, BarChart3, Users, 
+  Zap, Globe, CheckCircle, ArrowRight, Star, Award,
+  LineChart, PieChart, Activity, DollarSign, AlertCircle,
+  Sparkles, ChevronRight, PlayCircle
+} from 'lucide-react'
+import { PremiumButton } from '@/components/ui/premium-button'
+import { PremiumCard, PremiumCardHeader, PremiumCardContent } from '@/components/ui/premium-card'
+import { PremiumStat, PremiumStatsGrid } from '@/components/ui/premium-stats'
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6 }
+}
+
+const staggerChildren = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-        <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28">
-          <div className="text-center">
-            <Badge className="mb-6 bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2">
-              ✨ Trusted by 500+ AI-powered companies
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-              AI spending made
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                simple and smart
-              </span>
-            </h1>
-            <p className="text-xl lg:text-2xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Track, optimize, and control your AI costs across all providers. Get real-time insights, 
-              set intelligent limits, and reduce spending by up to 40%.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
-              <Link href="/signup">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg">
-                  Start free trial
-                  <span className="ml-2">→</span>
-                </Button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 overflow-hidden">
+      {/* Premium Hero Section */}
+      <section className="relative min-h-screen flex items-center">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-pink-50" />
+          <div className="absolute inset-0 gradient-mesh opacity-30" />
+          {/* Floating orbs */}
+          <motion.div
+            animate={{ 
+              y: [0, -30, 0],
+              x: [0, 20, 0]
+            }}
+            transition={{ duration: 20, repeat: Infinity }}
+            className="absolute top-20 left-20 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl"
+          />
+          <motion.div
+            animate={{ 
+              y: [0, 30, 0],
+              x: [0, -20, 0]
+            }}
+            transition={{ duration: 15, repeat: Infinity }}
+            className="absolute bottom-20 right-20 w-96 h-96 bg-pink-400/20 rounded-full blur-3xl"
+          />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-32">
+          <motion.div 
+            initial="initial"
+            animate="animate"
+            variants={staggerChildren}
+            className="text-center"
+          >
+            {/* Premium Badge */}
+            <motion.div variants={fadeInUp} className="flex justify-center mb-8">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-xl border border-purple-200/50 shadow-lg">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                <span className="text-sm font-semibold text-gray-800">Trusted by Fortune 500 Companies</span>
+                <div className="flex -space-x-2">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white" />
+                  ))}
+                  <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold">
+                    +500
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Main Heading with Animation */}
+            <motion.h1 
+              variants={fadeInUp}
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8"
+            >
+              <span className="text-gray-900">AI Cost Management</span>
+              <br />
+              <span className="text-gradient">Reimagined for Enterprise</span>
+            </motion.h1>
+
+            {/* Subheading */}
+            <motion.p 
+              variants={fadeInUp}
+              className="text-xl lg:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
+            >
+              Save 40% on AI expenses with real-time monitoring, intelligent optimization, 
+              and enterprise-grade control across all major providers.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div 
+              variants={fadeInUp}
+              className="flex flex-col sm:flex-row justify-center gap-4 mb-12"
+            >
+              <Link href="/auth/signup">
+                <PremiumButton size="lg" icon={ArrowRight} iconPosition="right">
+                  Start Free Trial
+                </PremiumButton>
               </Link>
-              <Link href="/dashboard">
-                <Button size="lg" variant="outline" className="border-slate-300 text-slate-300 hover:bg-white hover:text-slate-900 px-8 py-4 text-lg font-semibold">
-                  View demo
-                </Button>
+              <Link href="/demo">
+                <PremiumButton size="lg" variant="secondary" icon={PlayCircle}>
+                  Watch Demo
+                </PremiumButton>
               </Link>
-            </div>
-            <p className="text-slate-400 text-sm">
-              No credit card required • 14-day free trial • Cancel anytime
-            </p>
-          </div>
-        </div>
-      </div>
+            </motion.div>
 
-      {/* Logo Strip */}
-      <div className="bg-slate-50 py-12">
+            {/* Trust Indicators */}
+            <motion.div 
+              variants={fadeInUp}
+              className="flex flex-wrap justify-center gap-8 text-sm text-gray-600"
+            >
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <span>SOC 2 Certified</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-blue-600" />
+                <span>Bank-Level Security</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-purple-600" />
+                <span>G2 Leader 2024</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+        >
+          <ChevronRight className="w-6 h-6 text-gray-400 rotate-90" />
+        </motion.div>
+      </section>
+
+      {/* Premium Stats Section */}
+      <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-slate-500 text-sm font-medium mb-8">
-            INTEGRATE WITH YOUR FAVORITE AI PROVIDERS
-          </p>
-          <div className="flex justify-center items-center space-x-12 opacity-60">
-            <div className="text-2xl font-bold text-slate-700">OpenAI</div>
-            <div className="text-2xl font-bold text-slate-700">Claude</div>
-            <div className="text-2xl font-bold text-slate-700">Gemini</div>
-            <div className="text-2xl font-bold text-slate-700">GPT-4</div>
-            <div className="text-2xl font-bold text-slate-700">Dall-E</div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <PremiumStatsGrid>
+              <PremiumStat
+                label="Average Savings"
+                value="40"
+                suffix="%"
+                icon={TrendingDown}
+                color="green"
+                change={{ value: 12, trend: 'up' }}
+                description="vs. last quarter"
+              />
+              <PremiumStat
+                label="AI Providers"
+                value="25"
+                suffix="+"
+                icon={Globe}
+                color="blue"
+                description="Integrated platforms"
+              />
+              <PremiumStat
+                label="Active Users"
+                value="50,000"
+                suffix="+"
+                icon={Users}
+                color="purple"
+                change={{ value: 28, trend: 'up' }}
+                description="Enterprise users"
+              />
+              <PremiumStat
+                label="Cost Reduced"
+                value="2.5"
+                prefix="$"
+                suffix="M"
+                icon={DollarSign}
+                color="yellow"
+                change={{ value: 35, trend: 'up' }}
+                description="Total saved"
+              />
+            </PremiumStatsGrid>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Value Proposition */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
-            Stop overspending on AI. Start optimizing.
-          </h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Companies using AI Credit Tracker reduce their AI costs by an average of 35% 
-            while improving usage efficiency and team productivity.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">35% average cost reduction</h3>
-            <p className="text-slate-600">
-              Our intelligent optimization algorithms help you identify waste and optimize usage patterns automatically.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">Real-time monitoring</h3>
-            <p className="text-slate-600">
-              Track every API call, token usage, and cost in real-time across all your AI providers and applications.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">Smart budget controls</h3>
-            <p className="text-slate-600">
-              Set intelligent limits, get predictive alerts, and automatically prevent budget overruns before they happen.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="bg-slate-50 py-20">
+      {/* Premium Features Grid */}
+      <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
-              Everything you need to master AI costs
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">
+              <span className="text-gradient-blue">Enterprise Features</span>
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Comprehensive tools designed for modern businesses using AI at scale.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Everything you need to master AI costs at scale
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">Usage Analytics</CardTitle>
-                <CardDescription className="text-slate-600">
-                  Deep insights into usage patterns, trends, and optimization opportunities
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">Multi-Provider Support</CardTitle>
-                <CardDescription className="text-slate-600">
-                  Unified tracking across OpenAI, Claude, Gemini, and 20+ AI providers
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 7H4l5-5v5z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">Smart Alerts</CardTitle>
-                <CardDescription className="text-slate-600">
-                  Predictive notifications and automated budget protection
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">Team Management</CardTitle>
-                <CardDescription className="text-slate-600">
-                  User limits, role-based access, and team usage insights
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">Enterprise Security</CardTitle>
-                <CardDescription className="text-slate-600">
-                  SOC 2 compliant with encrypted API key storage and audit logs
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-xl font-semibold">API Integration</CardTitle>
-                <CardDescription className="text-slate-600">
-                  Easy setup with REST APIs, webhooks, and popular frameworks
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            {[
+              {
+                icon: Brain,
+                title: 'AI-Powered Insights',
+                description: 'Machine learning algorithms analyze your usage patterns to identify optimization opportunities.',
+                color: 'from-purple-500/10 to-pink-500/10'
+              },
+              {
+                icon: Shield,
+                title: 'Enterprise Security',
+                description: 'Bank-level encryption, SSO, and compliance with SOC 2, GDPR, and HIPAA standards.',
+                color: 'from-blue-500/10 to-cyan-500/10'
+              },
+              {
+                icon: BarChart3,
+                title: 'Advanced Analytics',
+                description: 'Deep dive into usage metrics with custom dashboards and automated reporting.',
+                color: 'from-green-500/10 to-teal-500/10'
+              },
+              {
+                icon: Zap,
+                title: 'Real-time Monitoring',
+                description: 'Track every API call with millisecond precision and instant cost calculations.',
+                color: 'from-yellow-500/10 to-orange-500/10'
+              },
+              {
+                icon: Users,
+                title: 'Team Management',
+                description: 'Role-based access control, usage limits, and department-level cost allocation.',
+                color: 'from-red-500/10 to-pink-500/10'
+              },
+              {
+                icon: AlertCircle,
+                title: 'Smart Alerts',
+                description: 'Predictive alerts before budget overruns with AI-powered anomaly detection.',
+                color: 'from-indigo-500/10 to-purple-500/10'
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <PremiumCard hover glow={index === 1}>
+                  <PremiumCardHeader
+                    icon={feature.icon}
+                    title={feature.title}
+                    subtitle={feature.description}
+                  />
+                  <PremiumCardContent>
+                    <div className="flex items-center gap-2 text-sm text-purple-600 font-medium mt-4">
+                      <span>Learn more</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </PremiumCardContent>
+                </PremiumCard>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Social Proof */}
-      <div className="py-20">
+      {/* Interactive Demo Section */}
+      <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
-              Trusted by AI-forward companies
-            </h2>
-            <p className="text-xl text-slate-600">
-              Join hundreds of companies already optimizing their AI spending
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-slate-700">TechCorp</div>
-              <p className="text-sm text-slate-500 mt-2">Saved $50K/month</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-slate-700">AI Startup</div>
-              <p className="text-sm text-slate-500 mt-2">40% cost reduction</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-slate-700">Enterprise Co</div>
-              <p className="text-sm text-slate-500 mt-2">Real-time visibility</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-slate-700">InnovateLab</div>
-              <p className="text-sm text-slate-500 mt-2">Better budget control</p>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <PremiumCard variant="gradient" className="overflow-hidden">
+              <div className="grid lg:grid-cols-2 gap-12 items-center p-12">
+                <div>
+                  <h3 className="text-3xl lg:text-4xl font-bold mb-6">
+                    See AICostGuardian in Action
+                  </h3>
+                  <p className="text-lg text-gray-600 mb-8">
+                    Watch how leading enterprises reduce AI costs by 40% while improving efficiency and control.
+                  </p>
+                  <ul className="space-y-4 mb-8">
+                    {[
+                      'Real-time cost tracking across 25+ AI providers',
+                      'Automated budget alerts and spending limits',
+                      'Team usage analytics and optimization',
+                      'Enterprise SSO and advanced security'
+                    ].map((item, i) => (
+                      <motion.li
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        viewport={{ once: true }}
+                        className="flex items-center gap-3"
+                      >
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <span className="text-gray-700">{item}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-4">
+                    <PremiumButton icon={PlayCircle}>
+                      Watch Demo
+                    </PremiumButton>
+                    <PremiumButton variant="ghost" icon={ArrowRight} iconPosition="right">
+                      Schedule Call
+                    </PremiumButton>
+                  </div>
+                </div>
+                <div className="relative">
+                  {/* Dashboard Preview */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="relative rounded-2xl overflow-hidden shadow-2xl"
+                  >
+                    <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-8">
+                      <div className="bg-white/10 backdrop-blur rounded-xl p-6">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="bg-white/20 rounded-lg p-4">
+                            <LineChart className="w-8 h-8 text-white mb-2" />
+                            <div className="text-2xl font-bold text-white">$24,580</div>
+                            <div className="text-sm text-white/80">Monthly Spend</div>
+                          </div>
+                          <div className="bg-white/20 rounded-lg p-4">
+                            <PieChart className="w-8 h-8 text-white mb-2" />
+                            <div className="text-2xl font-bold text-white">-35%</div>
+                            <div className="text-sm text-white/80">vs Last Month</div>
+                          </div>
+                        </div>
+                        <div className="bg-white/20 rounded-lg p-4">
+                          <Activity className="w-full h-24 text-white/40" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                  {/* Floating badges */}
+                  <motion.div
+                    animate={{ y: [-10, 10, -10] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="absolute -top-4 -right-4 bg-white rounded-full shadow-xl p-3"
+                  >
+                    <Star className="w-6 h-6 text-yellow-500" />
+                  </motion.div>
+                  <motion.div
+                    animate={{ y: [10, -10, 10] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="absolute -bottom-4 -left-4 bg-white rounded-full shadow-xl p-3"
+                  >
+                    <Shield className="w-6 h-6 text-green-500" />
+                  </motion.div>
+                </div>
+              </div>
+            </PremiumCard>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Ready to optimize your AI spending?
-          </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Join hundreds of companies that have reduced their AI costs by up to 40% 
-            with intelligent monitoring and optimization.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold shadow-lg">
-                Start your free trial
-                <span className="ml-2">→</span>
-              </Button>
-            </Link>
-            <Link href="/usage">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold">
-                See it in action
-              </Button>
-            </Link>
+      {/* Testimonials */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">
+              Loved by <span className="text-gradient">Industry Leaders</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "AICostGuardian reduced our AI spending by 42% in just 3 months. Incredible ROI!",
+                author: "Sarah Chen",
+                role: "CTO, TechCorp",
+                rating: 5
+              },
+              {
+                quote: "The real-time monitoring and alerts have been game-changing for our team.",
+                author: "Michael Rodriguez",
+                role: "VP Engineering, DataFlow",
+                rating: 5
+              },
+              {
+                quote: "Enterprise-grade security with consumer-grade simplicity. Exactly what we needed.",
+                author: "Emily Watson",
+                role: "CISO, FinanceAI",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <PremiumCard variant="glass">
+                  <PremiumCardContent>
+                    <div className="flex mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      ))}
+                    </div>
+                    <p className="text-gray-700 mb-6 italic">"{testimonial.quote}"</p>
+                    <div>
+                      <div className="font-semibold text-gray-900">{testimonial.author}</div>
+                      <div className="text-sm text-gray-600">{testimonial.role}</div>
+                    </div>
+                  </PremiumCardContent>
+                </PremiumCard>
+              </motion.div>
+            ))}
           </div>
-          <p className="text-blue-200 text-sm mt-6">
-            14-day free trial • No credit card required • Setup in 5 minutes
-          </p>
         </div>
-      </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-20 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <PremiumCard variant="dark" className="text-center p-12 lg:p-16">
+              <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
+                Ready to Optimize Your AI Spending?
+              </h2>
+              <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+                Join 500+ companies saving millions on AI costs with intelligent monitoring and optimization.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link href="/auth/signup">
+                  <PremiumButton size="xl" icon={Sparkles}>
+                    Start 14-Day Free Trial
+                  </PremiumButton>
+                </Link>
+                <Link href="/pricing">
+                  <PremiumButton size="xl" variant="secondary" icon={DollarSign}>
+                    View Pricing
+                  </PremiumButton>
+                </Link>
+              </div>
+              <p className="text-gray-400 text-sm mt-8">
+                No credit card required • Setup in 5 minutes • Cancel anytime
+              </p>
+            </PremiumCard>
+          </motion.div>
+        </div>
+      </section>
     </div>
   )
 }

@@ -3,12 +3,14 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import NextAuthSessionProvider from '@/components/SessionProvider'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import DemoDataProvider from '@/components/DemoDataProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AI Credit Tracker',
-  description: 'Track your AI usage and credits',
+  title: 'AICostGuardian - Enterprise AI Cost Management',
+  description: 'Track, optimize, and control AI costs across all providers. Real-time monitoring and intelligent cost management.',
 }
 
 export default function RootLayout({
@@ -19,10 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <NextAuthSessionProvider>
-          <Navigation />
-          {children}
-        </NextAuthSessionProvider>
+        <ErrorBoundary>
+          <NextAuthSessionProvider>
+            <DemoDataProvider>
+              <Navigation />
+              {children}
+            </DemoDataProvider>
+          </NextAuthSessionProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

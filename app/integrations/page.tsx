@@ -1,378 +1,265 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
+'use client'
 
-export default function Integrations() {
-  const aiProviders = [
-    {
-      name: 'OpenAI',
-      logo: '🤖',
-      description: 'GPT-4, GPT-3.5, DALL-E, Whisper, and Embeddings',
-      status: 'Available',
-      setupTime: '2 min',
-      features: ['Real-time tracking', 'Token counting', 'Model usage analytics', 'Cost forecasting'],
-      docs: '/docs/openai'
-    },
-    {
-      name: 'Anthropic Claude',
-      logo: '🧠',
-      description: 'Claude 3 Opus, Sonnet, and Haiku models',
-      status: 'Available',
-      setupTime: '2 min',
-      features: ['Message tracking', 'Usage analytics', 'Cost optimization', 'Rate limit monitoring'],
-      docs: '/docs/claude'
-    },
-    {
-      name: 'Google Gemini',
-      logo: '💎',
-      description: 'Gemini Pro, Ultra, and Vision models',
-      status: 'Available',
-      setupTime: '3 min',
-      features: ['Multi-modal tracking', 'Token analytics', 'Safety settings', 'Performance metrics'],
-      docs: '/docs/gemini'
-    },
-    {
-      name: 'Hugging Face',
-      logo: '🤗',
-      description: 'Inference API and Hosted models',
-      status: 'Available',
-      setupTime: '3 min',
-      features: ['Model tracking', 'Inference costs', 'Custom models', 'Performance analytics'],
-      docs: '/docs/huggingface'
-    },
-    {
-      name: 'Stability AI',
-      logo: '🎨',
-      description: 'Stable Diffusion and image generation',
-      status: 'Available',
-      setupTime: '2 min',
-      features: ['Image generation tracking', 'Quality metrics', 'Cost per image', 'Usage patterns'],
-      docs: '/docs/stability'
-    },
-    {
-      name: 'Replicate',
-      logo: '🔄',
-      description: 'Open-source model hosting platform',
-      status: 'Available',
-      setupTime: '3 min',
-      features: ['Prediction tracking', 'Model costs', 'Runtime analytics', 'Custom models'],
-      docs: '/docs/replicate'
-    },
-    {
-      name: 'Azure OpenAI',
-      logo: '☁️',
-      description: 'Microsoft Azure hosted OpenAI models',
-      status: 'Available',
-      setupTime: '4 min',
-      features: ['Enterprise tracking', 'Deployment analytics', 'Regional costs', 'Compliance reporting'],
-      docs: '/docs/azure-openai'
-    },
-    {
-      name: 'AWS Bedrock',
-      logo: '🪨',
-      description: 'Foundation models on AWS',
-      status: 'Coming Soon',
-      setupTime: 'TBD',
-      features: ['Multi-model tracking', 'Cost allocation', 'Usage analytics', 'Regional billing'],
-      docs: '/docs/bedrock'
-    }
-  ]
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { getAIProviderLogo, getProviderInfo } from '@/components/ui/ai-logos'
+import { Check, X, Loader2, ArrowRight, Shield, Zap, Link2, Settings, Key, AlertCircle } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { getEnabledProviders, AI_PROVIDER_IDS } from '@/lib/ai-providers-config'
 
-  const frameworks = [
-    {
-      name: 'LangChain',
-      logo: '🦜',
-      language: 'Python/JS',
-      description: 'Popular LLM application framework',
-      integration: 'SDK',
-      features: ['Chain tracking', 'Agent monitoring', 'Tool usage', 'Memory costs']
-    },
-    {
-      name: 'LlamaIndex',
-      logo: '🦙',
-      language: 'Python',
-      description: 'Data framework for LLM applications',
-      integration: 'SDK',
-      features: ['Index costs', 'Query tracking', 'Embedding usage', 'Retrieval analytics']
-    },
-    {
-      name: 'Vercel AI SDK',
-      logo: '▲',
-      language: 'TypeScript',
-      description: 'AI toolkit for TypeScript developers',
-      integration: 'Plugin',
-      features: ['Stream tracking', 'Function calls', 'Tool usage', 'Real-time costs']
-    },
-    {
-      name: 'OpenAI SDK',
-      logo: '🔧',
-      language: 'Multi',
-      description: 'Official OpenAI client libraries',
-      integration: 'Wrapper',
-      features: ['Drop-in replacement', 'Zero config', 'Automatic tracking', 'Cost attribution']
-    }
-  ]
+interface Integration {
+  id: string
+  name: string
+  description: string
+  status: 'connected' | 'disconnected' | 'checking'
+  features: string[]
+  apiKeyRequired: boolean
+  lastSync?: string
+}
 
-  const enterprise = [
-    {
-      name: 'REST API',
-      logo: '🔌',
-      description: 'Full-featured API for custom integrations',
-      features: ['Usage reporting', 'Real-time tracking', 'Webhooks', 'Custom dashboards']
-    },
-    {
-      name: 'Webhooks',
-      logo: '📡',
-      description: 'Real-time notifications and data streaming',
-      features: ['Usage alerts', 'Cost thresholds', 'Custom events', 'Third-party forwarding']
-    },
-    {
-      name: 'Single Sign-On',
-      logo: '🔐',
-      description: 'SAML 2.0 and OAuth 2.0 support',
-      features: ['Active Directory', 'Okta', 'Auth0', 'Custom SAML']
-    },
-    {
-      name: 'Data Export',
-      logo: '📊',
-      description: 'Export your data to analytics platforms',
-      features: ['CSV export', 'JSON API', 'Data warehouse', 'BI tool integration']
+export default function IntegrationsPage() {
+  const { data: session } = useSession()
+  const [integrations, setIntegrations] = useState<Integration[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    checkIntegrations()
+  }, [session])
+
+  const checkIntegrations = async () => {
+    const enabledProviders = getEnabledProviders()
+    
+    if (!session?.user?.id) {
+      // Demo data for non-authenticated users
+      const demoIntegrations = enabledProviders.map(provider => ({
+        id: provider.id,
+        name: provider.displayName,
+        description: provider.description,
+        status: 'disconnected' as const,
+        features: provider.models.map(m => m.name),
+        apiKeyRequired: true
+      }))
+      setIntegrations(demoIntegrations)
+      setLoading(false)
+      return
     }
-  ]
+
+    // Check actual integration status for authenticated users
+    setLoading(true)
+    const providers = AI_PROVIDER_IDS
+    const statusPromises = providers.map(async (provider) => {
+      try {
+        const response = await fetch(`/api/${provider}/test`)
+        const data = await response.json()
+        return {
+          id: provider,
+          status: data.isValid ? 'connected' : 'disconnected',
+          lastSync: data.isValid ? new Date().toISOString() : undefined
+        }
+      } catch (error) {
+        return { id: provider, status: 'disconnected' as const }
+      }
+    })
+
+    const statuses = await Promise.all(statusPromises)
+    
+    const integrationsData: Integration[] = enabledProviders.map(provider => ({
+      id: provider.id,
+      name: provider.displayName,
+      description: provider.description,
+      status: statuses.find(s => s.id === provider.id)?.status || 'disconnected',
+      features: provider.models.map(m => m.name),
+      apiKeyRequired: true,
+      lastSync: statuses.find(s => s.id === provider.id)?.lastSync
+    }))
+
+    setIntegrations(integrationsData)
+    setLoading(false)
+  }
+
+  const connectedCount = integrations.filter(i => i.status === 'connected').length
+  const availableCount = integrations.filter(i => i.status === 'disconnected').length
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center">
-            <Badge className="mb-6 bg-blue-100 text-blue-700 px-4 py-2">
-              20+ AI Providers Supported
-            </Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-              Connect with your favorite AI providers
-            </h1>
-            <p className="text-xl text-slate-300 mb-10 max-w-3xl mx-auto">
-              Track costs across all major AI platforms with simple API key setup. 
-              Get started in minutes with our comprehensive integrations.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/signup">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4">
-                  Start tracking now
-                </Button>
-              </Link>
-              <Link href="/docs">
-                <Button size="lg" variant="outline" className="border-slate-300 text-slate-300 hover:bg-white hover:text-slate-900 px-8 py-4">
-                  View documentation
-                </Button>
-              </Link>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">
+            <Link2 className="w-4 h-4" />
+            <span>AI Provider Integrations</span>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Connect Your AI Providers
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Integrate with your favorite AI providers to track usage and costs in real-time
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Connected</span>
+              <Check className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{connectedCount}</div>
+            <div className="text-sm text-gray-500 mt-1">Active integrations</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-xl p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Available</span>
+              <Zap className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{availableCount}</div>
+            <div className="text-sm text-gray-500 mt-1">Ready to connect</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-xl p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Total</span>
+              <Shield className="w-5 h-5 text-purple-600" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{integrations.length}</div>
+            <div className="text-sm text-gray-500 mt-1">Supported providers</div>
+          </motion.div>
+        </div>
+
+        {/* Integrations Grid */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {integrations.map((integration, index) => (
+              <motion.div
+                key={integration.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`bg-white rounded-xl shadow-sm border-2 transition-all hover:shadow-lg ${
+                  integration.status === 'connected'
+                    ? 'border-green-200'
+                    : 'border-gray-200'
+                }`}
+              >
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {getAIProviderLogo(integration.id, 'w-10 h-10')}
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{integration.name}</h3>
+                        <p className="text-sm text-gray-600">{integration.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="mb-4">
+                    {integration.status === 'connected' ? (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm font-medium">Connected</span>
+                        {integration.lastSync && (
+                          <span className="text-xs text-gray-500">
+                            • Synced {new Date(integration.lastSync).toLocaleTimeString()}
+                          </span>
+                        )}
+                      </div>
+                    ) : integration.status === 'checking' ? (
+                      <div className="flex items-center gap-2 text-yellow-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm font-medium">Checking...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <X className="w-4 h-4" />
+                        <span className="text-sm font-medium">Not connected</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-1">
+                      {integration.features.map((feature, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <button
+                    className={`w-full py-2 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                      integration.status === 'connected'
+                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                    }`}
+                  >
+                    {integration.status === 'connected' ? (
+                      <>
+                        <Settings className="w-4 h-4" />
+                        <span>Manage</span>
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4" />
+                        <span>Connect</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Info Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 bg-blue-50 rounded-xl p-6 border border-blue-200"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Secure Integration</h3>
+              <p className="text-sm text-blue-800">
+                Your API keys are encrypted and stored securely. We never access your AI models directly - 
+                we only track usage through official APIs for cost monitoring.
+              </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* AI Providers Section */}
-      <div className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              AI Provider Integrations
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Connect your AI provider accounts and start tracking costs immediately. 
-              No code changes required for most platforms.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {aiProviders.map((provider, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow border-2 hover:border-blue-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-3xl">{provider.logo}</div>
-                      <div>
-                        <CardTitle className="text-xl">{provider.name}</CardTitle>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant={provider.status === 'Available' ? 'default' : 'secondary'} className="text-xs">
-                            {provider.status}
-                          </Badge>
-                          {provider.status === 'Available' && (
-                            <span className="text-xs text-green-600 font-medium">
-                              {provider.setupTime} setup
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <CardDescription className="text-gray-600">
-                    {provider.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Features:</h4>
-                      <ul className="space-y-1">
-                        {provider.features.map((feature, idx) => (
-                          <li key={idx} className="text-sm text-gray-600 flex items-center">
-                            <span className="text-green-500 mr-2">✓</span>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="pt-4 border-t">
-                      {provider.status === 'Available' ? (
-                        <Button variant="outline" size="sm" className="w-full">
-                          Setup Integration
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="w-full" disabled>
-                          Coming Soon
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Framework Integrations */}
-      <div className="bg-slate-50 py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Framework & SDK Integrations
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Seamlessly integrate with popular AI frameworks and development tools. 
-              Track costs without changing your existing codebase.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {frameworks.map((framework, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="text-4xl">{framework.logo}</div>
-                    <div>
-                      <CardTitle className="text-xl">{framework.name}</CardTitle>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {framework.language}
-                        </Badge>
-                        <Badge className="text-xs bg-blue-100 text-blue-700">
-                          {framework.integration}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <CardDescription className="text-gray-600">
-                    {framework.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Tracking Features:</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {framework.features.map((feature, idx) => (
-                          <div key={idx} className="text-sm text-gray-600 flex items-center">
-                            <span className="text-blue-500 mr-2">•</span>
-                            {feature}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <Button variant="outline" size="sm" className="w-full">
-                        View Integration Guide
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Enterprise Integrations */}
-      <div className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Enterprise Integrations
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Advanced integrations for enterprise customers requiring custom solutions, 
-              enhanced security, and comprehensive data export capabilities.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {enterprise.map((integration, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">{integration.logo}</span>
-                  </div>
-                  <CardTitle className="text-lg">{integration.name}</CardTitle>
-                  <CardDescription className="text-gray-600">
-                    {integration.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    {integration.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center justify-center">
-                        <span className="text-green-500 mr-2">✓</span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Getting Started Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Ready to start tracking your AI costs?
-          </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Set up your first integration in under 5 minutes. Connect your AI providers 
-            and get instant visibility into your spending.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold">
-                Start free trial
-                <span className="ml-2">→</span>
-              </Button>
-            </Link>
-            <Link href="/docs/quickstart">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold">
-                Quick start guide
-              </Button>
-            </Link>
-          </div>
-          <p className="text-blue-200 text-sm mt-6">
-            14-day free trial • No credit card required • 2-minute setup
-          </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

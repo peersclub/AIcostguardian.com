@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     try {
       // Try to fetch from real Claude Admin API
       const adminClient = getClaudeAdminClient(session.user.id)
-      const versionInfo = await adminClient.getApiVersion()
+      const versionInfo = await adminClient.getApiVersionInfo()
       
       return NextResponse.json({
         ...versionInfo,
