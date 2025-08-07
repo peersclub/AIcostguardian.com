@@ -25,7 +25,8 @@ import {
   Filter,
   Download,
   Lightbulb,
-  Shield
+  Shield,
+  Bell
 } from 'lucide-react'
 
 export default function TrendsAnalyticsV2() {
