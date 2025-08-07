@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import NavigationProgress from '@/components/NavigationProgress'
 import NextAuthSessionProvider from '@/components/SessionProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import DemoDataProvider from '@/components/DemoDataProvider'
@@ -24,6 +25,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <NextAuthSessionProvider>
             <DemoDataProvider>
+              <NavigationProgress />
               <Navigation />
               {children}
             </DemoDataProvider>
