@@ -21,7 +21,7 @@ import { AI_PROVIDER_IDS, getProviderById } from '@/lib/ai-providers-config'
 
 export default function ProviderInsights() {
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
-  const [comparisonMetric, setComparisonMetric] = useState('cost')
+  const [comparisonMetric, setComparisonMetric] = useState<'cost' | 'performance' | 'reliability' | 'efficiency'>('cost')
 
   // Mock provider performance data
   const providerPerformance = [
@@ -170,7 +170,7 @@ export default function ProviderInsights() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">Compare by</label>
                 <select
                   value={comparisonMetric}
-                  onChange={(e) => setComparisonMetric(e.target.value)}
+                  onChange={(e) => setComparisonMetric(e.target.value as 'cost' | 'performance' | 'reliability' | 'efficiency')}
                   className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="cost">Cost</option>
@@ -339,10 +339,10 @@ export default function ProviderInsights() {
                           className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
                           style={{ 
                             width: `${comparisonMetric === 'cost' 
-                              ? (item.value / Math.max(...comparisonData[comparisonMetric].map(d => d.value))) * 100
+                              ? (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value))) * 100
                               : comparisonMetric === 'performance'
-                                ? (1 - (item.value / Math.max(...comparisonData[comparisonMetric].map(d => d.value)))) * 100
-                                : (item.value / Math.max(...comparisonData[comparisonMetric].map(d => d.value))) * 100
+                                ? (1 - (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value)))) * 100
+                                : (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value))) * 100
                             }%` 
                           }}
                         ></div>
