@@ -144,7 +144,7 @@ export interface FormFieldProps extends BaseComponentProps {
   disabled?: boolean
 }
 
-export interface InputProps extends FormFieldProps, Omit<HTMLAttributes<HTMLInputElement>, 'type'> {
+export interface InputProps extends FormFieldProps, Omit<HTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search'
   value?: string | number
   onChange?: (value: string) => void

@@ -1,4 +1,4 @@
-import { ProviderConfig } from '@/types/providers'
+import { ProviderConfig } from '@/lib/types/providers'
 
 export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {

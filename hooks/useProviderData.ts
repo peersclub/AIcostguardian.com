@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ProviderStatus, UsageStats, ApiResponse } from '@/lib/types/usage'
+import { ProviderConnectionStatus, UsageStats } from '@/lib/types/usage'
+import { ApiResponse } from '@/lib/types/api'
 
 interface UseProviderStatusOptions {
   autoRefresh?: boolean
@@ -14,7 +15,7 @@ export function useProviderStatus(
 ) {
   const { autoRefresh = false, refreshInterval = 30000 } = options
   
-  const [status, setStatus] = useState<ProviderStatus>({
+  const [status, setStatus] = useState<ProviderConnectionStatus>({
     isConfigured: false,
     isValid: false
   })
@@ -27,12 +28,15 @@ export function useProviderStatus(
       setError(null)
       
       const response = await fetch(`/api/${provider}/status`)
-      const data: ApiResponse<ProviderStatus> = await response.json()
+      const data: ApiResponse<ProviderConnectionStatus> = await response.json()
       
       if (data.success && data.data) {
         setStatus(data.data)
       } else {
-        setError(data.error || 'Failed to fetch status')
+        const errorMessage = typeof data.error === 'string' 
+          ? data.error 
+          : data.error?.message || 'Failed to fetch status'
+        setError(errorMessage)
       }
     } catch (err) {
       setError('Network error occurred')
@@ -83,7 +87,10 @@ export function useUsageStats(
       if (data.success && data.data) {
         setStats(data.data)
       } else {
-        setError(data.error || 'Failed to fetch usage stats')
+        const errorMessage = typeof data.error === 'string' 
+          ? data.error 
+          : data.error?.message || 'Failed to fetch usage stats'
+        setError(errorMessage)
       }
     } catch (err) {
       setError('Network error occurred')
@@ -155,7 +162,10 @@ export function useApiKey(provider: string, options: UseApiKeyOptions = {}) {
         setApiKey(newKey)
         return true
       } else {
-        setError(data.error || 'Failed to save API key')
+        const errorMessage = typeof data.error === 'string' 
+          ? data.error 
+          : data.error?.message || 'Failed to save API key'
+        setError(errorMessage)
         return false
       }
     } catch (err) {
@@ -182,7 +192,10 @@ export function useApiKey(provider: string, options: UseApiKeyOptions = {}) {
         setApiKey('')
         return true
       } else {
-        setError(data.error || 'Failed to delete API key')
+        const errorMessage = typeof data.error === 'string' 
+          ? data.error 
+          : data.error?.message || 'Failed to delete API key'
+        setError(errorMessage)
         return false
       }
     } catch (err) {
@@ -216,7 +229,7 @@ export function useApiKey(provider: string, options: UseApiKeyOptions = {}) {
 export function useAllProviders() {
   const providers = ['openai', 'claude', 'gemini', 'grok', 'perplexity', 'mistral']
   const [providersData, setProvidersData] = useState<Record<string, {
-    status: ProviderStatus
+    status: ProviderConnectionStatus
     stats: UsageStats | null
   }>>({})
   const [loading, setLoading] = useState(true)
@@ -232,7 +245,7 @@ export function useAllProviders() {
             fetch(`/api/${provider}/usage?timeRange=30d`)
           ])
           
-          const statusData: ApiResponse<ProviderStatus> = await statusRes.json()
+          const statusData: ApiResponse<ProviderConnectionStatus> = await statusRes.json()
           const statsData: ApiResponse<UsageStats> = await statsRes.json()
           
           return {

@@ -1,5 +1,5 @@
-import { API_BASE_URL, ERROR_MESSAGES } from '@/config/constants'
-import { ApiResponse, ApiError } from '@/types/api'
+import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/config/constants'
+import { ApiResponse, ApiError } from '@/lib/types/api'
 
 export interface RequestConfig extends RequestInit {
   params?: Record<string, any>
@@ -30,7 +30,7 @@ class HttpClient {
   }
 
   private async handleRequest(url: string, config: RequestConfig = {}): Promise<Response> {
-    let finalConfig = {
+    let finalConfig: RequestConfig = {
       ...config,
       headers: {
         ...this.defaultHeaders,
@@ -255,7 +255,7 @@ const httpClient = new HttpClient()
 // Add request logging in development
 if (process.env.NODE_ENV === 'development') {
   httpClient.addRequestInterceptor((config) => {
-    console.log(`[HTTP] ${config.method} ${config.url}`, config)
+    console.log(`[HTTP] ${config.method || 'REQUEST'}`, config)
     return config
   })
 

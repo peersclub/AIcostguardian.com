@@ -51,7 +51,7 @@ export interface UsageTrend {
   cost: number
 }
 
-export interface ProviderStatus {
+export interface ProviderConnectionStatus {
   isConfigured: boolean
   isValid: boolean
   lastChecked?: string
@@ -62,22 +62,6 @@ export interface ProviderStatus {
     tokenLimit: number
     costLimit: number
   }
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-  timestamp: string
-}
-
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  hasMore: boolean
 }
 
 export type TimeRange = '1h' | '24h' | '7d' | '30d' | '90d' | '1y' | 'custom'

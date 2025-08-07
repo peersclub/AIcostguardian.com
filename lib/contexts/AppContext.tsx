@@ -1,8 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User, Organization, Subscription, ThemeMode, AppConfig } from '@/types'
-import { STORAGE_KEYS, APP_NAME, APP_VERSION } from '@/config/constants'
+import { User, Organization, Subscription, ThemeMode, AppConfig } from '@/lib/types'
+import { STORAGE_KEYS, APP_NAME, APP_VERSION } from '@/lib/config/constants'
 
 interface AppContextValue {
   // User & Auth

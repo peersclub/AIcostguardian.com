@@ -1,9 +1,24 @@
 import { withAuth } from 'next-auth/middleware'
+import { NextResponse } from 'next/server'
+import { CSP_HEADERS } from '@/lib/security'
 
 export default withAuth(
   // `withAuth` augments your `Request` with the user's token.
   function middleware(req) {
-    // Add any additional middleware logic here if needed
+    // Create response with security headers
+    const response = NextResponse.next()
+    
+    // Apply CSP and security headers
+    Object.entries(CSP_HEADERS).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+    
+    // Add additional security headers for API routes
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      response.headers.set('Cache-Control', 'no-store, max-age=0')
+    }
+    
+    return response
   },
   {
     callbacks: {

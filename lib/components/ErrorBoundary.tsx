@@ -132,15 +132,13 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     // Send to monitoring service
-    if (window.fetch) {
-      fetch('/api/errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(errorReport),
-      }).catch(err => {
-        console.error('Failed to report error:', err)
-      })
-    }
+    fetch('/api/errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(errorReport),
+    }).catch(err => {
+      console.error('Failed to report error:', err)
+    })
   }
 
   render() {

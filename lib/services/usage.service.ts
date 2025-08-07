@@ -1,12 +1,12 @@
 import httpClient from './httpClient'
-import { ROUTES } from '@/config/constants'
+import { ROUTES } from '@/lib/config/constants'
 import { 
   ApiResponse, 
   UsageResponse, 
   TeamStatsResponse,
   PaginatedResponse 
-} from '@/types/api'
-import { ProviderId } from '@/types/providers'
+} from '@/lib/types/api'
+import { ProviderId } from '@/lib/types/providers'
 
 export interface UsageFilters {
   provider?: ProviderId

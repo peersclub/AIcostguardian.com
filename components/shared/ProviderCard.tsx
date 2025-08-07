@@ -14,12 +14,12 @@ import {
   Zap
 } from 'lucide-react'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
-import { ProviderStatus, UsageStats } from '@/lib/types/usage'
+import { ProviderConnectionStatus, UsageStats } from '@/lib/types/usage'
 
 interface ProviderCardProps {
   providerId: string
   providerName: string
-  status: ProviderStatus
+  status: ProviderConnectionStatus
   stats?: Partial<UsageStats>
   onConfigure?: () => void
   onViewDetails?: () => void

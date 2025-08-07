@@ -1,10 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { ProviderId, ProviderConnection, ProviderCredentials, ProviderTestResult } from '@/types/providers'
-import { PROVIDER_CONFIGS } from '@/config/providers'
-import { POLLING_INTERVALS } from '@/config/constants'
-import providersService from '@/services/api/providers.service'
+import { ProviderId, ProviderConnection, ProviderCredentials, ProviderTestResult } from '@/lib/types/providers'
+import { PROVIDER_CONFIGS } from '@/lib/config/providers'
+import { POLLING_INTERVALS } from '@/lib/config/constants'
+import providersService from '@/lib/services/providers.service'
 
 interface ProvidersContextValue {
   connections: Record<ProviderId, ProviderConnection>
@@ -42,7 +42,7 @@ interface ProvidersProviderProps {
 
 export const ProvidersProvider: React.FC<ProvidersProviderProps> = ({ 
   children, 
-  initialConnections = {} 
+  initialConnections = {} as Record<ProviderId, ProviderConnection>
 }) => {
   const [connections, setConnections] = useState<Record<ProviderId, ProviderConnection>>(initialConnections)
   const [loading, setLoading] = useState(false)
@@ -57,11 +57,11 @@ export const ProvidersProvider: React.FC<ProvidersProviderProps> = ({
       const response = await providersService.getConnections()
       
       if (response.success && response.data) {
-        const connectionsMap: Record<ProviderId, ProviderConnection> = {}
+        const connectionsMap: Partial<Record<ProviderId, ProviderConnection>> = {}
         response.data.forEach(connection => {
           connectionsMap[connection.providerId] = connection
         })
-        setConnections(connectionsMap)
+        setConnections(connectionsMap as Record<ProviderId, ProviderConnection>)
       } else {
         setError(response.error?.message || 'Failed to fetch connections')
       }

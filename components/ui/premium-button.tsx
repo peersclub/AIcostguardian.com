@@ -28,6 +28,8 @@ export const PremiumButton = React.forwardRef<HTMLButtonElement, PremiumButtonPr
     gradient = true,
     children,
     disabled,
+    onClick,
+    type,
     ...props
   }, ref) => {
     const sizeClasses = {
@@ -65,7 +67,8 @@ export const PremiumButton = React.forwardRef<HTMLButtonElement, PremiumButtonPr
           className
         )}
         disabled={disabled || loading}
-        {...props}
+        onClick={onClick}
+        type={type}
       >
         {/* Shine effect */}
         <motion.div

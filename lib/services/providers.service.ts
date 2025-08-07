@@ -1,12 +1,12 @@
 import httpClient from './httpClient'
-import { ROUTES } from '@/config/constants'
+import { ROUTES } from '@/lib/config/constants'
 import { 
   ProviderConnection, 
   ProviderCredentials, 
   ProviderTestResult,
   ProviderId 
-} from '@/types/providers'
-import { ApiResponse, ApiKeyResponse } from '@/types/api'
+} from '@/lib/types/providers'
+import { ApiResponse, ApiKeyResponse } from '@/lib/types/api'
 
 class ProvidersService {
   /**

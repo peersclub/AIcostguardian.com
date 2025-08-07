@@ -540,13 +540,13 @@ function SettingsContent() {
     
     switch (status) {
       case 'online':
-        return <CheckCircle className="w-4 h-4 text-green-400" title="Connected" />
+        return <CheckCircle className="w-4 h-4 text-green-400" />
       case 'offline':
-        return <XCircle className="w-4 h-4 text-red-400" title="Disconnected" />
+        return <XCircle className="w-4 h-4 text-red-400" />
       case 'checking':
-        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" title="Checking..." />
+        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
       default:
-        return <Clock className="w-4 h-4 text-gray-400" title="Unknown" />
+        return <Clock className="w-4 h-4 text-gray-400" />
     }
   }
 
@@ -1267,7 +1267,7 @@ function SettingsContent() {
                                   {Object.entries(testResult.tokenUsage).map(([key, value]) => (
                                     <div key={key} className="flex justify-between">
                                       <span className="text-gray-400 capitalize">{key}:</span>
-                                      <span className="text-white">{value}</span>
+                                      <span className="text-white">{String(value)}</span>
                                     </div>
                                   ))}
                                 </div>

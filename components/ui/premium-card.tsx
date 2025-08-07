@@ -21,6 +21,10 @@ export const PremiumCard = React.forwardRef<HTMLDivElement, PremiumCardProps>(
     glow = false,
     padding = 'lg',
     children,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    style,
     ...props
   }, ref) => {
     const paddingClasses = {
@@ -56,7 +60,10 @@ export const PremiumCard = React.forwardRef<HTMLDivElement, PremiumCardProps>(
           glow && 'glow',
           className
         )}
-        {...props}
+        onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        style={style}
       >
         {children}
       </motion.div>
