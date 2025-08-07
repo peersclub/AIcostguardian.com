@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { PremiumButton } from '@/components/ui/premium-button'
 import { PremiumCard, PremiumCardHeader, PremiumCardContent } from '@/components/ui/premium-card'
-import { PremiumStat, PremiumStatsGrid } from '@/components/ui/premium-stats'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -65,15 +65,7 @@ export default function Home() {
             <motion.div variants={fadeInUp} className="flex justify-center mb-8">
               <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-xl border border-purple-200/50 shadow-lg">
                 <Sparkles className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-semibold text-gray-800">Trusted by Fortune 500 Companies</span>
-                <div className="flex -space-x-2">
-                  {[1,2,3,4,5].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white" />
-                  ))}
-                  <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold">
-                    +500
-                  </div>
-                </div>
+                <span className="text-xs sm:text-sm font-semibold text-gray-800">Trusted by Fortune 500 Companies</span>
               </div>
             </motion.div>
 
@@ -153,44 +145,122 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <PremiumStatsGrid>
-              <PremiumStat
-                label="Average Savings"
-                value="40"
-                suffix="%"
-                icon={TrendingDown}
-                color="green"
-                change={{ value: 12, trend: 'up' }}
-                description="vs. last quarter"
-              />
-              <PremiumStat
-                label="AI Providers"
-                value="25"
-                suffix="+"
-                icon={Globe}
-                color="blue"
-                description="Integrated platforms"
-              />
-              <PremiumStat
-                label="Active Users"
-                value="50,000"
-                suffix="+"
-                icon={Users}
-                color="purple"
-                change={{ value: 28, trend: 'up' }}
-                description="Enterprise users"
-              />
-              <PremiumStat
-                label="Cost Reduced"
-                value="2.5"
-                prefix="$"
-                suffix="M"
-                icon={DollarSign}
-                color="yellow"
-                change={{ value: 35, trend: 'up' }}
-                description="Total saved"
-              />
-            </PremiumStatsGrid>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              {/* Average Savings Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-lg bg-green-50">
+                      <TrendingDown className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                      +12%
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-gray-900">40</span>
+                      <span className="text-xl font-semibold text-gray-600">%</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Average Savings</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* AI Providers Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-lg bg-blue-50">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex -space-x-2">
+                      {['openai', 'claude', 'gemini'].map((provider) => (
+                        <div key={provider} className="w-7 h-7 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                          {getAIProviderLogo(provider, 'w-4 h-4')}
+                        </div>
+                      ))}
+                      <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-gray-600">+22</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-gray-900">25</span>
+                      <span className="text-xl font-semibold text-gray-600">+</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">AI Providers</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Active Users Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-lg bg-purple-50">
+                      <Users className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                      +28%
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline">
+                      <span className="text-3xl font-bold text-gray-900">50K</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Active Users</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Cost Reduced Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-lg bg-yellow-50">
+                      <DollarSign className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                      +35%
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-semibold text-gray-600">$</span>
+                      <span className="text-3xl font-bold text-gray-900">2.5</span>
+                      <span className="text-xl font-semibold text-gray-600">M</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Cost Reduced</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -213,7 +283,7 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {[
               {
                 icon: Brain,
@@ -258,15 +328,18 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
+                className="h-full"
               >
-                <PremiumCard hover glow={index === 1}>
-                  <PremiumCardHeader
-                    icon={feature.icon}
-                    title={feature.title}
-                    subtitle={feature.description}
-                  />
+                <PremiumCard hover glow={index === 1} className="h-full flex flex-col">
+                  <div className="flex-1">
+                    <PremiumCardHeader
+                      icon={feature.icon}
+                      title={feature.title}
+                      subtitle={feature.description}
+                    />
+                  </div>
                   <PremiumCardContent>
-                    <div className="flex items-center gap-2 text-sm text-purple-600 font-medium mt-4">
+                    <div className="flex items-center gap-2 text-sm text-purple-600 font-medium">
                       <span>Learn more</span>
                       <ArrowRight className="w-4 h-4" />
                     </div>
@@ -289,15 +362,15 @@ export default function Home() {
             className="relative"
           >
             <PremiumCard variant="gradient" className="overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-12 items-center p-12">
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center p-6 sm:p-8 lg:p-12">
                 <div>
-                  <h3 className="text-3xl lg:text-4xl font-bold mb-6">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">
                     See AICostGuardian in Action
                   </h3>
-                  <p className="text-lg text-gray-600 mb-8">
+                  <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
                     Watch how leading enterprises reduce AI costs by 40% while improving efficiency and control.
                   </p>
-                  <ul className="space-y-4 mb-8">
+                  <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                     {[
                       'Real-time cost tracking across 25+ AI providers',
                       'Automated budget alerts and spending limits',
@@ -317,7 +390,7 @@ export default function Home() {
                       </motion.li>
                     ))}
                   </ul>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <PremiumButton icon={PlayCircle}>
                       Watch Demo
                     </PremiumButton>
@@ -326,28 +399,28 @@ export default function Home() {
                     </PremiumButton>
                   </div>
                 </div>
-                <div className="relative">
+                <div className="relative mt-8 lg:mt-0">
                   {/* Dashboard Preview */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     className="relative rounded-2xl overflow-hidden shadow-2xl"
                   >
-                    <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-8">
-                      <div className="bg-white/10 backdrop-blur rounded-xl p-6">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="bg-white/20 rounded-lg p-4">
-                            <LineChart className="w-8 h-8 text-white mb-2" />
-                            <div className="text-2xl font-bold text-white">$24,580</div>
-                            <div className="text-sm text-white/80">Monthly Spend</div>
+                    <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-4 sm:p-6 lg:p-8">
+                      <div className="bg-white/10 backdrop-blur rounded-xl p-3 sm:p-4 lg:p-6">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 mb-2 sm:mb-3 lg:mb-4">
+                          <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                            <LineChart className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8 text-white mb-1 sm:mb-2" />
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">$24,580</div>
+                            <div className="text-xs sm:text-sm text-white/80">Monthly Spend</div>
                           </div>
-                          <div className="bg-white/20 rounded-lg p-4">
-                            <PieChart className="w-8 h-8 text-white mb-2" />
-                            <div className="text-2xl font-bold text-white">-35%</div>
-                            <div className="text-sm text-white/80">vs Last Month</div>
+                          <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                            <PieChart className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8 text-white mb-1 sm:mb-2" />
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">-35%</div>
+                            <div className="text-xs sm:text-sm text-white/80">vs Last Month</div>
                           </div>
                         </div>
-                        <div className="bg-white/20 rounded-lg p-4">
-                          <Activity className="w-full h-24 text-white/40" />
+                        <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                          <Activity className="w-full h-16 sm:h-20 lg:h-24 text-white/40" />
                         </div>
                       </div>
                     </div>
@@ -416,16 +489,17 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
+                className="h-full"
               >
-                <PremiumCard variant="glass">
-                  <PremiumCardContent>
+                <PremiumCard variant="glass" className="h-full flex flex-col">
+                  <PremiumCardContent className="flex-1 flex flex-col">
                     <div className="flex mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                       ))}
                     </div>
-                    <p className="text-gray-700 mb-6 italic">"{testimonial.quote}"</p>
-                    <div>
+                    <p className="text-gray-700 mb-6 italic flex-1">"{testimonial.quote}"</p>
+                    <div className="mt-auto">
                       <div className="font-semibold text-gray-900">{testimonial.author}</div>
                       <div className="text-sm text-gray-600">{testimonial.role}</div>
                     </div>
@@ -446,26 +520,26 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <PremiumCard variant="dark" className="text-center p-12 lg:p-16">
-              <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
+            <PremiumCard variant="dark" className="text-center p-8 sm:p-10 lg:p-12 xl:p-16">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6">
                 Ready to Optimize Your AI Spending?
               </h2>
-              <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-300 mb-6 sm:mb-8 lg:mb-10 max-w-2xl mx-auto">
                 Join 500+ companies saving millions on AI costs with intelligent monitoring and optimization.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link href="/auth/signup">
-                  <PremiumButton size="xl" icon={Sparkles}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+                <Link href="/auth/signup" className="w-full sm:w-auto">
+                  <PremiumButton size="lg" icon={Sparkles} className="w-full sm:w-auto">
                     Start 14-Day Free Trial
                   </PremiumButton>
                 </Link>
-                <Link href="/pricing">
-                  <PremiumButton size="xl" variant="secondary" icon={DollarSign}>
+                <Link href="/pricing" className="w-full sm:w-auto">
+                  <PremiumButton size="lg" variant="secondary" icon={DollarSign} className="w-full sm:w-auto">
                     View Pricing
                   </PremiumButton>
                 </Link>
               </div>
-              <p className="text-gray-400 text-sm mt-8">
+              <p className="text-gray-400 text-xs sm:text-sm mt-6 sm:mt-8">
                 No credit card required • Setup in 5 minutes • Cancel anytime
               </p>
             </PremiumCard>
