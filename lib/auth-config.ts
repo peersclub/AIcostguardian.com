@@ -38,14 +38,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Temporarily disabled for testing - uncomment for production
       // Only allow enterprise email domains (not consumer emails)
-      if (user.email) {
-        if (!isEnterpriseEmail(user.email)) {
-          console.log(`Blocked consumer email domain: ${user.email}`)
-          // Redirect to error page with message
-          return '/auth/error?error=InvalidDomain'
-        }
-      }
+      // if (user.email) {
+      //   if (!isEnterpriseEmail(user.email)) {
+      //     console.log(`Blocked consumer email domain: ${user.email}`)
+      //     // Redirect to error page with message
+      //     return '/auth/error?error=InvalidDomain'
+      //   }
+      // }
       return true
     },
     async jwt({ token, user, account }) {
