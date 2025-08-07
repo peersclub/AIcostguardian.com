@@ -103,6 +103,26 @@ export default function TrendsAnalyticsV2() {
     }
   }
 
+  const marketIntelligence = {
+    trends: [
+      {
+        trend: 'AI Cost Optimization Tools',
+        impact: 'Opportunity',
+        timeline: 'Q1 2025'
+      },
+      {
+        trend: 'Model Price Reductions',
+        impact: 'Positive',
+        timeline: 'Q2 2025'
+      },
+      {
+        trend: 'Enterprise Adoption Surge',
+        impact: 'Positive',
+        timeline: 'Current'
+      }
+    ]
+  }
+
   const scenarios = [
     {
       name: 'Conservative Growth',
