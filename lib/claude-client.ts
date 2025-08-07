@@ -1,8 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { getApiKey } from './api-key-store'
 
-// Initialize Claude client
+// Initialize Claude client with dummy key (will be replaced per request)
 const claude = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: 'dummy-key-will-be-replaced',
 })
 
 // Claude model pricing (tokens per dollar)
@@ -80,10 +81,23 @@ export async function makeClaudeCall(
   try {
     const { maxTokens = 1024, temperature = 0.7, systemPrompt, apiKey } = options
 
-    // Use provided API key or fall back to environment variable
-    const claudeClient = apiKey 
-      ? new Anthropic({ apiKey }) 
-      : claude
+    // Get API key from options, user storage, or environment
+    let finalApiKey = apiKey
+    if (!finalApiKey) {
+      // Try to get from user storage
+      finalApiKey = getApiKey(userId, 'claude')
+    }
+    if (!finalApiKey && process.env.ANTHROPIC_API_KEY) {
+      // Fall back to environment variable if set
+      finalApiKey = process.env.ANTHROPIC_API_KEY
+    }
+    
+    if (!finalApiKey) {
+      throw new Error('No Claude API key found. Please configure your API key in Settings.')
+    }
+
+    // Create client with the correct API key
+    const claudeClient = new Anthropic({ apiKey: finalApiKey })
 
     // Make the API call
     const response = await claudeClient.messages.create({
@@ -159,33 +173,11 @@ export async function getClaudeStatus(testApiKey?: string): Promise<{
     }
   }
 
-  // Check environment variable API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return {
-      isConfigured: false,
-      isValid: false,
-      error: 'ANTHROPIC_API_KEY not configured'
-    }
-  }
-
-  try {
-    // Test the API key with a minimal request
-    await claude.messages.create({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 10,
-      messages: [{ role: 'user', content: 'Hi' }]
-    })
-
-    return {
-      isConfigured: true,
-      isValid: true
-    }
-  } catch (error: any) {
-    return {
-      isConfigured: true,
-      isValid: false,
-      error: error.message || 'Invalid API key'
-    }
+  // No API key to test
+  return {
+    isConfigured: false,
+    isValid: false,
+    error: 'No API key configured. Please add your Claude API key in Settings.'
   }
 }
 

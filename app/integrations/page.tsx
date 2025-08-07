@@ -67,7 +67,7 @@ export default function IntegrationsPage() {
       id: provider.id,
       name: provider.displayName,
       description: provider.description,
-      status: statuses.find(s => s.id === provider.id)?.status || 'disconnected',
+      status: (statuses.find(s => s.id === provider.id)?.status || 'disconnected') as 'connected' | 'disconnected' | 'checking',
       features: provider.models.map(m => m.name),
       apiKeyRequired: true,
       lastSync: statuses.find(s => s.id === provider.id)?.lastSync

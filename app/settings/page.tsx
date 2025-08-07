@@ -237,11 +237,11 @@ function SettingsContent() {
   }
 
   // Enhanced testing with detailed results
-  const performDetailedTest = async (providerId: string, apiKey?: string) => {
+  const performDetailedTest = async (providerId: string, apiKey?: string, useStoredKey: boolean = false) => {
     const provider = apiProviders.find(p => p.id === providerId)
-    const keyToTest = apiKey || storedApiKeys[providerId]?.masked
     
-    if (!keyToTest && !apiKey) {
+    // Only check for key if we're not using stored key and no key is provided
+    if (!apiKey && !useStoredKey && !storedApiKeys[providerId]?.hasKey) {
       setProviderMessages(prev => ({ 
         ...prev, 
         [providerId]: { 
@@ -251,6 +251,9 @@ function SettingsContent() {
       }))
       return
     }
+    
+    // Only pass apiKey if we have a real one (not for stored keys)
+    const keyToTest = (apiKey && !useStoredKey) ? apiKey : undefined
 
     setTestingProviders(prev => new Set(prev).add(providerId))
     setProviderMessages(prev => ({ 
@@ -265,7 +268,16 @@ function SettingsContent() {
       const startTime = Date.now()
       
       // Determine if we should test against admin endpoint for Claude
-      const keyIsAdmin = isAdminKey(apiKey || keyToTest, providerId)
+      // If using stored key, check the stored metadata to see if it's admin
+      let keyIsAdmin = false
+      if (useStoredKey && providerId === 'claude') {
+        // Check if the stored key is marked as admin
+        keyIsAdmin = storedApiKeys[providerId]?.isAdmin || false
+      } else if (apiKey) {
+        // Check the actual key if provided
+        keyIsAdmin = isAdminKey(apiKey, providerId)
+      }
+      
       const testEndpoint = (providerId === 'claude' && keyIsAdmin) 
         ? '/api/claude-admin/test' 
         : `/api/${providerId}/test`
@@ -283,7 +295,7 @@ function SettingsContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: "This is a comprehensive API test. Please respond with: 'Test successful! API integration working properly.'",
-          testApiKey: apiKey,
+          ...(keyToTest ? { testApiKey: keyToTest } : {}), // Only include testApiKey if we have a real key to test
           detailed: true
         })
       })
@@ -412,9 +424,76 @@ function SettingsContent() {
         setEditingProvider(null)
         await loadStoredApiKeys()
         
-        // Auto-test the newly saved key
+        // Auto-test the newly saved key - force it to skip the hasKey check since we just saved it
         setTimeout(() => {
-          performDetailedTest(providerId)
+          // Directly call the test without checking storedApiKeys since state might not be updated yet
+          setTestingProviders(prev => new Set(prev).add(providerId))
+          setProviderMessages(prev => ({ 
+            ...prev, 
+            [providerId]: { 
+              type: 'info', 
+              message: `🔄 Running comprehensive test for ${provider?.displayName}...` 
+            }
+          }))
+          
+          const testEndpoint = (providerId === 'claude' && keyIsAdmin) 
+            ? '/api/claude-admin/test'
+            : `/api/${providerId}/test`
+          
+          // Run the actual test without checking for stored keys
+          fetch(testEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              prompt: "This is a comprehensive API test. Please respond with: 'Test successful! API integration working properly.'",
+              // Don't send testApiKey - let backend use the stored one
+              detailed: true
+            })
+          }).then(async response => {
+            const result = await response.json()
+            const testResult = {
+              status: response.ok ? 'success' : 'error',
+              message: result.success ? result.response?.content || 'Test successful!' : result.error || 'Test failed',
+              details: result,
+              timestamp: new Date().toISOString(),
+              responseTime: 0
+            }
+            
+            setTestResults(prev => ({ ...prev, [providerId]: testResult }))
+            setConnectionStatus(prev => ({ ...prev, [providerId]: response.ok ? 'online' : 'offline' }))
+            
+            if (response.ok) {
+              setProviderMessages(prev => ({ 
+                ...prev, 
+                [providerId]: { 
+                  type: 'success', 
+                  message: `✅ ${provider?.displayName} connection test successful!` 
+                }
+              }))
+            } else {
+              setProviderMessages(prev => ({ 
+                ...prev, 
+                [providerId]: { 
+                  type: 'error', 
+                  message: `❌ ${provider?.displayName} test failed: ${result.error || 'Unknown error'}` 
+                }
+              }))
+            }
+          }).catch(error => {
+            setProviderMessages(prev => ({ 
+              ...prev, 
+              [providerId]: { 
+                type: 'error', 
+                message: `❌ Network error testing ${provider?.displayName}` 
+              }
+            }))
+          }).finally(() => {
+            setTestingProviders(prev => {
+              const newSet = new Set(prev)
+              newSet.delete(providerId)
+              return newSet
+            })
+          })
         }, 1000)
       } else {
         setProviderMessages(prev => ({ 
@@ -540,13 +619,13 @@ function SettingsContent() {
     
     switch (status) {
       case 'online':
-        return <CheckCircle className="w-4 h-4 text-green-400" title="Connected" />
+        return <CheckCircle className="w-4 h-4 text-green-400" />
       case 'offline':
-        return <XCircle className="w-4 h-4 text-red-400" title="Disconnected" />
+        return <XCircle className="w-4 h-4 text-red-400" />
       case 'checking':
-        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" title="Checking..." />
+        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
       default:
-        return <Clock className="w-4 h-4 text-gray-400" title="Unknown" />
+        return <Clock className="w-4 h-4 text-gray-400" />
     }
   }
 
@@ -820,7 +899,7 @@ function SettingsContent() {
 
                             <div className="flex items-center gap-2 mt-4">
                               <button
-                                onClick={() => performDetailedTest(provider.id)}
+                                onClick={() => performDetailedTest(provider.id, undefined, true)} // Use stored key
                                 disabled={isTesting}
                                 className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm flex items-center gap-2"
                               >
@@ -1101,7 +1180,7 @@ function SettingsContent() {
                     onClick={() => {
                       apiProviders
                         .filter(p => storedApiKeys[p.id]?.hasKey)
-                        .forEach(p => performDetailedTest(p.id))
+                        .forEach(p => performDetailedTest(p.id, undefined, true)) // Use stored key
                     }}
                     disabled={testingProviders.size > 0}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
@@ -1136,7 +1215,7 @@ function SettingsContent() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => performDetailedTest(provider.id)}
+                              onClick={() => performDetailedTest(provider.id, undefined, true)} // Use stored key
                               disabled={isTesting}
                               className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm flex items-center gap-2"
                             >
@@ -1267,7 +1346,7 @@ function SettingsContent() {
                                   {Object.entries(testResult.tokenUsage).map(([key, value]) => (
                                     <div key={key} className="flex justify-between">
                                       <span className="text-gray-400 capitalize">{key}:</span>
-                                      <span className="text-white">{value}</span>
+                                      <span className="text-white">{String(value)}</span>
                                     </div>
                                   ))}
                                 </div>

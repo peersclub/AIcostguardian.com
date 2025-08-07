@@ -56,7 +56,12 @@ export const PremiumCard = React.forwardRef<HTMLDivElement, PremiumCardProps>(
           glow && 'glow',
           className
         )}
-        {...props}
+        onClick={props.onClick}
+        onMouseEnter={props.onMouseEnter}
+        onMouseLeave={props.onMouseLeave}
+        id={props.id}
+        role={props.role}
+        style={props.style}
       >
         {children}
       </motion.div>

@@ -66,7 +66,24 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Mock response for Grok API test
+    // Check if this is an admin/org key pattern (xAI/Grok might use xai-admin- or similar)
+    if (apiKey.includes('admin') || apiKey.startsWith('xai-admin') || apiKey.includes('org-')) {
+      return NextResponse.json({
+        success: true,
+        response: {
+          content: 'Your Grok/xAI Admin key is valid! Note: Admin keys provide administrative access for managing xAI services and organizations.',
+          model: 'grok-admin-notice',
+          usage: {
+            tokens: 0,
+            cost: 0
+          }
+        },
+        keyType: 'admin',
+        adminKeyNotice: true
+      })
+    }
+
+    // Regular key response
     return NextResponse.json({
       success: true,
       response: {

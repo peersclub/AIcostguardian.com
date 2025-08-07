@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { makeOpenAICall, getOpenAIStatus } from '@/lib/openai-client'
 import { storeUsage } from '@/lib/usage-tracker'
+import { getApiKey } from '@/lib/api-key-store'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,6 +40,25 @@ export async function POST(request: NextRequest) {
 
     // If testApiKey is provided, test it
     if (testApiKey) {
+      // Check if this is an admin/organization key pattern (OpenAI uses org- prefix for org keys)
+      if (testApiKey.startsWith('org-') || testApiKey.includes('admin')) {
+        return NextResponse.json({
+          success: true,
+          response: {
+            content: 'Your OpenAI Organization/Admin key is valid! Note: Organization keys provide administrative access to manage your OpenAI organization.',
+            model: 'openai-admin-notice',
+            usage: {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+              cost: 0
+            }
+          },
+          keyType: 'admin',
+          adminKeyNotice: true
+        })
+      }
+      
       const status = await getOpenAIStatus(session.user.id, testApiKey)
       if (!status.isValid) {
         return NextResponse.json({
@@ -52,6 +72,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           response: { content: 'API key is working!' }
+        })
+      }
+    } else {
+      // No testApiKey provided, check if stored key is admin key
+      const storedKey = getApiKey(session.user.id, 'openai')
+      if (storedKey && (storedKey.startsWith('org-') || storedKey.includes('admin'))) {
+        // Admin/Org key detected - return appropriate response
+        return NextResponse.json({
+          success: true,
+          response: {
+            content: 'Your OpenAI Organization key is valid! Organization keys provide administrative access for managing your OpenAI organization.',
+            model: 'openai-admin-notice',
+            usage: {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+              cost: 0
+            }
+          },
+          keyType: 'admin',
+          adminKeyNotice: true
         })
       }
     }

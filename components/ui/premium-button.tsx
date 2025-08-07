@@ -65,7 +65,17 @@ export const PremiumButton = React.forwardRef<HTMLButtonElement, PremiumButtonPr
           className
         )}
         disabled={disabled || loading}
-        {...props}
+        onClick={props.onClick}
+        onSubmit={props.onSubmit}
+        type={props.type}
+        name={props.name}
+        value={props.value}
+        form={props.form}
+        formAction={props.formAction}
+        formEncType={props.formEncType}
+        formMethod={props.formMethod}
+        formNoValidate={props.formNoValidate}
+        formTarget={props.formTarget}
       >
         {/* Shine effect */}
         <motion.div

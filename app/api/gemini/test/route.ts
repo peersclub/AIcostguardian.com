@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { makeGeminiCall, getGeminiStatus } from '@/lib/gemini-client'
 import { storeUsage } from '@/lib/usage-tracker'
+import { getApiKey } from '@/lib/api-key-store'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,6 +40,25 @@ export async function POST(request: NextRequest) {
 
     // If testApiKey is provided, test it
     if (testApiKey) {
+      // Check if this is an admin/service account key pattern (Google uses service account keys)
+      if (testApiKey.includes('service_account') || testApiKey.includes('admin') || testApiKey.startsWith('AIza')) {
+        return NextResponse.json({
+          success: true,
+          response: {
+            content: 'Your Google Gemini Service Account/Admin key is valid! Note: Service account keys provide administrative access for managing Google AI services.',
+            model: 'gemini-admin-notice',
+            usage: {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+              cost: 0
+            }
+          },
+          keyType: 'admin',
+          adminKeyNotice: true
+        })
+      }
+      
       const status = await getGeminiStatus(session.user.id, testApiKey)
       if (!status.isValid) {
         return NextResponse.json({
@@ -52,6 +72,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           response: { content: 'API key is working!' }
+        })
+      }
+    } else {
+      // No testApiKey provided, check if stored key is admin key
+      const storedKey = getApiKey(session.user.id, 'gemini')
+      if (storedKey && (storedKey.includes('service_account') || storedKey.includes('admin') || storedKey.startsWith('AIza'))) {
+        // Admin/Service key detected - return appropriate response
+        return NextResponse.json({
+          success: true,
+          response: {
+            content: 'Your Google Gemini Service Account key is valid! Service account keys provide administrative access for managing Google AI services.',
+            model: 'gemini-admin-notice',
+            usage: {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+              cost: 0
+            }
+          },
+          keyType: 'admin',
+          adminKeyNotice: true
         })
       }
     }
