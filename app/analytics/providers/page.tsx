@@ -338,12 +338,15 @@ export default function ProviderInsights() {
                         <div 
                           className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${comparisonMetric === 'cost' 
-                              ? (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value))) * 100
-                              : comparisonMetric === 'performance'
-                                ? (1 - (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value)))) * 100
-                                : (item.value / Math.max(...comparisonData[comparisonMetric as keyof typeof comparisonData].map(d => d.value))) * 100
-                            }%` 
+                            width: `${(() => {
+                              const metricKey = comparisonMetric as keyof typeof comparisonData;
+                              const maxValue = Math.max(...comparisonData[metricKey].map(d => d.value));
+                              return comparisonMetric === 'cost' 
+                                ? (item.value / maxValue) * 100
+                                : comparisonMetric === 'performance'
+                                  ? (1 - (item.value / maxValue)) * 100
+                                  : (item.value / maxValue) * 100;
+                            })()}%` 
                           }}
                         ></div>
                       </div>
