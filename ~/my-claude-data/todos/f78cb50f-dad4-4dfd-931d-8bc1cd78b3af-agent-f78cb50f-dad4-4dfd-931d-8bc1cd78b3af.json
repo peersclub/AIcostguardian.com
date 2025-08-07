@@ -1,0 +1,17 @@
+[
+  {
+    "content": "Re-enable enterprise email restriction",
+    "status": "completed",
+    "id": "16"
+  },
+  {
+    "content": "Fix middleware to allow all public pages",
+    "status": "completed",
+    "id": "17"
+  },
+  {
+    "content": "Test and commit the fixes",
+    "status": "in_progress",
+    "id": "18"
+  }
+]

@@ -2,5 +2,26 @@
   "installMethod": "unknown",
   "autoUpdates": true,
   "userID": "dd56fa96f8f4fb179d4d9cbc6d3582f513abb3b8671091b42061747824e45c0e",
-  "fallbackAvailableWarningThreshold": 0.2
+  "fallbackAvailableWarningThreshold": 0.5,
+  "projects": {
+    "/Users/Victor/anthropic-quickstarts": {
+      "allowedTools": [],
+      "history": [
+        {
+          "display": "But /auth/error?error=Configuration is the URL - I should be able to visit all visitor pages? also enable email restriction that was originally there ",
+          "pastedContents": {}
+        }
+      ],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "hasTrustDialogHooksAccepted": false,
+      "ignorePatterns": [],
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false
+    }
+  }
 }

@@ -12,12 +12,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname
         
-        // Always allow access to auth pages and API routes
-        if (path.startsWith('/auth') || path.startsWith('/api/auth')) {
-          return true
-        }
-        
-        // Check if user is trying to access protected routes
+        // List of protected routes that require authentication
         const isProtectedRoute = path.startsWith('/dashboard') ||
                                 path.startsWith('/usage') ||
                                 path.startsWith('/billing') ||
@@ -25,14 +20,16 @@ export default withAuth(
                                 path.startsWith('/onboarding') ||
                                 path.startsWith('/team') ||
                                 path.startsWith('/analytics') ||
-                                path.startsWith('/integration')
+                                path.startsWith('/integrations') ||
+                                path.startsWith('/providers') ||
+                                path.startsWith('/superadmin')
         
         // If it's a protected route, require authentication
         if (isProtectedRoute) {
           return !!token
         }
         
-        // Allow access to public routes
+        // Allow access to all other routes (public pages, auth pages, API routes)
         return true
       },
     },
@@ -46,13 +43,17 @@ export default withAuth(
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (with extensions)
+     * Match only the protected routes that need authentication:
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*$).*)',
+    '/dashboard/:path*',
+    '/usage/:path*',
+    '/billing/:path*',
+    '/settings/:path*',
+    '/onboarding/:path*',
+    '/team/:path*',
+    '/analytics/:path*',
+    '/integrations/:path*',
+    '/providers/:path*',
+    '/superadmin/:path*',
   ],
 }
