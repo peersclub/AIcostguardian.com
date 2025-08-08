@@ -1,0 +1,73 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#312e81;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4c1d95;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#backgroundGradient)"/>
+  
+  <!-- Grid Pattern -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Main Shield Icon -->
+  <g transform="translate(100, 150)">
+    <path d="M120 25l96 36v68c0 60-40 116-96 148-56-32-96-88-96-148V61l96-36z" 
+          fill="url(#shieldGradient)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+    
+    <!-- Dollar Sign -->
+    <path d="M120 80c-20 0-36 16-36 36s16 36 36 36 36-16 36-36-16-36-36-36zm0 16c11.2 0 20 8.8 20 20s-8.8 20-20 20-20-8.8-20-20 8.8-20 20-20z" 
+          fill="white"/>
+    <rect x="104" y="172" width="32" height="24" rx="2" fill="white"/>
+    <path d="M120 180.5c2.4 0 4 1.6 4 4s-1.6 4-4 4-4-1.6-4-4 1.6-4 4-4z" fill="#6366f1"/>
+  </g>
+  
+  <!-- Title Text -->
+  <text x="350" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="bold" fill="url(#textGradient)">
+    AI Cost Guardian
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="350" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="rgba(255,255,255,0.8)">
+    Enterprise AI Usage Tracking &amp; Cost Management
+  </text>
+  
+  <!-- Feature Highlights -->
+  <g transform="translate(350, 340)">
+    <circle cx="8" cy="8" r="4" fill="#6366f1"/>
+    <text x="24" y="14" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.9)">
+      Real-time Cost Monitoring
+    </text>
+    
+    <circle cx="8" cy="48" r="4" fill="#8b5cf6"/>
+    <text x="24" y="54" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.9)">
+      Multi-Provider Analytics
+    </text>
+    
+    <circle cx="8" cy="88" r="4" fill="#a855f7"/>
+    <text x="24" y="94" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.9)">
+      Budget Alerts &amp; Controls
+    </text>
+  </g>
+  
+  <!-- Decorative Elements -->
+  <circle cx="950" cy="150" r="60" fill="rgba(99, 102, 241, 0.1)" stroke="rgba(99, 102, 241, 0.3)" stroke-width="2"/>
+  <circle cx="1050" cy="400" r="40" fill="rgba(139, 92, 246, 0.1)" stroke="rgba(139, 92, 246, 0.3)" stroke-width="2"/>
+  <circle cx="850" cy="500" r="80" fill="rgba(168, 85, 247, 0.1)" stroke="rgba(168, 85, 247, 0.3)" stroke-width="2"/>
+</svg>

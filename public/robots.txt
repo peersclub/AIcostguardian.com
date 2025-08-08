@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /team
+Disallow: /analytics
+Disallow: /api/
+Disallow: /auth/
+
+Sitemap: https://aicostguardian.com/sitemap.xml
