@@ -6,7 +6,7 @@ import NavigationProgress from '@/components/NavigationProgress'
 import NextAuthSessionProvider from '@/components/SessionProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import DemoDataProvider from '@/components/DemoDataProvider'
-import { Analytics } from '@vercel/analytics/react'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'] })
 
