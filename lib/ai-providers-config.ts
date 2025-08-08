@@ -147,7 +147,7 @@ export const TEAM_SIZE_RANGES = [
 ]
 
 // Pricing last updated date
-export const PRICING_LAST_UPDATED = 'December 2024'
+export const PRICING_LAST_UPDATED = 'August 2025'
 
 // Export all provider IDs for iteration
 export const AI_PROVIDER_IDS = getEnabledProviders().map(p => p.id)

@@ -13,7 +13,7 @@ teamMembers.set('default', [
     email: 'john.smith@assetworks.com',
     role: 'admin',
     status: 'active',
-    joinedAt: new Date('2024-01-15'),
+    joinedAt: new Date('2025-01-15'),
     lastActive: new Date(),
     usage: { totalCalls: 1250, totalCost: 45.67, thisMonth: 89 },
     company: 'AssetWorks'
@@ -24,7 +24,7 @@ teamMembers.set('default', [
     email: 'sarah.johnson@assetworks.com',
     role: 'manager',
     status: 'active',
-    joinedAt: new Date('2024-02-01'),
+    joinedAt: new Date('2025-02-01'),
     lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000),
     usage: { totalCalls: 892, totalCost: 32.14, thisMonth: 67 },
     company: 'AssetWorks'

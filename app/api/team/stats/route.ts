@@ -24,13 +24,13 @@ teamStats.set('default', {
     member: { calls: 456, cost: 18.92 }
   },
   activityTrend: [
-    { date: '2024-01-01', calls: 45, cost: 2.34 },
-    { date: '2024-01-02', calls: 67, cost: 3.12 },
-    { date: '2024-01-03', calls: 89, cost: 4.56 },
-    { date: '2024-01-04', calls: 123, cost: 6.78 },
-    { date: '2024-01-05', calls: 156, cost: 8.90 },
-    { date: '2024-01-06', calls: 134, cost: 7.23 },
-    { date: '2024-01-07', calls: 178, cost: 9.45 }
+    { date: '2025-08-01', calls: 45, cost: 2.34 },
+    { date: '2025-08-02', calls: 67, cost: 3.12 },
+    { date: '2025-08-03', calls: 89, cost: 4.56 },
+    { date: '2025-08-04', calls: 123, cost: 6.78 },
+    { date: '2025-08-05', calls: 156, cost: 8.90 },
+    { date: '2025-08-06', calls: 134, cost: 7.23 },
+    { date: '2025-08-07', calls: 178, cost: 9.45 }
   ]
 })
 

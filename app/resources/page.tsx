@@ -205,8 +205,8 @@ export default function Resources() {
 
   const webinars = [
     {
-      title: "AI Cost Management in 2024: Trends and Strategies",
-      date: "March 15, 2024",
+      title: "AI Cost Management in 2025: Trends and Strategies",
+      date: "March 15, 2025",
       duration: "45 min",
       speaker: "Sarah Chen, Head of AI Operations",
       registrations: "1,200+",
@@ -214,7 +214,7 @@ export default function Resources() {
     },
     {
       title: "Building AI Budgets That Actually Work",
-      date: "February 20, 2024",
+      date: "February 20, 2025",
       duration: "40 min",
       speaker: "Mike Rodriguez, Finance Director",
       registrations: "850+",
@@ -222,7 +222,7 @@ export default function Resources() {
     },
     {
       title: "Enterprise AI Governance and Compliance",
-      date: "January 18, 2024",
+      date: "January 18, 2025",
       duration: "50 min",
       speaker: "Dr. Emma Thompson, Compliance Expert",
       registrations: "650+",

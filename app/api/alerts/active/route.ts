@@ -26,7 +26,7 @@ activeAlerts.set('default', [
       currentQuota: 23000,
       totalQuota: 25000,
       quotaPeriod: 'monthly',
-      projectedExhaustion: '2024-03-28'
+      projectedExhaustion: '2025-03-28'
     }
   },
   {

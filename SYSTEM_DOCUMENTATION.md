@@ -667,5 +667,5 @@ NEXT_PUBLIC_VERCEL_ANALYTICS_ID=...
 
 ---
 
-*Last Updated: January 2024*
+*Last Updated: August 2025*
 *Version: 1.0.0-beta*

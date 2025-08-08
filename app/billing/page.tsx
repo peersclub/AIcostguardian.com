@@ -33,10 +33,10 @@ export default function Billing() {
   ]
 
   const billingHistory = [
-    { date: '2024-08-01', amount: 49.00, plan: 'Pro', status: 'Paid', invoice: 'INV-2024-001' },
-    { date: '2024-07-01', amount: 49.00, plan: 'Pro', status: 'Paid', invoice: 'INV-2024-002' },
-    { date: '2024-06-01', amount: 19.00, plan: 'Starter', status: 'Paid', invoice: 'INV-2024-003' },
-    { date: '2024-05-01', amount: 19.00, plan: 'Starter', status: 'Paid', invoice: 'INV-2024-004' }
+    { date: '2025-08-01', amount: 49.00, plan: 'Pro', status: 'Paid', invoice: 'INV-2025-001' },
+    { date: '2025-07-01', amount: 49.00, plan: 'Pro', status: 'Paid', invoice: 'INV-2025-002' },
+    { date: '2025-06-01', amount: 19.00, plan: 'Starter', status: 'Paid', invoice: 'INV-2025-003' },
+    { date: '2025-05-01', amount: 19.00, plan: 'Starter', status: 'Paid', invoice: 'INV-2025-004' }
   ]
 
   const usageBreakdown = [
@@ -64,7 +64,7 @@ export default function Billing() {
               <div>
                 <h3 className="text-2xl font-bold">Pro Plan</h3>
                 <p className="text-gray-600">50,000 credits per month</p>
-                <p className="text-sm text-gray-500 mt-1">Next billing date: September 1, 2024</p>
+                <p className="text-sm text-gray-500 mt-1">Next billing date: September 1, 2025</p>
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold">$49<span className="text-lg text-gray-500">/month</span></p>

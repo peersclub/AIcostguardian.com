@@ -188,3 +188,6 @@ git push origin feature/your-feature
 ---
 
 *Use this context file when working on AI Cost Guardian. It has everything you need to know.*
+
+**Last Updated**: August 2025
+**Version**: 1.0.0

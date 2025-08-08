@@ -1,27 +1,12 @@
 [
   {
-    "content": "Check current favicon setup",
-    "status": "completed",
-    "id": "23"
+    "content": "Commit all documentation and date updates",
+    "status": "in_progress",
+    "id": "1"
   },
   {
-    "content": "Create or update favicon files",
-    "status": "completed",
-    "id": "24"
-  },
-  {
-    "content": "Add Open Graph meta tags for social thumbnails",
-    "status": "completed",
-    "id": "25"
-  },
-  {
-    "content": "Update metadata in layout.tsx",
-    "status": "completed",
-    "id": "26"
-  },
-  {
-    "content": "Test and commit changes",
-    "status": "completed",
-    "id": "27"
+    "content": "Push changes to deploy to Vercel",
+    "status": "pending",
+    "id": "2"
   }
 ]

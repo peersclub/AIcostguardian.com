@@ -120,7 +120,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-purple-600" />
-                <span>G2 Leader 2024</span>
+                <span>G2 Leader 2025</span>
               </div>
             </motion.div>
           </motion.div>
