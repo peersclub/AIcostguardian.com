@@ -1,17 +1,27 @@
 [
   {
-    "content": "Re-enable enterprise email restriction",
+    "content": "Check current favicon setup",
     "status": "completed",
-    "id": "16"
+    "id": "23"
   },
   {
-    "content": "Fix middleware to allow all public pages",
+    "content": "Create or update favicon files",
     "status": "completed",
-    "id": "17"
+    "id": "24"
   },
   {
-    "content": "Test and commit the fixes",
-    "status": "in_progress",
-    "id": "18"
+    "content": "Add Open Graph meta tags for social thumbnails",
+    "status": "completed",
+    "id": "25"
+  },
+  {
+    "content": "Update metadata in layout.tsx",
+    "status": "completed",
+    "id": "26"
+  },
+  {
+    "content": "Test and commit changes",
+    "status": "completed",
+    "id": "27"
   }
 ]

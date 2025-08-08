@@ -8,6 +8,10 @@
       "allowedTools": [],
       "history": [
         {
+          "display": "npm i @vercel/analytics",
+          "pastedContents": {}
+        },
+        {
           "display": "But /auth/error?error=Configuration is the URL - I should be able to visit all visitor pages? also enable email restriction that was originally there ",
           "pastedContents": {}
         }
