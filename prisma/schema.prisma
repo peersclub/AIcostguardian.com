@@ -1,0 +1,440 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  company       String?
+  role          UserRole  @default(USER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  
+  accounts              Account[]
+  apiKeys               ApiKey[]
+  usageLogs             UsageLog[]
+  usage                 Usage[]
+  alerts                Alert[]
+  sessions              Session[]
+  notificationRules     NotificationRule[]
+  notifications         Notification[]
+  notificationPreferences NotificationPreferences?
+}
+
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  domain        String    @unique
+  subscription  SubscriptionTier @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  users             User[]
+  apiKeys           ApiKey[]
+  usageLogs         UsageLog[]
+  monthlySpend      Float     @default(0)
+  spendLimit        Float?
+  notificationRules NotificationRule[]
+  notifications     Notification[]
+}
+
+model ApiKey {
+  id            String    @id @default(cuid())
+  provider      String    // openai, claude, gemini, etc.
+  encryptedKey  String
+  lastUsed      DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  
+  @@unique([userId, provider])
+}
+
+model UsageLog {
+  id            String    @id @default(cuid())
+  provider      String
+  model         String
+  promptTokens  Int
+  completionTokens Int
+  totalTokens   Int
+  cost          Float
+  timestamp     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  
+  @@index([userId, timestamp])
+  @@index([organizationId, timestamp])
+}
+
+model Usage {
+  id            String    @id @default(cuid())
+  provider      String
+  model         String
+  inputTokens   Int       @default(0)
+  outputTokens  Int       @default(0)
+  totalTokens   Int       @default(0)
+  cost          Float     @default(0)
+  requestId     String?
+  timestamp     DateTime  @default(now())
+  metadata      Json      @default("{}")
+  
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  
+  @@index([userId, timestamp])
+  @@index([provider, timestamp])
+}
+
+model Alert {
+  id            String    @id @default(cuid())
+  type          String
+  provider      String
+  threshold     Float     @default(0)
+  message       String
+  metadata      Json      @default("{}")
+  isActive      Boolean   @default(true)
+  triggeredAt   DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  GROWTH
+  SCALE
+  ENTERPRISE
+}
+
+enum AlertType {
+  SPEND_THRESHOLD
+  USAGE_SPIKE
+  RATE_LIMIT
+  ERROR_RATE
+}
+
+// Notification System Models
+model NotificationRule {
+  id                String   @id @default(cuid())
+  userId           String
+  organizationId   String
+  name             String
+  description      String?
+  type             NotificationType
+  enabled          Boolean  @default(true)
+  
+  // Conditions
+  conditions       Json     // Complex condition logic
+  threshold        Float?   // For numeric thresholds
+  comparisonOp     String?  // gt, gte, lt, lte, eq
+  timeWindow       Int?     // Minutes for time-based rules
+  
+  // Scheduling
+  schedule         String?  // Cron expression for scheduled notifications
+  timezone         String   @default("UTC")
+  
+  // Throttling
+  cooldownMinutes  Int      @default(60)
+  maxPerDay        Int      @default(10)
+  lastTriggeredAt  DateTime?
+  triggerCount     Int      @default(0)
+  
+  // Metadata
+  priority         NotificationPriority @default(MEDIUM)
+  tags             String[]
+  metadata         Json?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  user             User     @relation(fields: [userId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  channels         NotificationChannel[]
+  notifications    Notification[]
+  
+  @@index([userId, enabled])
+  @@index([organizationId, type])
+}
+
+model NotificationChannel {
+  id               String   @id @default(cuid())
+  ruleId           String
+  type             ChannelType
+  
+  // Channel-specific config
+  destination      String   // email address, phone, webhook URL, etc.
+  config           Json?    // Channel-specific settings
+  
+  // Delivery preferences
+  enabled          Boolean  @default(true)
+  includeDetails   Boolean  @default(true)
+  format           String   @default("html") // html, text, markdown
+  
+  rule             NotificationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  @@unique([ruleId, type, destination])
+}
+
+model Notification {
+  id               String   @id @default(cuid())
+  ruleId           String?
+  userId           String
+  organizationId   String
+  
+  type             NotificationType
+  priority         NotificationPriority
+  title            String
+  message          String   @db.Text
+  data             Json?    // Additional context data
+  
+  // Delivery status
+  status           NotificationStatus @default(PENDING)
+  channels         Json     // Track delivery per channel
+  attempts         Int      @default(0)
+  lastAttemptAt    DateTime?
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  acknowledgedAt   DateTime?
+  
+  // Error tracking
+  error            String?
+  errorDetails     Json?
+  
+  // Grouping
+  groupId          String?  // For grouping related notifications
+  parentId         String?  // For threaded notifications
+  
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime?
+  
+  user             User     @relation(fields: [userId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  rule             NotificationRule? @relation(fields: [ruleId], references: [id])
+  
+  @@index([userId, status, createdAt])
+  @@index([organizationId, type, createdAt])
+  @@index([groupId])
+}
+
+model NotificationPreferences {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  
+  // Global settings
+  emailEnabled     Boolean  @default(true)
+  smsEnabled       Boolean  @default(false)
+  pushEnabled      Boolean  @default(true)
+  inAppEnabled     Boolean  @default(true)
+  slackEnabled     Boolean  @default(false)
+  teamsEnabled     Boolean  @default(false)
+  
+  // Quiet hours
+  quietHoursEnabled Boolean @default(false)
+  quietHoursStart  String?  // "22:00"
+  quietHoursEnd    String?  // "08:00"
+  timezone         String   @default("UTC")
+  weekendQuiet     Boolean  @default(false)
+  
+  // Batching preferences
+  batchEmails      Boolean  @default(false)
+  batchFrequency   String   @default("daily") // immediate, hourly, daily
+  nextBatchAt      DateTime?
+  
+  // Channel-specific settings
+  emailDigest      Boolean  @default(true)
+  slackDM          Boolean  @default(false)
+  preferredChannel ChannelType @default(EMAIL)
+  
+  // Notification categories opt-in/out
+  costAlerts       Boolean  @default(true)
+  usageAlerts      Boolean  @default(true)
+  systemAlerts     Boolean  @default(true)
+  teamAlerts       Boolean  @default(true)
+  reports          Boolean  @default(true)
+  recommendations  Boolean  @default(true)
+  
+  // Thresholds for auto-escalation
+  autoEscalate     Boolean  @default(false)
+  escalateAfterMinutes Int  @default(30)
+  
+  user             User     @relation(fields: [userId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model NotificationTemplate {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  type             NotificationType
+  channel          ChannelType
+  
+  // Template content
+  subject          String?  // For email
+  bodyTemplate     String   @db.Text
+  bodyHtml         String?  @db.Text
+  variables        Json     // Available variables for substitution
+  
+  // Customization
+  locale           String   @default("en")
+  brand            Json?    // Brand customization (colors, logo, etc.)
+  
+  isDefault        Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@unique([type, channel, locale, isDefault])
+  @@index([type, channel])
+}
+
+model NotificationLog {
+  id               String   @id @default(cuid())
+  notificationId   String
+  channel          ChannelType
+  status           String
+  destination      String
+  attemptNumber    Int
+  requestData      Json?
+  responseData     Json?
+  error            String?
+  latencyMs        Int?
+  timestamp        DateTime @default(now())
+  
+  @@index([notificationId])
+  @@index([timestamp])
+}
+
+// Enums for Notification System
+enum NotificationType {
+  // Cost Alerts
+  COST_THRESHOLD_WARNING
+  COST_THRESHOLD_CRITICAL
+  COST_THRESHOLD_EXCEEDED
+  DAILY_COST_SPIKE
+  UNUSUAL_SPENDING_PATTERN
+  
+  // Usage Alerts
+  API_RATE_LIMIT_WARNING
+  API_RATE_LIMIT_EXCEEDED
+  USAGE_QUOTA_WARNING
+  USAGE_QUOTA_EXCEEDED
+  MODEL_DEPRECATION
+  
+  // System Events
+  API_KEY_EXPIRING
+  API_KEY_EXPIRED
+  PROVIDER_OUTAGE
+  INTEGRATION_FAILURE
+  PAYMENT_FAILED
+  SUBSCRIPTION_EXPIRING
+  
+  // Team Events  
+  NEW_TEAM_MEMBER
+  MEMBER_EXCEEDED_LIMIT
+  SUSPICIOUS_ACTIVITY
+  
+  // Reports
+  WEEKLY_COST_REPORT
+  MONTHLY_COST_REPORT
+  OPTIMIZATION_RECOMMENDATIONS
+}
+
+enum ChannelType {
+  EMAIL
+  SMS
+  SLACK
+  TEAMS
+  WEBHOOK
+  IN_APP
+  PUSH
+  PAGERDUTY
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

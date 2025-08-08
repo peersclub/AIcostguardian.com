@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
-import { getApiKey } from '@/lib/api-key-store'
+import prisma from '@/lib/prisma'
+import { safeDecrypt } from '@/lib/crypto-helper'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ 
         isConfigured: false, 
         isValid: false, 
@@ -14,9 +15,22 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const apiKey = getApiKey(session.user.id, 'grok')
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { apiKeys: true }
+    })
+
+    if (!user) {
+      return NextResponse.json({
+        isConfigured: false,
+        isValid: false,
+        error: 'User not found'
+      })
+    }
+
+    const apiKeyRecord = user.apiKeys.find(k => k.provider === 'xai')
     
-    if (!apiKey) {
+    if (!apiKeyRecord) {
       return NextResponse.json({
         isConfigured: false,
         isValid: false,
@@ -41,14 +55,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ 
         success: false, 
         error: 'Not authenticated' 
       }, { status: 401 })
     }
 
-    const { prompt, testApiKey } = await request.json()
+    const { prompt, testApiKey, useStoredKey } = await request.json()
     
     if (!prompt) {
       return NextResponse.json({
@@ -57,7 +71,27 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const apiKey = testApiKey || getApiKey(session.user.id, 'grok')
+    let apiKey = testApiKey
+    
+    // If using stored key, fetch from database
+    if (!apiKey || useStoredKey) {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { apiKeys: true }
+      })
+
+      if (!user) {
+        return NextResponse.json({
+          success: false,
+          error: 'User not found'
+        }, { status: 400 })
+      }
+
+      const apiKeyRecord = user.apiKeys.find(k => k.provider === 'xai')
+      if (apiKeyRecord) {
+        apiKey = safeDecrypt(apiKeyRecord.encryptedKey)
+      }
+    }
     
     if (!apiKey) {
       return NextResponse.json({
