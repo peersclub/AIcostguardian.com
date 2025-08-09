@@ -20,21 +20,22 @@ export async function GET(request: NextRequest) {
     // Get all API keys for the user
     const apiKeys = await getApiKeys(user.id)
 
-    // Format response with masked keys
-    const maskedKeys = apiKeys.reduce((acc, key) => {
-      acc[key.provider] = {
-        hasKey: true,
-        isActive: key.isActive,
-        lastUsed: key.lastUsed,
-        createdAt: key.createdAt,
-        masked: `${key.provider.slice(0, 4)}...****`
-      }
-      return acc
-    }, {} as Record<string, any>)
+    // Format response as array for the frontend
+    const formattedKeys = apiKeys.map(key => ({
+      id: key.id,
+      name: `${key.provider} API Key`,
+      provider: key.provider.toLowerCase(), // Send lowercase to match frontend expectations
+      key: '••••••••••••••••', // Fully masked for security
+      masked: `${key.provider.slice(0, 4)}...****`,
+      status: key.isActive ? 'active' : 'inactive',
+      createdAt: key.createdAt.toISOString(),
+      lastUsed: key.lastUsed ? key.lastUsed.toISOString() : null,
+      usage: 0 // Could be calculated from usage logs
+    }))
 
     return NextResponse.json({ 
       success: true,
-      apiKeys: maskedKeys 
+      keys: formattedKeys // Frontend expects 'keys' as an array
     })
   } catch (error) {
     console.error('Error retrieving API keys:', error)

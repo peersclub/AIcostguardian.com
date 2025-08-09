@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
         apiKeys: true,
@@ -21,7 +21,42 @@ export async function GET() {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      // Auto-create user if doesn't exist
+      const organizationName = session.user.email.split('@')[1]?.split('.')[0] || 'default'
+      
+      // First, create or find organization
+      let organization = await prisma.organization.findFirst({
+        where: { 
+          OR: [
+            { name: organizationName },
+            { domain: session.user.email.split('@')[1] }
+          ]
+        }
+      })
+      
+      if (!organization) {
+        organization = await prisma.organization.create({
+          data: {
+            name: organizationName,
+            domain: session.user.email.split('@')[1],
+            plan: 'FREE'
+          }
+        })
+      }
+      
+      // Create the user
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          role: 'USER',
+          organizationId: organization.id
+        },
+        include: {
+          apiKeys: true,
+          organization: true
+        }
+      })
     }
 
     // Return keys without the encrypted values
@@ -56,14 +91,51 @@ export async function POST(request: Request) {
     if (!provider || !apiKey) {
       return NextResponse.json({ error: 'Provider and API key are required' }, { status: 400 })
     }
+    
+    // Convert provider to uppercase to match Prisma enum
+    const normalizedProvider = provider.toUpperCase()
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { organization: true }
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      // Auto-create user if doesn't exist
+      const organizationName = session.user.email.split('@')[1]?.split('.')[0] || 'default'
+      
+      // First, create or find organization
+      let organization = await prisma.organization.findFirst({
+        where: { 
+          OR: [
+            { name: organizationName },
+            { domain: session.user.email.split('@')[1] }
+          ]
+        }
+      })
+      
+      if (!organization) {
+        organization = await prisma.organization.create({
+          data: {
+            name: organizationName,
+            domain: session.user.email.split('@')[1],
+            plan: 'FREE'
+          }
+        })
+      }
+      
+      // Create the user
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          role: 'USER',
+          organizationId: organization.id
+        },
+        include: {
+          organization: true
+        }
+      })
     }
 
     // Check if key already exists for this provider
@@ -71,12 +143,15 @@ export async function POST(request: Request) {
       where: {
         userId_provider: {
           userId: user.id,
-          provider: provider
+          provider: normalizedProvider as any
         }
       }
     })
 
-    const encryptedKey = encrypt(apiKey)
+    const encryptedString = encrypt(apiKey)
+    // Parse the encrypted string format: iv:tag:encryptedData
+    const [iv, tag, ...encryptedParts] = encryptedString.split(':')
+    const encryptedKey = encryptedParts.join(':') // In case encrypted data contains colons
 
     if (existingKey) {
       // Update existing key
@@ -84,6 +159,8 @@ export async function POST(request: Request) {
         where: { id: existingKey.id },
         data: {
           encryptedKey,
+          iv,
+          tag,
           isActive: true,
           lastUsed: new Date()
         }
@@ -120,8 +197,10 @@ export async function POST(request: Request) {
       // Create new key
       const created = await prisma.apiKey.create({
         data: {
-          provider,
+          provider: normalizedProvider as any,
           encryptedKey,
+          iv,
+          tag,
           userId: user.id,
           organizationId: organizationId
         }
@@ -149,12 +228,43 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Key ID is required' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      // Auto-create user if doesn't exist (even for DELETE operations)
+      const organizationName = session.user.email.split('@')[1]?.split('.')[0] || 'default'
+      
+      // First, create or find organization
+      let organization = await prisma.organization.findFirst({
+        where: { 
+          OR: [
+            { name: organizationName },
+            { domain: session.user.email.split('@')[1] }
+          ]
+        }
+      })
+      
+      if (!organization) {
+        organization = await prisma.organization.create({
+          data: {
+            name: organizationName,
+            domain: session.user.email.split('@')[1],
+            plan: 'FREE'
+          }
+        })
+      }
+      
+      // Create the user
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          role: 'USER',
+          organizationId: organization.id
+        }
+      })
     }
 
     // Verify the key belongs to the user

@@ -48,23 +48,58 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {
-        token.id = user.id
         token.email = user.email
         token.name = user.name
         token.image = user.image
         
-        // Fetch user from database to get role and organization
-        const dbUser = await prisma.user.findUnique({
+        // Always fetch or create user from database
+        let dbUser = await prisma.user.findUnique({
           where: { email: user.email! },
           include: { organization: true }
         })
         
-        if (dbUser) {
-          token.role = dbUser.role
-          token.organizationId = dbUser.organizationId
-          token.organization = dbUser.organization
-          token.company = dbUser.company || getCompanyFromDomain(dbUser.email)
+        // Auto-create user if doesn't exist
+        if (!dbUser) {
+          const company = user.email?.split('@')[1]?.split('.')[0] || 'default'
+          
+          // Find or create organization
+          let organization = await prisma.organization.findFirst({
+            where: { 
+              OR: [
+                { name: company },
+                { domain: user.email?.split('@')[1] }
+              ]
+            }
+          })
+          
+          if (!organization) {
+            organization = await prisma.organization.create({
+              data: {
+                name: company,
+                domain: user.email?.split('@')[1],
+                plan: 'FREE',
+              }
+            })
+          }
+          
+          dbUser = await prisma.user.create({
+            data: {
+              email: user.email!,
+              name: user.name || user.email?.split('@')[0],
+              company,
+              role: 'USER',
+              organizationId: organization.id,
+            },
+            include: { organization: true }
+          })
         }
+        
+        // Always use database user ID
+        token.id = dbUser.id
+        token.role = dbUser.role
+        token.organizationId = dbUser.organizationId
+        token.organization = dbUser.organization
+        token.company = dbUser.company || getCompanyFromDomain(dbUser.email)
       }
       
       return token

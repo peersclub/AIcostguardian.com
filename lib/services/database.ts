@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma'
-import { UserRole, SubscriptionTier, AlertType } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { UserRole, Plan, AlertType } from '@prisma/client'
+import { encrypt, decrypt } from '@/lib/encryption'
 
 // User Services
 export async function getUserById(userId: string) {
@@ -15,12 +15,52 @@ export async function getUserById(userId: string) {
 }
 
 export async function getUserByEmail(email: string) {
-  return prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { email },
     include: {
       organization: true,
     },
   })
+  
+  // Auto-create user if doesn't exist
+  if (!user) {
+    const company = email.split('@')[1]?.split('.')[0] || 'default'
+    
+    // Find or create organization
+    let organization = await prisma.organization.findFirst({
+      where: { 
+        OR: [
+          { name: company },
+          { domain: email.split('@')[1] }
+        ]
+      }
+    })
+    
+    if (!organization) {
+      organization = await prisma.organization.create({
+        data: {
+          name: company,
+          domain: email.split('@')[1],
+          plan: 'FREE',
+        }
+      })
+    }
+    
+    user = await prisma.user.create({
+      data: {
+        email,
+        name: email.split('@')[0],
+        company,
+        role: UserRole.USER,
+        organizationId: organization.id,
+      },
+      include: { 
+        organization: true 
+      }
+    })
+  }
+  
+  return user
 }
 
 export async function createUser(data: {
@@ -43,7 +83,7 @@ export async function createUser(data: {
       data: {
         name: company,
         domain: data.email.split('@')[1],
-        subscription: SubscriptionTier.FREE,
+        plan: 'FREE',
       },
     })
   }
@@ -80,25 +120,35 @@ export async function saveApiKey(
   apiKey: string,
   organizationId: string
 ) {
-  // Encrypt the API key
-  const encryptedKey = await bcrypt.hash(apiKey, 10)
+  // Encrypt the API key using AES-256-GCM
+  const encryptedString = encrypt(apiKey)
+  // Parse the encrypted string format: iv:tag:encryptedData
+  const [iv, tag, ...encryptedParts] = encryptedString.split(':')
+  const encryptedKey = encryptedParts.join(':') // In case encrypted data contains colons
+  
+  // Normalize provider to uppercase to match Prisma enum
+  const normalizedProvider = provider.toUpperCase() as any
 
   return prisma.apiKey.upsert({
     where: {
       userId_provider: {
         userId,
-        provider,
+        provider: normalizedProvider,
       },
     },
     update: {
       encryptedKey,
+      iv,
+      tag,
       isActive: true,
       lastUsed: new Date(),
     },
     create: {
       userId,
-      provider,
+      provider: normalizedProvider,
       encryptedKey,
+      iv,
+      tag,
       organizationId,
       isActive: true,
     },
@@ -106,22 +156,28 @@ export async function saveApiKey(
 }
 
 export async function getApiKey(userId: string, provider: string) {
+  // Normalize provider to uppercase to match Prisma enum
+  const normalizedProvider = provider.toUpperCase() as any
+  
   return prisma.apiKey.findUnique({
     where: {
       userId_provider: {
         userId,
-        provider,
+        provider: normalizedProvider,
       },
     },
   })
 }
 
 export async function deleteApiKey(userId: string, provider: string) {
+  // Normalize provider to uppercase to match Prisma enum
+  const normalizedProvider = provider.toUpperCase() as any
+  
   return prisma.apiKey.delete({
     where: {
       userId_provider: {
         userId,
-        provider,
+        provider: normalizedProvider,
       },
     },
   })
@@ -133,25 +189,34 @@ export async function logUsage(data: {
   organizationId: string
   provider: string
   model: string
-  promptTokens: number
-  completionTokens: number
+  operation?: string
+  promptTokens?: number
+  completionTokens?: number
+  inputTokens?: number
+  outputTokens?: number
   totalTokens: number
   cost: number
 }) {
+  // Normalize provider to uppercase to match Prisma enum
+  const normalizedData = {
+    userId: data.userId,
+    organizationId: data.organizationId,
+    provider: data.provider.toUpperCase() as any,
+    model: data.model,
+    operation: data.operation || 'completion',
+    inputTokens: data.inputTokens || data.promptTokens || 0,
+    outputTokens: data.outputTokens || data.completionTokens || 0,
+    totalTokens: data.totalTokens,
+    cost: data.cost
+  }
+  
   // Create usage log
   const log = await prisma.usageLog.create({
-    data,
+    data: normalizedData,
   })
 
-  // Update organization monthly spend
-  await prisma.organization.update({
-    where: { id: data.organizationId },
-    data: {
-      monthlySpend: {
-        increment: data.cost,
-      },
-    },
-  })
+  // Note: Monthly spend tracking can be calculated from usage logs
+  // No need to update organization as there's no monthlySpend field
 
   return log
 }
@@ -284,8 +349,8 @@ export async function getOrganization(organizationId: string) {
 
 export async function updateOrganization(organizationId: string, data: {
   name?: string
-  subscription?: SubscriptionTier
-  spendLimit?: number
+  plan?: Plan
+  billingEmail?: string
 }) {
   return prisma.organization.update({
     where: { id: organizationId },

@@ -45,36 +45,8 @@ export async function POST(request: Request) {
       }
     })
 
-    // Update organization monthly spend
-    if (user.organizationId) {
-      await prisma.organization.update({
-        where: { id: user.organizationId },
-        data: {
-          monthlySpend: {
-            increment: calculatedCost
-          }
-        }
-      })
-
-      // Check if spend limit is exceeded and create alert
-      const org = await prisma.organization.findUnique({
-        where: { id: user.organizationId }
-      })
-
-      if (org && org.spendLimit && org.monthlySpend > org.spendLimit) {
-        await prisma.alert.create({
-          data: {
-            type: 'spend_threshold',
-            provider: provider || 'system',
-            threshold: org.spendLimit,
-            message: 'Spend Limit Exceeded',
-            userId: user.id,
-            isActive: true,
-            triggeredAt: new Date()
-          }
-        })
-      }
-    }
+    // Note: Monthly spend can be calculated from usage logs
+    // Alert creation can be based on aggregated costs if needed
 
     return NextResponse.json({ 
       message: 'Usage tracked successfully',
