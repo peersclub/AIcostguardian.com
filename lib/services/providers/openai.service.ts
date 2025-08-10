@@ -10,6 +10,7 @@ import {
   CostBreakdown,
   ModelConfig 
 } from './base-provider.service';
+import { UsageLog } from '@prisma/client';
 
 // Define Provider type locally since it's not an enum in Prisma
 type Provider = 'OPENAI' | 'CLAUDE' | 'GEMINI' | 'GROK' | 'PERPLEXITY';
@@ -96,10 +97,10 @@ export class OpenAIService extends BaseProviderService {
         },
       });
       
-      const totalTokens = usageLogs.reduce((sum, log) => sum + log.totalTokens, 0);
-      const totalCost = usageLogs.reduce((sum, log) => sum + Number(log.cost), 0);
+      const totalTokens = usageLogs.reduce((sum: number, log: UsageLog) => sum + log.totalTokens, 0);
+      const totalCost = usageLogs.reduce((sum: number, log: UsageLog) => sum + Number(log.cost), 0);
       
-      const breakdown = usageLogs.reduce((acc, log) => {
+      const breakdown = usageLogs.reduce((acc: any, log: UsageLog) => {
         if (!acc[log.model]) {
           acc[log.model] = {
             inputTokens: 0,

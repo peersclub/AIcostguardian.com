@@ -134,7 +134,7 @@ export async function DELETE(
     }
 
     // Delete user and all related data in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Delete related data first
       await tx.notification.deleteMany({ where: { userId } })
       await tx.notificationRule.deleteMany({ where: { userId } })

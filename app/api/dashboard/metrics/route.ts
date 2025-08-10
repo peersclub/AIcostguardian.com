@@ -77,12 +77,12 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate metrics
-    const totalSpend = usageLogs.reduce((sum, log) => sum + log.cost, 0)
+    const totalSpend = usageLogs.reduce((sum: number, log: any) => sum + log.cost, 0)
     const totalRequests = usageLogs.length
     const avgCostPerRequest = totalRequests > 0 ? totalSpend / totalRequests : 0
 
     // Calculate provider breakdown
-    const providerBreakdown = usageLogs.reduce((acc, log) => {
+    const providerBreakdown = usageLogs.reduce((acc: any, log: any) => {
       if (!acc[log.provider]) {
         acc[log.provider] = {
           spend: 0,
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, any>)
 
     // Calculate budget utilization
-    const monthlyBudget = budgets.find(b => b.period === 'MONTHLY')
+    const monthlyBudget = budgets.find((b: any) => b.period === 'MONTHLY')
     const budgetUtilization = monthlyBudget 
       ? (totalSpend / monthlyBudget.amount) * 100 
       : 0
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const previousSpend = previousUsageLogs.reduce((sum, log) => sum + log.cost, 0)
+    const previousSpend = previousUsageLogs.reduce((sum: number, log: any) => sum + log.cost, 0)
     const spendGrowth = previousSpend > 0 
       ? ((totalSpend - previousSpend) / previousSpend) * 100 
       : 0
@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
       teamMetrics,
       forecastData,
       businessInsights,
-      alerts: alerts.map(a => ({
+      alerts: alerts.map((a: any) => ({
         id: a.id,
         type: a.type,
         message: a.message,

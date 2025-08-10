@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const apiKeyRecord = user.apiKeys.find(k => k.provider === 'xai')
+    const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'xai')
     
     if (!apiKeyRecord) {
       return NextResponse.json({
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const apiKeyRecord = user.apiKeys.find(k => k.provider === 'xai')
+      const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'xai')
       if (apiKeyRecord) {
         apiKey = safeDecrypt(apiKeyRecord.encryptedKey)
       }

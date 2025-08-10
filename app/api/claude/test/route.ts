@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const apiKeyRecord = user.apiKeys.find(k => k.provider === 'anthropic')
+    const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'anthropic')
     
     if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
       return NextResponse.json({
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
-      const apiKeyRecord = user.apiKeys.find(k => k.provider === 'anthropic')
+      const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'anthropic')
       if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
         return NextResponse.json({ 
           error: 'Claude API key not configured. Please add your API key in Settings.' 

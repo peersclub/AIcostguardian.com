@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
       select: { id: true }
     })
 
-    const validIds = notificationCheck.map(n => n.id)
-    const invalidIds = validatedData.notificationIds.filter(id => !validIds.includes(id))
+    const validIds = notificationCheck.map((n: any) => n.id)
+    const invalidIds = validatedData.notificationIds.filter((id: any) => !validIds.includes(id))
 
     if (invalidIds.length > 0) {
       return NextResponse.json(
@@ -447,17 +447,17 @@ async function handleBulkCount(query: any, session: any) {
       unread,
       recent24h: recent,
       breakdown: {
-        byStatus: byStatus.reduce((acc, item) => {
+        byStatus: byStatus.reduce((acc: any, item: any) => {
           acc[item.status] = item._count
           return acc
         }, {} as Record<string, number>),
         
-        byType: byType.reduce((acc, item) => {
+        byType: byType.reduce((acc: any, item: any) => {
           acc[item.type] = item._count
           return acc
         }, {} as Record<string, number>),
         
-        byPriority: byPriority.reduce((acc, item) => {
+        byPriority: byPriority.reduce((acc: any, item: any) => {
           acc[item.priority] = item._count
           return acc
         }, {} as Record<string, number>)
@@ -487,7 +487,7 @@ async function handleBulkExport(query: any, session: any) {
   if (query.format === 'csv') {
     // Convert to CSV format
     const csvHeader = 'ID,Type,Priority,Title,Message,Status,Created,Read,Delivered,Rule'
-    const csvRows = notifications.map(n => [
+    const csvRows = notifications.map((n: any) => [
       n.id,
       n.type,
       n.priority,
@@ -577,7 +577,7 @@ async function handleBulkAnalyze(query: any, session: any) {
   return NextResponse.json({
     success: true,
     data: {
-      deliveryRates: deliveryRates.reduce((acc, item) => {
+      deliveryRates: deliveryRates.reduce((acc: any, item: any) => {
         acc[item.status] = item._count
         return acc
       }, {} as Record<string, number>),
@@ -585,7 +585,7 @@ async function handleBulkAnalyze(query: any, session: any) {
       avgResponseTimeSeconds: (avgResponseTime as any)[0]?.avg_seconds || null,
       
       topRules: await Promise.all(
-        topRules.map(async (rule) => {
+        topRules.map(async (rule: any) => {
           const ruleInfo = await prisma.notificationRule.findUnique({
             where: { id: rule.ruleId! },
             select: { name: true, type: true }

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Look for Claude Admin key - could be stored as 'anthropic' with admin prefix
-    const apiKeyRecord = user.apiKeys.find(k => 
+    const apiKeyRecord = user.apiKeys.find((k: any) => 
       k.provider === 'anthropic' || k.provider === 'claude-admin'
     )
     
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Look for Claude Admin key
-      const apiKeyRecord = user.apiKeys.find(k => {
+      const apiKeyRecord = user.apiKeys.find((k: any) => {
         if (k.provider === 'anthropic' || k.provider === 'claude-admin') {
           try {
             const decrypted = safeDecrypt(k.encryptedKey)

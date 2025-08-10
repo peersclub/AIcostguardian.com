@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET() {
+  // Skip during build
+  if (!process.env.DATABASE_URL || process.env.NEXT_PHASE === 'phase-production-build') {
+    return NextResponse.json({ error: 'Database not available' }, { status: 503 })
+  }
+
   try {
     const session = await getServerSession(authOptions)
     
@@ -70,12 +75,12 @@ export async function GET() {
     ])
 
     // Calculate revenue (sum of all usage costs this month)
-    const totalRevenue = monthlyUsageLogs.reduce((sum, log) => sum + log.cost, 0)
-    const monthlyUsage = monthlyUsageLogs.reduce((sum, log) => sum + log.totalTokens, 0)
+    const totalRevenue = monthlyUsageLogs.reduce((sum: number, log: any) => sum + log.cost, 0)
+    const monthlyUsage = monthlyUsageLogs.reduce((sum: number, log: any) => sum + log.totalTokens, 0)
     const apiCallsToday = todayUsageLogs.length
     
     // Calculate error rate
-    const errorLogs = todayUsageLogs.filter(log => 
+    const errorLogs = todayUsageLogs.filter((log: any) => 
       log.metadata && typeof log.metadata === 'object' && 'error' in log.metadata
     )
     const errorRate = apiCallsToday > 0 

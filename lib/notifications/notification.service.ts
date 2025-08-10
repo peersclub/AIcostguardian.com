@@ -18,6 +18,12 @@ import { SlackNotificationChannel } from './channels/slack.channel'
 import { InAppNotificationChannel } from './channels/in-app.channel'
 import { WebhookNotificationChannel } from './channels/webhook.channel'
 import prisma from '@/lib/prisma'
+import { NotificationRule as PrismaNotificationRule, NotificationChannel as PrismaNotificationChannel } from '@prisma/client'
+
+// Type for notification rule with channels
+type NotificationRuleWithChannels = PrismaNotificationRule & {
+  channels: PrismaNotificationChannel[]
+}
 
 /**
  * Main notification service orchestrator
@@ -400,7 +406,7 @@ export class NotificationService {
       })
 
       // Convert to our internal format
-      return dbRules.map(rule => ({
+      return dbRules.map((rule: NotificationRuleWithChannels) => ({
         id: rule.id,
         userId: rule.userId,
         organizationId: rule.organizationId,
@@ -418,7 +424,7 @@ export class NotificationService {
         maxPerDay: rule.maxPerDay,
         priority: rule.priority,
         tags: rule.tags,
-        channels: rule.channels.map(ch => ({
+        channels: rule.channels.map((ch: PrismaNotificationChannel) => ({
           type: ch.type,
           destination: ch.destination,
           config: ch.config as any,

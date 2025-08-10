@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the API key for the selected provider
-    const apiKeyRecord = user.apiKeys.find(k => k.provider === modelConfig.provider)
+    const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === modelConfig.provider)
     if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
       return NextResponse.json({ 
         error: `${modelConfig.provider} API key not configured. Please add your API key in Settings.` 
@@ -309,9 +309,9 @@ export async function GET(request: NextRequest) {
     // Get available models based on configured API keys
     const availableModels = Object.entries(MODEL_CONFIGS)
       .filter(([_, config]) => {
-        return user.apiKeys.some(key => key.provider === config.provider && key.isActive)
+        return user.apiKeys.some((key: any) => key.provider === config.provider && key.isActive)
       })
-      .map(([modelId, config]) => ({
+      .map(([modelId, config]: [string, any]) => ({
         id: modelId,
         provider: config.provider,
         inputPrice: config.inputPrice,

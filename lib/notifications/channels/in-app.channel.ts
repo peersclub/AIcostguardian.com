@@ -7,6 +7,12 @@ import {
   ChannelError
 } from '../types'
 import prisma from '@/lib/prisma'
+import { Notification, NotificationRule } from '@prisma/client'
+
+// Type for notification with included rule
+type NotificationWithRule = Notification & {
+  rule: Pick<NotificationRule, 'name' | 'type'> | null
+}
 
 /**
  * In-app notification channel for real-time notifications
@@ -226,7 +232,7 @@ export class InAppNotificationChannel implements NotificationChannel {
         }
       })
 
-      return notifications.map(notification => ({
+      return notifications.map((notification: NotificationWithRule) => ({
         id: notification.id,
         type: notification.type,
         priority: notification.priority,

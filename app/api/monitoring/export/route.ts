@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
         },
         summary: {
           totalRecords: usageData.length,
-          totalCost: usageData.reduce((sum, record) => sum + record.cost, 0),
-          totalTokens: usageData.reduce((sum, record) => sum + record.totalTokens, 0),
-          providers: Array.from(new Set(usageData.map(record => record.provider)))
+          totalCost: usageData.reduce((sum: number, record: any) => sum + record.cost, 0),
+          totalTokens: usageData.reduce((sum: number, record: any) => sum + record.totalTokens, 0),
+          providers: Array.from(new Set(usageData.map((record: any) => record.provider)))
         },
         aggregatedData: aggregatedUsage,
         detailedUsage: usageData

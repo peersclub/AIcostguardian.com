@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET() {
+  // Skip during build
+  if (!process.env.DATABASE_URL || process.env.NEXT_PHASE === 'phase-production-build') {
+    return NextResponse.json({ error: 'Database not available' }, { status: 503 })
+  }
+
   try {
     const session = await getServerSession(authOptions)
     
@@ -48,8 +53,8 @@ export async function GET() {
     })
 
     // Transform data for frontend
-    const transformedUsers = users.map(user => {
-      const totalSpend = user.usageLogs.reduce((sum, log) => sum + log.cost, 0)
+    const transformedUsers = users.map((user: any) => {
+      const totalSpend = user.usageLogs.reduce((sum: number, log: any) => sum + log.cost, 0)
       const apiCalls = user.usageLogs.length
       
       // Determine status based on activity

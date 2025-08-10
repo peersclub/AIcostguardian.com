@@ -261,7 +261,7 @@ export async function PATCH(
     }
 
     // Update rule and channels in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Prepare rule update data
       const ruleUpdateData: any = {
         updatedAt: new Date()
@@ -406,7 +406,7 @@ export async function DELETE(
     }
 
     // Delete rule and related data in transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Delete channels first (foreign key constraint)
       await tx.notificationChannel.deleteMany({
         where: { ruleId: id }
@@ -596,7 +596,7 @@ async function testRuleEvaluation(
         currentCost: currentCost._sum.cost || 0,
         previousCost: previousCost._sum.cost || 0,
         costIncrease: (currentCost._sum.cost || 0) - (previousCost._sum.cost || 0),
-        usageData: recentUsage.map(log => ({
+        usageData: recentUsage.map((log: any) => ({
           provider: log.provider,
           model: log.model,
           tokens: log.totalTokens,

@@ -4,6 +4,12 @@ import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { organizationService } from '@/lib/services/organization.service'
 import { z } from 'zod'
+import { User, Usage } from '@prisma/client'
+
+// Type for user with usage included
+type UserWithUsage = User & {
+  usage: Usage[]
+}
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -64,19 +70,19 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate usage stats for each member
-    const enrichedMembers = members.map(member => {
+    const enrichedMembers = members.map((member: UserWithUsage) => {
       const totalCalls = member.usage.length
-      const totalCost = member.usage.reduce((sum, u) => sum + u.cost, 0)
+      const totalCost = member.usage.reduce((sum: number, u: Usage) => sum + u.cost, 0)
       
       // Calculate this month's usage
       const startOfMonth = new Date()
       startOfMonth.setDate(1)
       startOfMonth.setHours(0, 0, 0, 0)
       
-      const thisMonthUsage = member.usage.filter(u => 
+      const thisMonthUsage = member.usage.filter((u: Usage) => 
         new Date(u.timestamp) >= startOfMonth
       )
-      const thisMonthCost = thisMonthUsage.reduce((sum, u) => sum + u.cost, 0)
+      const thisMonthCost = thisMonthUsage.reduce((sum: number, u: Usage) => sum + u.cost, 0)
 
       return {
         id: member.id,

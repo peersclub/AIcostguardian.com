@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET() {
+  // Skip during build
+  if (!process.env.DATABASE_URL || process.env.NEXT_PHASE === 'phase-production-build') {
+    return NextResponse.json({ error: 'Database not available' }, { status: 503 })
+  }
+  
   try {
     const session = await getServerSession(authOptions)
     
@@ -46,7 +51,7 @@ export async function GET() {
     })
 
     // Transform data for frontend (never send encrypted keys)
-    const transformedKeys = apiKeys.map(key => ({
+    const transformedKeys = apiKeys.map((key: any) => ({
       id: key.id,
       provider: key.provider,
       userId: key.userId,

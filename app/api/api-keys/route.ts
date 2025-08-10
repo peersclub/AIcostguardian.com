@@ -63,7 +63,7 @@ export async function GET() {
     }
 
     // Return keys without the encrypted values
-    const keys = user.apiKeys.map(key => ({
+    const keys = user.apiKeys.map((key: any) => ({
       id: key.id,
       provider: key.provider,
       isActive: key.isActive,

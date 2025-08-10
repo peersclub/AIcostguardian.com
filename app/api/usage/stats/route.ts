@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
+import { UsageLog } from '@prisma/client'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -60,8 +61,8 @@ export async function GET(request: Request) {
 
     // Calculate stats
     const stats = {
-      totalCost: usageLogs.reduce((sum, log) => sum + log.cost, 0),
-      totalTokens: usageLogs.reduce((sum, log) => sum + log.totalTokens, 0),
+      totalCost: usageLogs.reduce((sum: number, log: UsageLog) => sum + log.cost, 0),
+      totalTokens: usageLogs.reduce((sum: number, log: UsageLog) => sum + log.totalTokens, 0),
       totalRequests: usageLogs.length,
       byProvider: {} as Record<string, any>,
       byModel: {} as Record<string, any>,
@@ -69,7 +70,7 @@ export async function GET(request: Request) {
     }
 
     // Group by provider
-    usageLogs.forEach(log => {
+    usageLogs.forEach((log: UsageLog) => {
       if (!stats.byProvider[log.provider]) {
         stats.byProvider[log.provider] = {
           cost: 0,
@@ -99,7 +100,7 @@ export async function GET(request: Request) {
 
     // Group by day for chart data
     const dailyData = new Map<string, any>()
-    usageLogs.forEach(log => {
+    usageLogs.forEach((log: UsageLog) => {
       const day = log.timestamp.toISOString().split('T')[0]
       if (!dailyData.has(day)) {
         dailyData.set(day, {

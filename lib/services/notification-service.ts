@@ -5,6 +5,7 @@
 
 import { ProviderName } from '@/config/providers'
 import prisma from '@/lib/prisma'
+import { Alert } from '@prisma/client'
 
 export interface NotificationData {
   type: 'cost_alert' | 'usage_spike' | 'error_rate' | 'system_notification'
@@ -163,7 +164,7 @@ class NotificationService {
         skip: offset
       })
 
-      return alerts.map(alert => ({
+      return alerts.map((alert: Alert) => ({
         id: alert.id,
         type: alert.type,
         title: `${alert.type.replace('_', ' ').toUpperCase()}: ${alert.provider}`,
@@ -220,12 +221,12 @@ class NotificationService {
 
       const stats = {
         total: alerts.length,
-        unread: alerts.filter(a => a.isActive).length,
+        unread: alerts.filter((a: Alert) => a.isActive).length,
         bySeverity: {} as Record<string, number>,
         byType: {} as Record<string, number>
       }
 
-      alerts.forEach(alert => {
+      alerts.forEach((alert: Alert) => {
         const severity = this.getSeverityFromType(alert.type)
         stats.bySeverity[severity] = (stats.bySeverity[severity] || 0) + 1
         stats.byType[alert.type] = (stats.byType[alert.type] || 0) + 1

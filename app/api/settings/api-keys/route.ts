@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const apiKeys = await getApiKeys(user.id)
 
     // Format response as array for the frontend
-    const formattedKeys = apiKeys.map(key => ({
+    const formattedKeys = apiKeys.map((key: any) => ({
       id: key.id,
       name: `${key.provider} API Key`,
       provider: key.provider.toLowerCase(), // Send lowercase to match frontend expectations

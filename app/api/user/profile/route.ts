@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
+import { ApiKey } from '@prisma/client'
+
+// Type for selected API key fields
+type SelectedApiKey = Pick<ApiKey, 'id' | 'provider' | 'isActive' | 'lastUsed' | 'createdAt'>
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -43,7 +47,7 @@ export async function GET() {
     return NextResponse.json({
       user: {
         ...user,
-        apiKeys: user.apiKeys.map(key => ({
+        apiKeys: user.apiKeys.map((key: SelectedApiKey) => ({
           ...key,
           encryptedKey: undefined // Don't send encrypted keys to client
         }))

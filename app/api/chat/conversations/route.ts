@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       })
 
       // Transform for frontend
-      const transformedConversations = conversations.map(conv => ({
+      const transformedConversations = conversations.map((conv: any) => ({
         id: conv.id,
         title: conv.title,
         lastMessage: conv.messages[0]?.content || '',

@@ -6,6 +6,11 @@ declare global {
 }
 
 const prismaClientSingleton = () => {
+  // Don't initialize Prisma during build phase
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return null as any
+  }
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     datasources: {

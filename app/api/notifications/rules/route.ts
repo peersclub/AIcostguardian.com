@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit)
 
     // Transform rules to include computed fields
-    const transformedRules = rules.map(rule => ({
+    const transformedRules = rules.map((rule: any) => ({
       ...rule,
       notificationCount: rule._count.notifications,
       isScheduled: !!rule.schedule,
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create rule with channels in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create the rule
       const rule = await tx.notificationRule.create({
         data: {
@@ -386,7 +386,7 @@ async function testRuleEvaluation(rule: any, userId: string, organizationId: str
       currentCost: currentCost._sum.cost || 0,
       previousCost: 0,
       costIncrease: currentCost._sum.cost || 0,
-      usageData: recentUsage.map(log => ({
+      usageData: recentUsage.map((log: any) => ({
         provider: log.provider,
         model: log.model,
         tokens: log.totalTokens,
@@ -412,7 +412,7 @@ async function testRuleEvaluation(rule: any, userId: string, organizationId: str
 
     // Test usage threshold
     if (rule.conditions.usageThreshold !== undefined) {
-      const totalTokens = evaluationContext.usageData.reduce((sum, usage) => sum + usage.tokens, 0)
+      const totalTokens = evaluationContext.usageData.reduce((sum: any, usage: any) => sum + usage.tokens, 0)
       wouldTrigger = wouldTrigger && (totalTokens >= rule.conditions.usageThreshold)
     }
 
@@ -420,7 +420,7 @@ async function testRuleEvaluation(rule: any, userId: string, organizationId: str
       wouldTrigger,
       evaluationContext: {
         currentCost: evaluationContext.currentCost,
-        totalTokens: evaluationContext.usageData.reduce((sum, usage) => sum + usage.tokens, 0),
+        totalTokens: evaluationContext.usageData.reduce((sum: any, usage: any) => sum + usage.tokens, 0),
         usageDataCount: evaluationContext.usageData.length
       }
     }

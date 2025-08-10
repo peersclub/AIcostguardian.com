@@ -102,7 +102,7 @@ export async function DELETE(
     const orgId = params.id
 
     // Delete organization and all related data in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Delete related data first
       await tx.notification.deleteMany({ where: { organizationId: orgId } })
       await tx.notificationRule.deleteMany({ where: { organizationId: orgId } })

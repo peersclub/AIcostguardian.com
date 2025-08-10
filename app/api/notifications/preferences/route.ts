@@ -424,7 +424,7 @@ async function getNotificationStats(userId: string) {
       today: todayCount,
       thisWeek: weekCount,
       thisMonth: monthCount,
-      byType: channelStats.reduce((acc, stat) => {
+      byType: channelStats.reduce((acc: any, stat: any) => {
         acc[stat.type] = stat._count
         return acc
       }, {} as Record<string, number>)

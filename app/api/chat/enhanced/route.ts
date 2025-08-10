@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     const alertBudgets = budgets.filter(b => b.alertTriggered && !b.isOverBudget)
     
     // Step 2: Get and decrypt API key
-    const apiKeyRecord = user.apiKeys.find(k => k.provider === modelConfig.provider.toLowerCase())
+    const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === modelConfig.provider.toLowerCase())
     if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
       return NextResponse.json({ 
         error: `${modelConfig.provider} API key not configured. Please add your API key in Settings.` 
