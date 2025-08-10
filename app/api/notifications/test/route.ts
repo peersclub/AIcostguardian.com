@@ -8,6 +8,7 @@ import { NotificationType, NotificationPriority, ChannelType } from '@prisma/cli
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // Validation schemas
 const testNotificationSchema = z.object({

@@ -5,7 +5,7 @@ import { getClaudeAdminClient } from '@/lib/claude-admin-client'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // This would be called by your AI integration to track usage
 export async function POST(request: Request) {

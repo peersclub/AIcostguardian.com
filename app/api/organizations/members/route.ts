@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 const updateRoleSchema = z.object({
   userId: z.string(),
   role: z.enum(['ADMIN', 'MANAGER', 'USER', 'VIEWER'])

@@ -6,7 +6,7 @@ import { decrypt } from '@/lib/encryption'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // Validation functions for different providers
 async function validateOpenAIKey(apiKey: string): Promise<boolean> {
   try {

@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // Validation schema for notification preferences
 const preferencesSchema = z.object({

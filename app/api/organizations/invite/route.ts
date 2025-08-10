@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 const inviteUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),

@@ -6,7 +6,7 @@ import { encrypt } from '@/lib/encryption'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

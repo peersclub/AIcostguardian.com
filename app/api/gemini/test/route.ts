@@ -6,7 +6,7 @@ import { safeDecrypt } from '@/lib/crypto-helper'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // Gemini API model pricing (per 1M tokens)
 const MODEL_PRICING = {
   'gemini-1.5-flash': { input: 0.075, output: 0.30 },

@@ -5,7 +5,7 @@ import { getApiKeys, saveApiKey, deleteApiKey, getUserByEmail } from '@/lib/serv
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // GET - Retrieve all API keys for the user (masked for security)
 export async function GET(request: NextRequest) {
   try {

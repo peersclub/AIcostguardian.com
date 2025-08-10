@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 const createBudgetSchema = z.object({
   organizationId: z.string(),
   name: z.string().min(1).max(100),

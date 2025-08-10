@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 export async function GET() {
   const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
   

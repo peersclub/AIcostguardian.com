@@ -8,6 +8,7 @@ import prisma from '@/lib/prisma'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // WebSocket connection tracking
 const activeConnections = new Map<string, {

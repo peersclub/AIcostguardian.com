@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth-config'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // In-memory storage for API keys (in production, use encrypted database)
 const userApiKeys = new Map<string, string>()
 

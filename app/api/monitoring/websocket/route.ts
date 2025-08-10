@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth-config'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // WebSocket connections store
 const connections = new Map<string, WebSocket>()
 

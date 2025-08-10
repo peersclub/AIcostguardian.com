@@ -8,6 +8,7 @@ import { NotificationType, NotificationPriority, NotificationStatus } from '@pri
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // Validation schemas
 const createNotificationSchema = z.object({

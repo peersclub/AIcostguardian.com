@@ -9,7 +9,7 @@ import { organizationService } from '@/lib/services/organization.service'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 // Model configurations with pricing (per 1M tokens)
 const MODEL_CONFIGS = {
   // OpenAI Models

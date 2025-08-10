@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 const inviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'manager', 'member']),

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs'
 export async function GET() {
   // Clear all auth-related cookies
   const cookieStore = cookies()
