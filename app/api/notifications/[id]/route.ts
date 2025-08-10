@@ -167,7 +167,7 @@ export async function PATCH(
     
     if (validatedData.metadata !== undefined) {
       updateData.metadata = {
-        ...existingNotification.metadata,
+        ...(existingNotification.metadata as any || {}),
         ...validatedData.metadata
       }
     }
@@ -279,7 +279,7 @@ export async function DELETE(
         status: 'DELETED',
         deletedAt: new Date(),
         metadata: {
-          ...existingNotification.metadata,
+          ...(existingNotification.metadata as any || {}),
           deletedBy: session.user.id,
           deletedReason: 'USER_REQUEST'
         }
