@@ -166,19 +166,16 @@ export async function PATCH(
     }
     
     if (validatedData.metadata !== undefined) {
-      updateData.metadata = {
-        ...(existingNotification.metadata as any || {}),
-        ...validatedData.metadata
+      updateData.data = {
+        ...(existingNotification.data as any || {}),
+        metadata: validatedData.metadata
       }
     }
 
     // Update notification
     const updatedNotification = await prisma.notification.update({
       where: { id },
-      data: {
-        ...updateData,
-        updatedAt: new Date()
-      },
+      data: updateData,
       include: {
         rule: {
           select: { id: true, name: true, type: true, description: true }
@@ -277,9 +274,9 @@ export async function DELETE(
       where: { id },
       data: {
         status: 'DELETED',
-        deletedAt: new Date(),
-        metadata: {
-          ...(existingNotification.metadata as any || {}),
+        data: {
+          ...(existingNotification.data as any || {}),
+          deletedAt: new Date().toISOString(),
           deletedBy: session.user.id,
           deletedReason: 'USER_REQUEST'
         }
@@ -413,8 +410,7 @@ export async function POST(
           ...notification.channels,
           lastResent: new Date().toISOString(),
           resendResults: results
-        },
-        updatedAt: new Date()
+        }
       }
     })
 
