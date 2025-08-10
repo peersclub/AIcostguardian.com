@@ -72,8 +72,21 @@ npx prisma studio     # View database in browser
 1. ✅ Run `npm run build` locally
 2. ✅ Check all TypeScript errors are resolved
 3. ✅ Verify API routes have `dynamic` export
-4. ✅ Test authentication flow
-5. ✅ Verify database connections work
+4. ✅ Verify pages with auth have `dynamic` export
+5. ✅ Test authentication flow
+6. ✅ Verify database connections work
+
+## Pages That Need Dynamic Rendering
+Pages that use authentication or database queries ALSO need the dynamic export:
+```typescript
+// app/dashboard/page.tsx or any page with auth
+export const dynamic = 'force-dynamic'
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions)
+  // ...
+}
+```
 
 ## Known Pending Items
 - Email Notifications - Needs SendGrid/Resend API keys

@@ -8,6 +8,7 @@ import { NotificationStatus } from '@prisma/client'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 // Validation schema for updates
 const updateNotificationSchema = z.object({
