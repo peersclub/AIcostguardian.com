@@ -32,7 +32,8 @@ import {
   Layers,
   DollarSign,
   BookOpen,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react'
 
 interface NavItem {
@@ -95,6 +96,13 @@ export default function Navigation() {
       href: '/dashboard',
       icon: LayoutDashboard,
       badge: 'Live',
+      visibility: 'auth'
+    },
+    {
+      label: 'AIOptimise',
+      href: '/aioptimise',
+      icon: Sparkles,
+      badge: 'New',
       visibility: 'auth'
     },
     {

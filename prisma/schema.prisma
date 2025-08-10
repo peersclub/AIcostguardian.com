@@ -34,6 +34,9 @@ model User {
   notifications         Notification[]
   notificationPreferences NotificationPreferences?
   conversations         Conversation[]
+  aiThreads             AIThread[]
+  promptPreferences     PromptPreference[]
+  modelOverrides        ModelOverride[]
 }
 
 model Organization {
@@ -514,4 +517,349 @@ model ChatMessage {
   usageLog        UsageLog?    @relation(fields: [usageLogId], references: [id])
   
   @@index([conversationId, createdAt])
+}
+
+// AIOptimise Models
+model AIThread {
+  id                String    @id @default(cuid())
+  userId            String
+  title             String
+  description       String?
+  isArchived        Boolean   @default(false)
+  isPinned          Boolean   @default(false)
+  tags              String[]
+  totalCost         Float     @default(0)
+  totalTokens       Int       @default(0)
+  messageCount      Int       @default(0)
+  averageQuality    Float     @default(0)
+  lastMessageAt     DateTime?
+  sharedWithEmails  String[]
+  shareExpiry       DateTime?
+  shareId           String?   @unique
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User      @relation(fields: [userId], references: [id])
+  messages          AIMessage[]
+  analytics         ThreadAnalytics?
+  
+  @@index([userId, isArchived])
+  @@index([userId, lastMessageAt])
+  @@index([shareId])
+}
+
+model AIMessage {
+  id                String    @id @default(cuid())
+  threadId          String
+  role              MessageRole
+  content           String    @db.Text
+  files             Json?     // Array of file references
+  
+  // Model selection data
+  selectedModel     String?
+  selectedProvider  String?
+  recommendedModel  String?
+  modelReason       String?
+  overrideReason    String?
+  
+  // Usage metrics
+  promptTokens      Int       @default(0)
+  completionTokens  Int       @default(0)
+  totalTokens       Int       @default(0)
+  cost              Float     @default(0)
+  latency           Int?      // milliseconds
+  streamingTime     Int?      // milliseconds
+  
+  // Quality metrics
+  qualityScore      Float?
+  feedback          MessageFeedback?
+  rating            Int?      // 1-5 stars
+  regenerateCount   Int       @default(0)
+  
+  // References
+  parentMessageId   String?
+  usageLogId        String?   @unique
+  editedAt          DateTime?
+  createdAt         DateTime  @default(now())
+  metadata          Json?
+  
+  thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  analysis          PromptAnalysis?
+  
+  @@index([threadId, createdAt])
+  @@index([threadId, role])
+}
+
+model PromptAnalysis {
+  id                String    @id @default(cuid())
+  messageId         String    @unique
+  
+  // Complexity metrics
+  complexity        ComplexityLevel
+  length            Int
+  hasCode           Boolean   @default(false)
+  hasImages         Boolean   @default(false)
+  hasFiles          Boolean   @default(false)
+  language          String    @default("en")
+  
+  // Content classification
+  contentType       ContentType
+  domain            String?   // coding, writing, analysis, etc
+  techStack         String[]  // detected technologies
+  requiredFeatures  String[]  // vision, tools, reasoning, etc
+  
+  // Model requirements
+  minContextWindow  Int       @default(4096)
+  requiredCapabilities String[]
+  estimatedTokens   Int
+  
+  // Quality requirements
+  accuracyNeeded    Float     // 0-1 score
+  creativityNeeded  Float     // 0-1 score
+  speedPriority     Float     // 0-1 score
+  
+  // Cost optimization
+  budgetSensitivity Float     // 0-1 score
+  qualityThreshold  Float     // minimum acceptable quality
+  
+  createdAt         DateTime  @default(now())
+  
+  message           AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model ModelSelection {
+  id                String    @id @default(cuid())
+  provider          String
+  model             String
+  
+  // Scoring metrics
+  qualityScore      Float
+  costScore         Float
+  speedScore        Float
+  capabilityScore   Float
+  totalScore        Float
+  
+  // Model capabilities
+  contextWindow     Int
+  supportedFeatures String[]
+  inputCost         Float     // per 1k tokens
+  outputCost        Float     // per 1k tokens
+  avgLatency        Int       // milliseconds
+  
+  // Selection metadata
+  selectionReason   String
+  isRecommended     Boolean
+  isOverride        Boolean   @default(false)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@unique([provider, model])
+  @@index([totalScore])
+}
+
+model ModelOverride {
+  id                String    @id @default(cuid())
+  userId            String
+  
+  // Override context
+  originalModel     String
+  originalProvider  String
+  overrideModel     String
+  overrideProvider  String
+  
+  // Reasoning
+  reason            String
+  promptComplexity  ComplexityLevel
+  contentType       ContentType
+  
+  // Performance tracking
+  qualityImprovement Float?   // percentage
+  costImpact        Float?    // percentage change
+  speedImpact       Float?    // percentage change
+  
+  // Learning data
+  wasSuccessful     Boolean?
+  userFeedback      String?
+  
+  createdAt         DateTime  @default(now())
+  
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId, createdAt])
+  @@index([originalModel, overrideModel])
+}
+
+model PromptTemplate {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  category          String
+  
+  // Template content
+  template          String    @db.Text
+  variables         Json      // variable definitions
+  examples          Json?     // example usages
+  
+  // Usage tracking
+  usageCount        Int       @default(0)
+  averageQuality    Float     @default(0)
+  averageCost       Float     @default(0)
+  
+  // Metadata
+  tags              String[]
+  isPublic          Boolean   @default(false)
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([category])
+  @@index([isPublic, usageCount])
+}
+
+model PromptPreference {
+  id                String    @id @default(cuid())
+  userId            String
+  
+  // Optimization mode
+  mode              OptimizationMode @default(BALANCED)
+  
+  // Custom weights (0-1)
+  qualityWeight     Float     @default(0.4)
+  costWeight        Float     @default(0.3)
+  speedWeight       Float     @default(0.2)
+  capabilityWeight  Float     @default(0.1)
+  
+  // Model preferences
+  preferredProviders String[]
+  blacklistedModels String[]
+  
+  // Budget settings
+  maxCostPerMessage Float?
+  maxCostPerDay     Float?
+  maxCostPerMonth   Float?
+  
+  // Quality settings
+  minQualityScore   Float     @default(0.7)
+  autoImprove       Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@unique([userId])
+}
+
+model ThreadAnalytics {
+  id                String    @id @default(cuid())
+  threadId          String    @unique
+  
+  // Cost metrics
+  totalCost         Float     @default(0)
+  costByProvider    Json      // { provider: cost }
+  costByModel       Json      // { model: cost }
+  savingsVsPremium  Float     @default(0)
+  
+  // Usage metrics
+  totalTokens       Int       @default(0)
+  promptTokens      Int       @default(0)
+  completionTokens  Int       @default(0)
+  messageCount      Int       @default(0)
+  regenerationCount Int       @default(0)
+  
+  // Quality metrics
+  averageQuality    Float     @default(0)
+  satisfactionRate  Float     @default(0)
+  overrideRate      Float     @default(0)
+  
+  // Performance metrics
+  averageLatency    Int       @default(0) // milliseconds
+  p95Latency        Int       @default(0)
+  errorRate         Float     @default(0)
+  
+  // Model distribution
+  modelUsage        Json      // { model: count }
+  providerUsage     Json      // { provider: count }
+  
+  // Time metrics
+  totalDuration     Int       @default(0) // seconds
+  firstMessageAt    DateTime?
+  lastMessageAt     DateTime?
+  peakHour          Int?      // 0-23
+  
+  updatedAt         DateTime  @updatedAt
+  
+  thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+}
+
+model SessionMetrics {
+  id                String    @id @default(cuid())
+  sessionId         String    @unique
+  userId            String
+  
+  // Session info
+  startedAt         DateTime  @default(now())
+  endedAt           DateTime?
+  duration          Int?      // seconds
+  
+  // Usage metrics
+  messageCount      Int       @default(0)
+  threadCount       Int       @default(0)
+  totalCost         Float     @default(0)
+  totalTokens       Int       @default(0)
+  
+  // Model metrics
+  modelsUsed        String[]
+  providersUsed     String[]
+  overrideCount     Int       @default(0)
+  
+  // Quality metrics
+  averageQuality    Float     @default(0)
+  regenerateCount   Int       @default(0)
+  
+  createdAt         DateTime  @default(now())
+  
+  @@index([userId, startedAt])
+}
+
+// Enums for AIOptimise
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  FUNCTION
+}
+
+enum MessageFeedback {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum ComplexityLevel {
+  SIMPLE
+  MODERATE
+  COMPLEX
+  EXPERT
+}
+
+enum ContentType {
+  GENERAL
+  CODE
+  CREATIVE
+  ANALYSIS
+  RESEARCH
+  TRANSLATION
+  SUMMARIZATION
+  CONVERSATION
+}
+
+enum OptimizationMode {
+  QUALITY      // Always pick best quality
+  BALANCED     // Balance quality and cost
+  BUDGET       // Minimize cost
+  SPEED        // Fastest response
+  CUSTOM       // User-defined weights
 }
