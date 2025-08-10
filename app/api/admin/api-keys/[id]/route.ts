@@ -6,12 +6,25 @@ import { prisma } from '@/lib/prisma'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const revalidate = 0
+
+// Tell Next.js not to generate static params for this route
+export async function generateStaticParams() {
+  return []
+}
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
+  // Prevent execution during build
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
+  
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
@@ -68,9 +81,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {

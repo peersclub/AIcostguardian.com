@@ -44,9 +44,11 @@ function checkRateLimit(userId: string): boolean {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions) as any
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -109,9 +111,11 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions) as any
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -212,9 +216,11 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions) as any
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -291,9 +297,11 @@ export async function DELETE(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions) as any
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })

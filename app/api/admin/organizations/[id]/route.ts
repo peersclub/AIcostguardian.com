@@ -9,9 +9,11 @@ export const runtime = 'nodejs'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
 ) {
   try {
+    // Handle both sync and async params
+    const params = 'then' in context.params ? await context.params : context.params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
