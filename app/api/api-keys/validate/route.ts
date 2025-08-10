@@ -3,75 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
+import { ApiValidationService, type AIProvider } from '@/lib/services/api-validation.service'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-// Validation functions for different providers
-async function validateOpenAIKey(apiKey: string): Promise<boolean> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
-    })
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
-async function validateClaudeKey(apiKey: string): Promise<boolean> {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 1
-      })
-    })
-    // 401 means invalid key, 400 might mean valid key but bad request
-    return response.status !== 401
-  } catch {
-    return false
-  }
-}
-
-async function validateGeminiKey(apiKey: string): Promise<boolean> {
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
-async function validateGrokKey(apiKey: string): Promise<boolean> {
-  try {
-    // Grok/X.AI validation endpoint
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'grok-beta',
-        messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 1
-      })
-    })
-    return response.status !== 401
-  } catch {
-    return false
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,64 +17,75 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { keyId, provider } = await request.json()
+    const body = await request.json()
+    const { keyId, provider: providedProvider, apiKey: rawApiKey, test } = body
 
-    if (!keyId) {
-      return NextResponse.json({ error: 'Key ID required' }, { status: 400 })
-    }
+    // Handle both stored keys and direct validation
+    let decryptedKey: string
+    let provider: string
 
-    // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
+    if (keyId) {
+      // Validating a stored key
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email }
+      })
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Get the API key
-    const apiKey = await prisma.apiKey.findFirst({
-      where: {
-        id: keyId,
-        userId: user.id
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
-    })
 
-    if (!apiKey) {
-      return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+      const apiKey = await prisma.apiKey.findFirst({
+        where: {
+          id: keyId,
+          userId: user.id
+        }
+      })
+
+      if (!apiKey) {
+        return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+      }
+
+      decryptedKey = decrypt(apiKey.encryptedKey)
+      provider = apiKey.provider
+    } else if (rawApiKey && providedProvider) {
+      // Direct validation (e.g., from onboarding or settings)
+      decryptedKey = rawApiKey
+      provider = providedProvider
+    } else {
+      return NextResponse.json({ 
+        error: 'Either keyId or both apiKey and provider are required' 
+      }, { status: 400 })
     }
 
-    // Decrypt the key
-    const decryptedKey = decrypt(apiKey.encryptedKey)
-
-    // Validate based on provider
-    let isValid = false
-    const providerLower = (provider || apiKey.provider).toLowerCase()
-
-    switch (providerLower) {
-      case 'openai':
-        isValid = await validateOpenAIKey(decryptedKey)
-        break
-      case 'claude':
-      case 'anthropic':
-        isValid = await validateClaudeKey(decryptedKey)
-        break
-      case 'gemini':
-      case 'google':
-        isValid = await validateGeminiKey(decryptedKey)
-        break
-      case 'grok':
-      case 'xai':
-        isValid = await validateGrokKey(decryptedKey)
-        break
-      default:
-        return NextResponse.json({ 
-          error: `Validation not supported for provider: ${providerLower}` 
-        }, { status: 400 })
+    // Map provider names to AIProvider type
+    const providerMap: Record<string, AIProvider> = {
+      'openai': 'openai',
+      'anthropic': 'anthropic',
+      'claude': 'anthropic',
+      'google': 'google',
+      'gemini': 'google',
+      'mistral': 'mistral',
+      'perplexity': 'perplexity',
+      'grok': 'grok',
+      'xai': 'grok'
     }
 
-    // Update last validated timestamp
-    if (isValid) {
+    const normalizedProvider = providerMap[provider.toLowerCase()]
+    
+    if (!normalizedProvider) {
+      return NextResponse.json({ 
+        error: `Unsupported provider: ${provider}` 
+      }, { status: 400 })
+    }
+
+    // Use centralized validation service
+    const validationResult = await ApiValidationService.validateApiKey(
+      decryptedKey,
+      normalizedProvider
+    )
+
+    // If validation passed and it's a stored key, update the database
+    if (validationResult.valid && keyId) {
       await prisma.apiKey.update({
         where: { id: keyId },
         data: { 
@@ -148,16 +95,29 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ 
-      valid: isValid,
-      provider: apiKey.provider,
-      message: isValid ? 'API key is valid' : 'API key validation failed'
-    })
+    // If test flag is set, also perform a test API call
+    if (test && validationResult.valid) {
+      const testResult = await ApiValidationService.testApiKey(
+        decryptedKey,
+        normalizedProvider
+      )
+      
+      return NextResponse.json({
+        ...validationResult,
+        test: testResult
+      })
+    }
+
+    return NextResponse.json(validationResult)
 
   } catch (error) {
     console.error('Error validating API key:', error)
+    
+    // Return a properly formatted JSON error response
     return NextResponse.json({ 
-      error: 'Failed to validate API key' 
+      valid: false,
+      error: error instanceof Error ? error.message : 'Failed to validate API key',
+      provider: 'unknown'
     }, { status: 500 })
   }
 }

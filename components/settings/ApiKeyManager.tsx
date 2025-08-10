@@ -65,61 +65,34 @@ export default function ApiKeyManager() {
     setError('')
     
     try {
-      // Determine the correct test endpoint based on provider and key type
-      let testEndpoint = ''
-      let isAdminKey = false
-      
-      if (selectedProvider === 'anthropic') {
-        // Check if it's a Claude Admin key
-        if (apiKeyInput.startsWith('sk-ant-admin')) {
-          testEndpoint = '/api/claude-admin/test'
-          isAdminKey = true
-        } else {
-          testEndpoint = '/api/claude/test'
-        }
-      } else if (selectedProvider === 'openai') {
-        // Check for OpenAI org keys
-        if (apiKeyInput.startsWith('org-') || apiKeyInput.includes('admin')) {
-          isAdminKey = true
-        }
-        testEndpoint = '/api/openai/test'
-      } else {
-        // Map other providers
-        const providerMap: Record<string, string> = {
-          'google': '/api/gemini/test',
-          'mistral': '/api/openai/test', // Mistral uses OpenAI-compatible API
-          'perplexity': '/api/openai/test', // Perplexity uses OpenAI-compatible API
-        }
-        testEndpoint = providerMap[selectedProvider] || ''
-      }
-      
-      if (testEndpoint) {
-        // Test the API key first
-        const testResponse = await fetch(testEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: "Hi, this is a test to validate my API key. Please respond with 'API key is working!'",
-            testApiKey: apiKeyInput,
-            detailed: isAdminKey // Get detailed response for admin keys
-          })
+      // Use centralized validation endpoint
+      const validationResponse = await fetch('/api/api-keys/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: apiKeyInput,
+          provider: selectedProvider,
+          test: true // Request test validation as well
         })
+      })
 
-        const testData = await testResponse.json()
-        
-        if (!testResponse.ok || !testData.success) {
-          setError(`API key validation failed: ${testData.error || 'Invalid API key'}`)
-          setSaving(false)
-          return
-        }
+      const validationData = await validationResponse.json()
+      
+      if (!validationResponse.ok || !validationData.valid) {
+        setError(`API key validation failed: ${validationData.error || 'Invalid API key'}`)
+        setSaving(false)
+        return
+      }
 
-        // Show detailed validation results
-        if (testData.keyType || testData.adminKeyNotice || isAdminKey) {
-          const providerName = PROVIDERS.find(p => p.id === selectedProvider)?.name || selectedProvider
-          setSuccess(`✓ ${testData.keyType || 'Admin/Organization'} key validated for ${providerName}. ${testData.message || 'This key has administrative privileges.'}`)
-        } else {
-          setSuccess(`✓ API key validated successfully!`)
-        }
+      // Show detailed validation results
+      const providerName = PROVIDERS.find(p => p.id === selectedProvider)?.name || selectedProvider
+      if (validationData.keyType) {
+        const keyTypeLabel = validationData.keyType === 'admin' ? 'Admin' : 
+                            validationData.keyType === 'organization' ? 'Organization' : 
+                            'Standard'
+        setSuccess(`✓ ${keyTypeLabel} key validated for ${providerName}. ${validationData.message || ''}`)
+      } else {
+        setSuccess(`✓ ${providerName} API key validated successfully!`)
       }
 
       // If validation passed, save the key
