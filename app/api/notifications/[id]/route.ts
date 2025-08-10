@@ -183,23 +183,8 @@ export async function PATCH(
       }
     })
 
-    // Log the action for audit purposes
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_UPDATE',
-        resourceType: 'NOTIFICATION',
-        resourceId: id,
-        details: {
-          updates: updateData,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      // Ignore audit log failures for now
-      console.warn('Failed to create audit log for notification update')
-    })
+    // Log the action for future audit implementation
+    // TODO: Implement audit logging when AuditLog model is added
 
     return NextResponse.json({
       success: true,
@@ -273,7 +258,7 @@ export async function DELETE(
     await prisma.notification.update({
       where: { id },
       data: {
-        status: 'DELETED',
+        status: 'CANCELLED',
         data: {
           ...(existingNotification.data as any || {}),
           deletedAt: new Date().toISOString(),
@@ -283,23 +268,8 @@ export async function DELETE(
       }
     })
 
-    // Log the action for audit purposes
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_DELETE',
-        resourceType: 'NOTIFICATION',
-        resourceId: id,
-        details: {
-          softDelete: true,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      // Ignore audit log failures for now
-      console.warn('Failed to create audit log for notification deletion')
-    })
+    // Log the action for future audit implementation
+    // TODO: Implement audit logging when AuditLog model is added
 
     return NextResponse.json({
       success: true,
@@ -388,7 +358,7 @@ export async function POST(
       priority: notification.priority,
       title: notification.title,
       message: notification.message,
-      data: notification.data,
+      data: notification.data as Record<string, any> || {},
       expiresAt: notification.expiresAt
     }
 
@@ -407,30 +377,15 @@ export async function POST(
         attempts: (notification.attempts || 0) + 1,
         error: allSuccessful ? null : results.find(r => !r.success)?.error,
         channels: {
-          ...notification.channels,
+          ...(notification.channels as Record<string, any> || {}),
           lastResent: new Date().toISOString(),
           resendResults: results
         }
       }
     })
 
-    // Log the resend action
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_RESEND',
-        resourceType: 'NOTIFICATION',
-        resourceId: id,
-        details: {
-          attemptNumber: updatedNotification.attempts,
-          results: results,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for notification resend')
-    })
+    // Log the action for future audit implementation
+    // TODO: Implement audit logging when AuditLog model is added
 
     return NextResponse.json({
       success: true,

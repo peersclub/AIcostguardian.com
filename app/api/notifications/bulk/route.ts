@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: whereClause,
           data: { 
-            status: 'DELETED',
+            status: 'CANCELLED',
             deletedAt: new Date(),
             updatedAt: new Date(),
             metadata: {
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: whereClause,
           data: { 
-            status: 'ARCHIVED',
+            status: 'READ',
             archivedAt: new Date(),
             updatedAt: new Date()
           }
