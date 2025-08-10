@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Generate mock usage data for demonstration
 function generateMockUsage(daysBack: number = 30) {
   const providers = ['openai', 'claude', 'gemini', 'perplexity', 'grok']

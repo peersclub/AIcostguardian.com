@@ -5,6 +5,9 @@ import { budgetService } from '@/lib/services/budget.service'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const createBudgetSchema = z.object({
   organizationId: z.string(),
   name: z.string().min(1).max(100),

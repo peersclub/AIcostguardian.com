@@ -5,6 +5,9 @@ import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { NotificationType, NotificationPriority, ChannelType } from '@prisma/client'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation schemas
 const notificationConditionsSchema = z.object({
   costThreshold: z.number().min(0).optional(),

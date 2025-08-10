@@ -6,6 +6,9 @@ import { notificationService } from '@/lib/notifications/notification.service'
 import { z } from 'zod'
 import { NotificationStatus } from '@prisma/client'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation schema for updates
 const updateNotificationSchema = z.object({
   readAt: z.string().datetime().optional(),

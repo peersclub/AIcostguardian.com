@@ -6,6 +6,9 @@ import { notificationService } from '@/lib/notifications/notification.service'
 import { z } from 'zod'
 import { NotificationType, NotificationPriority, ChannelType } from '@prisma/client'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation schemas
 const testNotificationSchema = z.object({
   channels: z.array(z.object({

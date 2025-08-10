@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import { z } from 'zod'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation schema for notification preferences
 const preferencesSchema = z.object({
   emailEnabled: z.boolean().default(true),

@@ -5,6 +5,9 @@ import { usageMonitor } from '@/lib/services/usage-monitor'
 import { PRICING_CONFIG, ProviderName } from '@/config/providers'
 import prisma from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 interface InsightData {
   type: 'optimization' | 'cost_saving' | 'usage_pattern' | 'warning'
   title: string

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Mock notification settings store
 const notificationSettings = new Map<string, any>()
 

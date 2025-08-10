@@ -5,6 +5,9 @@ import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { NotificationStatus, NotificationType, NotificationPriority } from '@prisma/client'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation schemas
 const bulkActionSchema = z.object({
   action: z.enum(['mark_read', 'mark_unread', 'delete', 'acknowledge', 'archive', 'restore']),

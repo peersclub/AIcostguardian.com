@@ -6,6 +6,9 @@ import prisma from '@/lib/prisma'
 // import { Server as SocketIOServer } from 'socket.io'
 // import { createServer } from 'http'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // WebSocket connection tracking
 const activeConnections = new Map<string, {
   userId: string

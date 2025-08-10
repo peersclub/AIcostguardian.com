@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Validation functions for different providers
 async function validateOpenAIKey(apiKey: string): Promise<boolean> {
   try {
