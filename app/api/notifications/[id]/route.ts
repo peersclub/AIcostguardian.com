@@ -359,11 +359,11 @@ export async function POST(
       title: notification.title,
       message: notification.message,
       data: notification.data as Record<string, any> || {},
-      expiresAt: notification.expiresAt
+      expiresAt: notification.expiresAt || undefined
     }
 
     // Resend notification
-    const results = await notificationService.processNotification(notificationData, notification.rule ? [notification.rule] : undefined)
+    const results = await notificationService.processNotification(notificationData as any, notification.rule ? [notification.rule] as any : undefined)
 
     const allSuccessful = results.every(r => r.success)
     const status = allSuccessful ? 'DELIVERED' : (results.some(r => r.success) ? 'SENT' : 'FAILED')
@@ -376,11 +376,11 @@ export async function POST(
         deliveredAt: allSuccessful ? new Date() : undefined,
         attempts: (notification.attempts || 0) + 1,
         error: allSuccessful ? null : results.find(r => !r.success)?.error,
-        channels: {
+        channels: JSON.parse(JSON.stringify({
           ...(notification.channels as Record<string, any> || {}),
           lastResent: new Date().toISOString(),
           resendResults: results
-        }
+        }))
       }
     })
 
