@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config'
 import { organizationService } from '@/lib/services/organization.service'
 import { z } from 'zod'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const createOrganizationSchema = z.object({
   name: z.string().min(2).max(100),
   domain: z.string().min(3).max(100),

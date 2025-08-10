@@ -5,6 +5,9 @@ import { organizationService } from '@/lib/services/organization.service'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const inviteUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),

@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import { safeDecrypt } from '@/lib/crypto-helper'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Claude API model pricing (per 1M tokens)
 const MODEL_PRICING = {
   'claude-3-opus-20240229': { input: 15, output: 75 },

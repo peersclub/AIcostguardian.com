@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // In-memory storage for API keys (in production, use encrypted database)
 const userApiKeys = new Map<string, string>()
 

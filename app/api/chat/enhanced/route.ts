@@ -7,6 +7,9 @@ import { logUsage } from '@/lib/services/database'
 import { budgetService } from '@/lib/services/budget.service'
 import { organizationService } from '@/lib/services/organization.service'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Model configurations with pricing (per 1M tokens)
 const MODEL_CONFIGS = {
   // OpenAI Models

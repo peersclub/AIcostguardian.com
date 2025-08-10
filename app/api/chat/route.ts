@@ -5,6 +5,9 @@ import prisma from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
 import { logUsage } from '@/lib/services/database'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Model configurations with pricing (per 1M tokens)
 const MODEL_CONFIGS = {
   // OpenAI Models

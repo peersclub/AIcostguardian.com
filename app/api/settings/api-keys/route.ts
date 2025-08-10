@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { getApiKeys, saveApiKey, deleteApiKey, getUserByEmail } from '@/lib/services/database'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // GET - Retrieve all API keys for the user (masked for security)
 export async function GET(request: NextRequest) {
   try {

@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import { safeDecrypt } from '@/lib/crypto-helper'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // OpenAI API model pricing (per 1000 tokens)
 const MODEL_PRICING = {
   'gpt-4o': { input: 0.005, output: 0.015 },
