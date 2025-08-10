@@ -177,7 +177,7 @@ export class PromptAnalyzer {
     for (const [type, score] of Object.entries(typeScores)) {
       if (score > maxScore) {
         maxScore = score;
-        selectedType = type as ContentType;
+        selectedType = type as any; // Type assertion needed for enum
       }
     }
     

@@ -10,7 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -206,7 +206,7 @@ async function processAIResponse(
 
       for await (const chunk of stream) {
         if (chunk.type === 'content_block_delta') {
-          const delta = chunk.delta.text || '';
+          const delta = (chunk.delta as any).text || '';
           content += delta;
           await writer.write(encoder.encode(`data: ${JSON.stringify({ 
             type: 'content', 

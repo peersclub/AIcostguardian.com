@@ -91,8 +91,9 @@ export function MessageComponent({ message, onRegenerate, onFeedback }: MessageP
           <div className="prose prose-sm dark:prose-invert max-w-none">
             <ReactMarkdown
               components={{
-                code({ node, inline, className, children, ...props }) {
+                code({ node, className, children, ...props }: any) {
                   const match = /language-(\w+)/.exec(className || '');
+                  const inline = node?.properties?.inline;
                   return !inline && match ? (
                     <SyntaxHighlighter
                       style={oneDark}
