@@ -10,7 +10,6 @@ import { NotificationStatus } from '@prisma/client'
 const updateNotificationSchema = z.object({
   readAt: z.string().datetime().optional(),
   status: z.nativeEnum(NotificationStatus).optional(),
-  acknowledgedAt: z.string().datetime().optional(),
   metadata: z.record(z.any()).optional()
 })
 
@@ -161,10 +160,6 @@ export async function PATCH(
       updateData.status = validatedData.status
     }
     
-    if (validatedData.acknowledgedAt !== undefined) {
-      updateData.acknowledgedAt = validatedData.acknowledgedAt ? new Date(validatedData.acknowledgedAt) : new Date()
-    }
-    
     if (validatedData.metadata !== undefined) {
       updateData.data = {
         ...(existingNotification.data as any || {}),
@@ -261,9 +256,11 @@ export async function DELETE(
         status: 'CANCELLED',
         data: {
           ...(existingNotification.data as any || {}),
-          deletedAt: new Date().toISOString(),
-          deletedBy: session.user.id,
-          deletedReason: 'USER_REQUEST'
+          ...{
+            deletedAt: new Date().toISOString(),
+            deletedBy: session.user.id,
+            deletedReason: 'USER_REQUEST'
+          }
         }
       }
     })

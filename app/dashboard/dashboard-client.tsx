@@ -384,7 +384,7 @@ function DashboardV2Content() {
                   </div>
                   
                   <div className="space-y-4">
-                    {businessInsights.slice(0, 3).map((insight, index) => (
+                    {businessInsights.slice(0, 3).map((insight: any, index: number) => (
                       <div key={index} className="p-4 bg-gray-800/30 rounded-lg border border-gray-700">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-3">
@@ -420,7 +420,7 @@ function DashboardV2Content() {
                   </div>
                   
                   <div className="space-y-4">
-                    {performanceMetrics.providers.slice(0, 4).map((provider, index) => (
+                    {performanceMetrics.providers.slice(0, 4).map((provider: any, index: number) => (
                       <div key={provider.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {getAIProviderLogo(provider.id, 'w-6 h-6')}
@@ -462,7 +462,7 @@ function DashboardV2Content() {
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                  {teamMetrics.topDepartments.map((dept, index) => (
+                  {teamMetrics.topDepartments.map((dept: any, index: number) => (
                     <div key={index} className="p-4 bg-gray-800/30 rounded-lg border border-gray-700">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium">{dept.name}</h4>
@@ -505,7 +505,7 @@ function DashboardV2Content() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {businessInsights.map((insight, index) => (
+                  {businessInsights.map((insight: any, index: number) => (
                     <div key={index} className="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
                       <div className="flex items-start justify-between mb-4">
                         <div>
@@ -557,7 +557,7 @@ function DashboardV2Content() {
                 </div>
 
                 <div className="space-y-4">
-                  {performanceMetrics.providers.map((provider) => (
+                  {performanceMetrics.providers.map((provider: any) => (
                     <div key={provider.id} className="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -627,7 +627,7 @@ function DashboardV2Content() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {forecastData.map((forecast, index) => (
+                  {forecastData.map((forecast: any, index: number) => (
                     <div key={index} className={`p-6 rounded-xl border ${
                       forecast.status === 'over-budget' 
                         ? 'bg-red-900/20 border-red-500/30' 

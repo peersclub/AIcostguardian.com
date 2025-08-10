@@ -2,10 +2,9 @@ import {
   NotificationTemplate, 
   TemplateVariables, 
   TemplateRenderResult, 
-  TemplateError,
-  NotificationType,
-  ChannelType
+  TemplateError
 } from './types'
+import { NotificationType, ChannelType } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 interface HandlebarsHelpers {
@@ -148,10 +147,11 @@ export class NotificationTemplateEngine {
         template = await this.getTemplate(templateName, type, channel, 'en')
       } else {
         // Find template by name (first match)
-        template = Array.from(this.templates.values()).find(t => t.name === templateName)
-        if (!template) {
+        const foundTemplate = Array.from(this.templates.values()).find(t => t.name === templateName)
+        if (!foundTemplate) {
           throw new TemplateError(`Template not found: ${templateName}`, templateName)
         }
+        template = foundTemplate
       }
 
       // Merge brand config into variables
@@ -196,7 +196,7 @@ export class NotificationTemplateEngine {
       if (error instanceof TemplateError) {
         throw error
       }
-      throw new TemplateError(`Failed to render template ${templateName}: ${error.message}`)
+      throw new TemplateError(`Failed to render template ${templateName}: ${(error as Error).message}`)
     }
   }
 
@@ -465,18 +465,18 @@ export class NotificationTemplateEngine {
     })
 
     // Math helpers
-    this.registerHelper('add', (a: number, b: number) => (a || 0) + (b || 0))
-    this.registerHelper('subtract', (a: number, b: number) => (a || 0) - (b || 0))
-    this.registerHelper('multiply', (a: number, b: number) => (a || 0) * (b || 0))
-    this.registerHelper('divide', (a: number, b: number) => b !== 0 ? (a || 0) / b : 0)
+    this.registerHelper('add', (a: number, b: number) => String((a || 0) + (b || 0)))
+    this.registerHelper('subtract', (a: number, b: number) => String((a || 0) - (b || 0)))
+    this.registerHelper('multiply', (a: number, b: number) => String((a || 0) * (b || 0)))
+    this.registerHelper('divide', (a: number, b: number) => String(b !== 0 ? (a || 0) / b : 0))
 
     // Comparison helpers
-    this.registerHelper('eq', (a: any, b: any) => a === b)
-    this.registerHelper('neq', (a: any, b: any) => a !== b)
-    this.registerHelper('gt', (a: number, b: number) => (a || 0) > (b || 0))
-    this.registerHelper('gte', (a: number, b: number) => (a || 0) >= (b || 0))
-    this.registerHelper('lt', (a: number, b: number) => (a || 0) < (b || 0))
-    this.registerHelper('lte', (a: number, b: number) => (a || 0) <= (b || 0))
+    this.registerHelper('eq', (a: any, b: any) => String(a === b))
+    this.registerHelper('neq', (a: any, b: any) => String(a !== b))
+    this.registerHelper('gt', (a: number, b: number) => String((a || 0) > (b || 0)))
+    this.registerHelper('gte', (a: number, b: number) => String((a || 0) >= (b || 0)))
+    this.registerHelper('lt', (a: number, b: number) => String((a || 0) < (b || 0)))
+    this.registerHelper('lte', (a: number, b: number) => String((a || 0) <= (b || 0)))
   }
 }
 

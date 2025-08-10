@@ -18,7 +18,7 @@ export function broadcastNotificationToSSE(userId: string, notification: any): n
   let sentCount = 0
   
   // Find all connections for this user
-  for (const [connectionId, connection] of sseConnections.entries()) {
+  for (const [connectionId, connection] of Array.from(sseConnections.entries())) {
     if (connection.userId !== userId) continue
     
     try {
@@ -53,7 +53,7 @@ export function cleanupInactiveSSEConnections(): number {
   const inactiveThreshold = 5 * 60 * 1000 // 5 minutes
   let cleanedCount = 0
 
-  for (const [connectionId, connection] of sseConnections.entries()) {
+  for (const [connectionId, connection] of Array.from(sseConnections.entries())) {
     if (now - connection.lastPing.getTime() > inactiveThreshold) {
       try {
         const timeoutEvent = createSSEMessage('timeout', {

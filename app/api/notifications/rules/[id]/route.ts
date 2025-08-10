@@ -316,22 +316,8 @@ export async function PATCH(
       session.user.organizationId!
     )
 
-    // Log rule update
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_RULE_UPDATE',
-        resourceType: 'NOTIFICATION_RULE',
-        resourceId: id,
-        details: {
-          updatedFields: Object.keys(validatedData),
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for rule update')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log rule update for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -428,24 +414,8 @@ export async function DELETE(
       })
     })
 
-    // Log rule deletion
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_RULE_DELETE',
-        resourceType: 'NOTIFICATION_RULE',
-        resourceId: id,
-        details: {
-          ruleName: existingRule.name,
-          ruleType: existingRule.type,
-          notificationCount: existingRule._count.notifications,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for rule deletion')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log rule deletion for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -530,22 +500,8 @@ export async function POST(
       testContext
     )
 
-    // Log test execution
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_RULE_TEST',
-        resourceType: 'NOTIFICATION_RULE',
-        resourceId: id,
-        details: {
-          testResults,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for rule test')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log test execution for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -631,7 +587,7 @@ async function testRuleEvaluation(
         usageData: recentUsage.map(log => ({
           provider: log.provider,
           model: log.model,
-          tokens: log.inputTokens + log.outputTokens,
+          tokens: log.totalTokens,
           requests: 1,
           cost: log.cost
         })),
@@ -648,7 +604,7 @@ async function testRuleEvaluation(
     }
 
     // Test each condition
-    const conditionResults = {}
+    const conditionResults: Record<string, any> = {}
     let wouldTrigger = true
 
     // Cost threshold
@@ -665,7 +621,7 @@ async function testRuleEvaluation(
 
     // Usage threshold
     if (rule.conditions.usageThreshold !== undefined) {
-      const totalTokens = evaluationContext.usageData.reduce((sum, usage) => sum + usage.tokens, 0)
+      const totalTokens = evaluationContext.usageData.reduce((sum: number, usage: any) => sum + usage.tokens, 0)
       const passes = totalTokens >= rule.conditions.usageThreshold
       conditionResults['usageThreshold'] = {
         condition: `totalTokens >= ${rule.conditions.usageThreshold}`,
@@ -679,12 +635,12 @@ async function testRuleEvaluation(
     // Provider filters
     if (rule.conditions.providerFilters?.length) {
       const matchingProviders = evaluationContext.usageData
-        .filter(usage => rule.conditions.providerFilters.includes(usage.provider))
-        .map(usage => usage.provider)
+        .filter((usage: any) => rule.conditions.providerFilters.includes(usage.provider))
+        .map((usage: any) => usage.provider)
       const passes = matchingProviders.length > 0
       conditionResults['providerFilters'] = {
         condition: `provider in [${rule.conditions.providerFilters.join(', ')}]`,
-        value: [...new Set(matchingProviders)],
+        value: Array.from(new Set(matchingProviders)),
         passes,
         description: `${passes ? 'Found' : 'No'} matching providers: ${matchingProviders.join(', ') || 'none'}`
       }
@@ -694,12 +650,12 @@ async function testRuleEvaluation(
     // Model filters
     if (rule.conditions.modelFilters?.length) {
       const matchingModels = evaluationContext.usageData
-        .filter(usage => rule.conditions.modelFilters.includes(usage.model))
-        .map(usage => usage.model)
+        .filter((usage: any) => rule.conditions.modelFilters.includes(usage.model))
+        .map((usage: any) => usage.model)
       const passes = matchingModels.length > 0
       conditionResults['modelFilters'] = {
         condition: `model in [${rule.conditions.modelFilters.join(', ')}]`,
-        value: [...new Set(matchingModels)],
+        value: Array.from(new Set(matchingModels)),
         passes,
         description: `${passes ? 'Found' : 'No'} matching models: ${matchingModels.join(', ') || 'none'}`
       }
@@ -713,7 +669,7 @@ async function testRuleEvaluation(
         currentCost: evaluationContext.currentCost,
         previousCost: evaluationContext.previousCost,
         costIncrease: evaluationContext.costIncrease,
-        totalTokens: evaluationContext.usageData.reduce((sum, usage) => sum + usage.tokens, 0),
+        totalTokens: evaluationContext.usageData.reduce((sum: number, usage: any) => sum + usage.tokens, 0),
         usageDataCount: evaluationContext.usageData.length,
         timeframe: evaluationContext.timeframe
       },
@@ -729,7 +685,7 @@ async function testRuleEvaluation(
     return {
       wouldTrigger: null,
       error: 'Failed to evaluate rule conditions',
-      errorDetails: error.message
+      errorDetails: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

@@ -99,7 +99,7 @@ export class SlackNotificationChannel implements NotificationChannel {
         success: false,
         channel: 'SLACK',
         destination: this.getDestination(channelConfig),
-        error: error.message,
+        error: (error as Error).message,
         latency,
         attempts: 1,
         metadata: {

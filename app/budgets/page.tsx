@@ -284,7 +284,6 @@ export default function BudgetManagement() {
                 <Progress 
                   value={Math.min(budget.percentage, 100)} 
                   className="h-2 bg-gray-800"
-                  indicatorClassName={getProgressColor(budget.percentage, budget.alertThreshold)}
                 />
               </div>
 

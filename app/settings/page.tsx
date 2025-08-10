@@ -79,7 +79,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 10
     }
@@ -149,8 +149,11 @@ export default function SettingsPage() {
           return {
             ...provider,
             dbKey,
-            keyType
-          }
+            keyType,
+            icon: getAIProviderLogo(provider.id, 'w-5 h-5'),
+            features: [],
+            status: 'active' as const
+          } as ApiProvider
         })
         
         setProviders(providersWithKeys)

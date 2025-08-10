@@ -1,10 +1,13 @@
 // services/providers/base-provider.service.ts
 // ABSTRACT BASE CLASS - All providers must extend this
 
-import { Provider } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { encryption } from '../encryption.service';
-import { io } from '@/lib/services/websocket.service';
+import { encrypt, decrypt } from '../encryption';
+// TODO: Add websocket service when implemented
+// import { io } from '@/lib/services/websocket.service';
+
+// Define Provider type locally since it's not an enum in Prisma
+type Provider = 'OPENAI' | 'CLAUDE' | 'GEMINI' | 'GROK' | 'PERPLEXITY';
 
 export interface TestResult {
   success: boolean;
@@ -31,6 +34,7 @@ export interface UsageMetrics {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  organizationId?: string;
 }
 
 export interface ModelConfig {
@@ -62,11 +66,11 @@ export abstract class BaseProviderService {
     await prisma.usageLog.create({
       data: {
         userId,
+        organizationId: usage.organizationId || userId, // TODO: Get proper organizationId
         provider: this.provider,
         model: usage.model,
-        operation: 'completion',
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
+        promptTokens: usage.inputTokens,
+        completionTokens: usage.outputTokens,
         totalTokens: usage.totalTokens,
         cost,
         timestamp: new Date(),
@@ -82,7 +86,9 @@ export abstract class BaseProviderService {
   
   protected async validateApiKey(encryptedKey: string, iv: string, tag: string): Promise<boolean> {
     try {
-      const decrypted = await encryption.decryptApiKey({ encryptedKey, iv, tag });
+      // Combine iv and encryptedKey for the decrypt function
+      const combined = `${iv}:${encryptedKey}`;
+      const decrypted = await decrypt(combined);
       const result = await this.testConnection(decrypted);
       return result.success;
     } catch (error) {
@@ -93,9 +99,10 @@ export abstract class BaseProviderService {
   
   private async broadcastUsageUpdate(userId: string, usage: UsageMetrics) {
     // WebSocket broadcast implementation
-    if (io) {
-      io.to(`user:${userId}`).emit('usage:update', usage);
-    }
+    // TODO: Emit websocket event when service is implemented
+    // if (io) {
+    //   io.to(`user:${userId}`).emit('usage:update', usage);
+    // }
   }
   
   private async checkAlerts(userId: string, cost: number) {
@@ -139,23 +146,24 @@ export abstract class BaseProviderService {
     // Update last triggered
     await prisma.alert.update({
       where: { id: alert.id },
-      data: { lastTriggered: new Date() },
+      data: { triggeredAt: new Date() },
     });
     
-    // Create alert notification
-    await prisma.alertNotification.create({
-      data: {
-        alertId: alert.id,
-        channel: 'email',
-        status: 'pending',
-        createdAt: new Date(),
-      },
-    });
+    // TODO: Create alert notification when alertNotification model is added
+    // await prisma.alertNotification.create({
+    //   data: {
+    //     alertId: alert.id,
+    //     channel: 'email',
+    //     status: 'pending',
+    //     createdAt: new Date(),
+    //   },
+    // });
     
     // Broadcast alert
-    if (io) {
-      io.to(`user:${alert.userId}`).emit('alert:triggered', alert);
-    }
+    // TODO: Emit websocket event when service is implemented
+    // if (io) {
+    //   io.to(`user:${alert.userId}`).emit('alert:triggered', alert);
+    // }
   }
   
   // Helper method to get decrypted API key
@@ -172,6 +180,7 @@ export abstract class BaseProviderService {
       return null;
     }
     
-    return encryption.decrypt(apiKey.encryptedKey, apiKey.iv, apiKey.tag);
+    // The encryptedKey should already contain the IV
+    return decrypt(apiKey.encryptedKey);
   }
 }

@@ -90,7 +90,7 @@ export class InAppNotificationChannel implements NotificationChannel {
         success: false,
         channel: 'IN_APP',
         destination: notification.userId,
-        error: error.message,
+        error: (error as Error).message,
         latency,
         attempts: 1,
         metadata: {

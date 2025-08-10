@@ -199,6 +199,8 @@ export async function logUsage(data: {
     operation: data.operation || 'completion',
     inputTokens: data.inputTokens || data.promptTokens || 0,
     outputTokens: data.outputTokens || data.completionTokens || 0,
+    promptTokens: data.promptTokens || data.inputTokens || 0,
+    completionTokens: data.completionTokens || data.outputTokens || 0,
     totalTokens: data.totalTokens,
     cost: data.cost
   }
@@ -280,12 +282,19 @@ export async function getUsageStats(userId: string) {
 // Alert Services
 export async function createAlert(data: {
   userId: string
-  name: string
   type: AlertType
   threshold: number
+  provider: string
+  message: string
 }) {
   return prisma.alert.create({
-    data,
+    data: {
+      userId: data.userId,
+      type: data.type,
+      threshold: data.threshold,
+      provider: data.provider,
+      message: data.message
+    },
   })
 }
 
@@ -319,7 +328,7 @@ export async function triggerAlert(alertId: string) {
   return prisma.alert.update({
     where: { id: alertId },
     data: {
-      lastTriggered: new Date(),
+      triggeredAt: new Date(),
     },
   })
 }

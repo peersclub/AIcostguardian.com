@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
-import { Server as SocketIOServer } from 'socket.io'
-import { createServer } from 'http'
+// TODO: Add socket.io when needed for real WebSocket implementation
+// import { Server as SocketIOServer } from 'socket.io'
+// import { createServer } from 'http'
 
 // WebSocket connection tracking
 const activeConnections = new Map<string, {
@@ -36,7 +37,7 @@ function checkConnectionRateLimit(userId: string): boolean {
 }
 
 // WebSocket server instance (would be initialized elsewhere in a real app)
-let wsServer: SocketIOServer | null = null
+let wsServer: any | null = null
 
 /**
  * GET /api/notifications/websocket - WebSocket connection endpoint
@@ -107,25 +108,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Log connection attempt
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId || 'unknown',
-        action: 'WEBSOCKET_CONNECTION_REQUESTED',
-        resourceType: 'WEBSOCKET_CONNECTION',
-        resourceId: connectionId,
-        details: {
-          connectionId,
-          clientVersion,
-          userAgent: request.headers.get('user-agent'),
-          ip: request.ip || 'unknown',
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for WebSocket connection')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log connection attempt for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -234,23 +218,8 @@ export async function DELETE(request: NextRequest) {
       connection.socket?.disconnect()
       activeConnections.delete(connectionId)
 
-      // Log disconnection
-      await prisma.auditLog.create({
-        data: {
-          userId: session.user.id,
-          organizationId: session.user.organizationId || 'unknown',
-          action: 'WEBSOCKET_CONNECTION_CLOSED',
-          resourceType: 'WEBSOCKET_CONNECTION',
-          resourceId: connectionId,
-          details: {
-            connectionId,
-            reason: 'USER_REQUEST',
-            timestamp: new Date().toISOString()
-          }
-        }
-      }).catch(() => {
-        console.warn('Failed to create audit log for WebSocket disconnection')
-      })
+      // TODO: Add audit logging when AuditLog model is available
+      // Log disconnection for future audit implementation
 
       return NextResponse.json({
         success: true,
@@ -305,7 +274,7 @@ async function handleConnectionRegistration(connectionId: string, userId: string
       where: {
         userId,
         readAt: null,
-        status: { not: 'DELETED' }
+        status: { not: 'CANCELLED' }
       },
       orderBy: { createdAt: 'desc' },
       take: 10

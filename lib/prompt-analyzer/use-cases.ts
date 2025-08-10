@@ -658,7 +658,7 @@ export function findBestModelForPrompt(prompt: string): {
   let bestScore = 0;
   let bestCases: UseCase[] = [];
 
-  for (const [model, data] of matches.entries()) {
+  for (const [model, data] of Array.from(matches.entries())) {
     if (data.score > bestScore) {
       bestScore = data.score;
       bestModel = model;

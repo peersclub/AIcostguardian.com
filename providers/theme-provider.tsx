@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { themeVars } from '@/lib/theme/theme-config';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -50,11 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(effectiveTheme);
     setResolvedTheme(effectiveTheme);
     
-    // Apply CSS variables
-    const vars = themeVars[effectiveTheme];
-    Object.entries(vars).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
+    // CSS variables are handled by Tailwind's dark mode
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
@@ -78,11 +73,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.add(newTheme);
       setResolvedTheme(newTheme);
       
-      // Apply CSS variables
-      const vars = themeVars[newTheme];
-      Object.entries(vars).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(key, value);
-      });
+      // CSS variables are handled by Tailwind's dark mode
     };
 
     mediaQuery.addEventListener('change', handleChange);

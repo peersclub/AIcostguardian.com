@@ -49,14 +49,35 @@ interface ToastContainerProps {
   position: NotificationToastProps['position']
 }
 
-const typeIcons = {
-  COST_ALERT: DollarSign,
-  USAGE_ALERT: TrendingUp,
-  SYSTEM_ALERT: AlertCircle,
-  TEAM_ALERT: Users,
-  REPORT: FileText,
-  RECOMMENDATION: Settings
-} as const
+// Map notification types to icons - group similar types together
+const getTypeIcon = (type: NotificationType) => {
+  // Cost related notifications
+  if (type.startsWith('COST_') || type.includes('SPENDING') || type.includes('PAYMENT')) {
+    return DollarSign
+  }
+  // Usage related notifications
+  if (type.includes('USAGE') || type.includes('RATE_LIMIT') || type.includes('QUOTA')) {
+    return TrendingUp
+  }
+  // System/API related notifications
+  if (type.includes('API_KEY') || type.includes('INTEGRATION') || type.includes('OUTAGE') || type.includes('DEPRECATION')) {
+    return AlertCircle
+  }
+  // Team related notifications
+  if (type.includes('TEAM')) {
+    return Users
+  }
+  // Report notifications
+  if (type.includes('REPORT')) {
+    return FileText
+  }
+  // Optimization/Recommendations
+  if (type.includes('RECOMMENDATION') || type.includes('OPTIMIZATION')) {
+    return Settings
+  }
+  // Default fallback
+  return AlertCircle
+}
 
 const priorityColors = {
   LOW: {
@@ -119,7 +140,7 @@ const animations = {
 
 function ToastContainer({ children, position }: ToastContainerProps) {
   return (
-    <div className={cn('fixed z-50 pointer-events-none', positionClasses[position])}>
+    <div className={cn('fixed z-50 pointer-events-none', positionClasses[position || 'top-right'])}>
       <div className="pointer-events-auto space-y-2">
         {children}
       </div>
@@ -152,9 +173,9 @@ export function NotificationToast({
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(Date.now())
 
-  const IconComponent = typeIcons[type] || AlertCircle
+  const IconComponent = getTypeIcon(type)
   const priorityStyle = priorityColors[priority]
-  const animation = animations[position]
+  const animation = animations[position || 'top-right']
 
   // Auto-dismiss timer
   useEffect(() => {

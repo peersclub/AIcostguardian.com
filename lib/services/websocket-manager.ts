@@ -18,7 +18,7 @@ export function broadcastToUser(userId: string, message: any): number {
   let sentCount = 0
   
   // Find all connections for this user
-  for (const [connectionId, connection] of activeConnections.entries()) {
+  for (const [connectionId, connection] of Array.from(activeConnections.entries())) {
     if (connection.userId !== userId) continue
     
     try {
@@ -46,7 +46,7 @@ export function cleanupInactiveConnections(): number {
   const inactiveThreshold = 5 * 60 * 1000 // 5 minutes
   let cleanedCount = 0
 
-  for (const [connectionId, connection] of activeConnections.entries()) {
+  for (const [connectionId, connection] of Array.from(activeConnections.entries())) {
     if (now - connection.lastPing.getTime() > inactiveThreshold) {
       try {
         connection.ws.close(1000, 'Connection timeout')

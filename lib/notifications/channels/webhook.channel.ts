@@ -6,6 +6,7 @@ import {
   WebhookChannelConfig,
   ChannelError
 } from '../types'
+import crypto from 'crypto'
 
 /**
  * Webhook notification channel for external integrations
@@ -67,13 +68,13 @@ export class WebhookNotificationChannel implements NotificationChannel {
         success: false,
         channel: 'WEBHOOK',
         destination: this.getDestination(channelConfig),
-        error: error.message,
+        error: (error as any).message,
         latency,
-        attempts: error.attempts || 1,
+        attempts: (error as any).attempts || 1,
         metadata: {
-          statusCode: error.statusCode,
+          statusCode: (error as any).statusCode,
           url: channelConfig.url,
-          lastError: error.lastError
+          lastError: (error as any).lastError
         }
       }
     }
@@ -271,7 +272,7 @@ export class WebhookNotificationChannel implements NotificationChannel {
           true // Recoverable
         )
       } catch (error) {
-        lastError = error
+        lastError = error as Error
         
         // Don't retry non-recoverable errors
         if (error instanceof ChannelError && !error.recoverable) {
@@ -294,7 +295,7 @@ export class WebhookNotificationChannel implements NotificationChannel {
     const error = new ChannelError(
       `Webhook failed after ${maxRetries} attempts: ${lastError?.message}`,
       'WEBHOOK'
-    )
+    ) as any
     error.attempts = maxRetries
     error.lastError = lastError?.message
     throw error

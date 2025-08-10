@@ -386,8 +386,8 @@ class UsageMonitorService {
       return 0
     }
 
-    const inputCost = (inputTokens / 1_000_000) * modelPricing.input
-    const outputCost = (outputTokens / 1_000_000) * modelPricing.output
+    const inputCost = (inputTokens / 1_000_000) * (modelPricing as any).input
+    const outputCost = (outputTokens / 1_000_000) * (modelPricing as any).output
     
     return inputCost + outputCost
   }
@@ -402,7 +402,7 @@ class UsageMonitorService {
   ): UsageData[] {
     const result: UsageData[] = []
     
-    for (const [key, data] of this.usageCache.entries()) {
+    for (const [key, data] of Array.from(this.usageCache.entries())) {
       if (key.startsWith(provider)) {
         const filtered = data.filter(u => 
           u.timestamp >= startDate && u.timestamp <= endDate

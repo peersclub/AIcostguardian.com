@@ -84,7 +84,7 @@ export class NotificationService {
             success: false,
             channel: 'UNKNOWN' as any,
             destination: 'unknown',
-            error: `Rule processing failed: ${error.message}`,
+            error: `Rule processing failed: ${(error as Error).message}`,
             attempts: 1,
             metadata: {
               ruleId: rule.id,
@@ -132,7 +132,7 @@ export class NotificationService {
             success: false,
             channel: channelConfig.type as any,
             destination: channelConfig.destination,
-            error: error.message,
+            error: (error as Error).message,
             attempts: 1
           })
         }
@@ -329,7 +329,7 @@ export class NotificationService {
           success: false,
           channel: channelConfig.type,
           destination: channelConfig.destination,
-          error: error.message,
+          error: (error as Error).message,
           attempts: 1,
           metadata: {
             ruleId: rule.id,
@@ -378,7 +378,7 @@ export class NotificationService {
         channelType
       )
     } catch (error) {
-      console.warn(`Template rendering failed, using raw content:`, error.message)
+      console.warn(`Template rendering failed, using raw content:`, (error as Error).message)
     }
 
     // Deliver notification

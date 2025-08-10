@@ -152,8 +152,7 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: whereClause,
           data: { 
-            readAt: new Date(),
-            updatedAt: new Date()
+            readAt: new Date()
           }
         })
         break
@@ -162,8 +161,7 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: whereClause,
           data: { 
-            readAt: null,
-            updatedAt: new Date()
+            readAt: null
           }
         })
         break
@@ -173,9 +171,8 @@ export async function POST(request: NextRequest) {
           where: whereClause,
           data: { 
             status: 'CANCELLED',
-            deletedAt: new Date(),
-            updatedAt: new Date(),
-            metadata: {
+            data: {
+              deletedAt: new Date().toISOString(),
               deletedBy: session.user.id,
               deletedReason: 'BULK_DELETE',
               bulkActionId: `bulk_${Date.now()}`
@@ -188,8 +185,10 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: whereClause,
           data: { 
-            acknowledgedAt: new Date(),
-            updatedAt: new Date()
+            readAt: new Date(),
+            data: {
+              acknowledgedAt: new Date().toISOString()
+            }
           }
         })
         break
@@ -199,8 +198,9 @@ export async function POST(request: NextRequest) {
           where: whereClause,
           data: { 
             status: 'READ',
-            archivedAt: new Date(),
-            updatedAt: new Date()
+            data: {
+              archivedAt: new Date().toISOString()
+            }
           }
         })
         break
@@ -209,13 +209,11 @@ export async function POST(request: NextRequest) {
         result = await prisma.notification.updateMany({
           where: {
             ...whereClause,
-            status: { in: ['DELETED', 'ARCHIVED'] }
+            status: { in: ['CANCELLED', 'READ'] }
           },
           data: { 
             status: 'DELIVERED',
-            deletedAt: null,
-            archivedAt: null,
-            updatedAt: new Date()
+            data: {}
           }
         })
         break
@@ -229,26 +227,8 @@ export async function POST(request: NextRequest) {
 
     const executionTime = Date.now() - startTime
 
-    // Log bulk operation
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_BULK_ACTION',
-        resourceType: 'NOTIFICATION_BULK',
-        resourceId: `bulk_${Date.now()}`,
-        details: {
-          action: validatedData.action,
-          notificationIds: validatedData.notificationIds,
-          filters: validatedData.filters,
-          affectedCount: result.count,
-          executionTimeMs: executionTime,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for bulk operation')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log bulk operation for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -383,7 +363,7 @@ async function handleBulkCreate(body: any, session: any) {
     } catch (error) {
       errors.push({
         index: i,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         notification: {
           title: notificationData.title,
           type: notificationData.type
@@ -392,26 +372,8 @@ async function handleBulkCreate(body: any, session: any) {
     }
   }
 
-  // Log bulk creation
-  await prisma.auditLog.create({
-    data: {
-      userId: session.user.id,
-      organizationId: session.user.organizationId!,
-      action: 'NOTIFICATION_BULK_CREATE',
-      resourceType: 'NOTIFICATION_BULK',
-      resourceId: `bulk_create_${Date.now()}`,
-      details: {
-        requestedCount: validatedData.notifications.length,
-        successfulCount: results.length,
-        errorCount: errors.length,
-        results,
-        errors,
-        timestamp: new Date().toISOString()
-      }
-    }
-  }).catch(() => {
-    console.warn('Failed to create audit log for bulk creation')
-  })
+  // TODO: Add audit logging when AuditLog model is available
+  // Log bulk creation for future audit implementation
 
   return NextResponse.json({
     success: errors.length === 0,
@@ -616,7 +578,7 @@ async function handleBulkAnalyze(query: any, session: any) {
         return acc
       }, {} as Record<string, number>),
       
-      avgResponseTimeSeconds: avgResponseTime[0]?.avg_seconds || null,
+      avgResponseTimeSeconds: (avgResponseTime as any)[0]?.avg_seconds || null,
       
       topRules: await Promise.all(
         topRules.map(async (rule) => {

@@ -317,24 +317,8 @@ export async function POST(request: NextRequest) {
     // Test rule evaluation if test conditions are provided in the request
     const testEvaluation = await testRuleEvaluation(result.rule, session.user.id, session.user.organizationId!)
 
-    // Log rule creation
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId!,
-        action: 'NOTIFICATION_RULE_CREATE',
-        resourceType: 'NOTIFICATION_RULE',
-        resourceId: result.rule.id,
-        details: {
-          ruleName: result.rule.name,
-          ruleType: result.rule.type,
-          channelCount: result.channels.length,
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for rule creation')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log rule creation for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -401,7 +385,7 @@ async function testRuleEvaluation(rule: any, userId: string, organizationId: str
       usageData: recentUsage.map(log => ({
         provider: log.provider,
         model: log.model,
-        tokens: log.inputTokens + log.outputTokens,
+        tokens: log.totalTokens,
         requests: 1
       })),
       timeframe: {

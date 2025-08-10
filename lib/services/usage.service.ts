@@ -4,8 +4,11 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { Provider, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns'
+
+// Define Provider type locally since it's not an enum in Prisma
+type Provider = 'OPENAI' | 'CLAUDE' | 'GEMINI' | 'GROK' | 'PERPLEXITY'
 
 // Pricing configuration for each provider
 const PROVIDER_PRICING = {
@@ -16,16 +19,16 @@ const PROVIDER_PRICING = {
     'dall-e-3': { perImage: 0.04 },
     'whisper': { perMinute: 0.006 }
   },
-  ANTHROPIC: {
+  CLAUDE: {
     'claude-3-opus': { input: 0.015, output: 0.075 },
     'claude-3-sonnet': { input: 0.003, output: 0.015 },
     'claude-3-haiku': { input: 0.00025, output: 0.00125 }
   },
-  GOOGLE: {
+  GEMINI: {
     'gemini-pro': { input: 0.00025, output: 0.0005 },
     'gemini-pro-vision': { input: 0.00025, output: 0.0005 }
   },
-  XAI: {
+  GROK: {
     'grok-1': { input: 0.05, output: 0.15 }
   },
   PERPLEXITY: {
@@ -87,16 +90,18 @@ export class UsageService {
     const usageLog = await prisma.usageLog.create({
       data: {
         userId,
-        organizationId: user?.organizationId,
+        organizationId: user?.organizationId || userId, // Fallback to userId if no org
         provider,
         model,
-        operation,
-        inputTokens,
-        outputTokens,
+        promptTokens: inputTokens,
+        completionTokens: outputTokens,
         totalTokens: inputTokens + outputTokens,
-        cost: new Prisma.Decimal(cost),
-        responseTime,
-        metadata: metadata || {}
+        cost,
+        metadata: {
+          operation,
+          responseTime,
+          ...(metadata || {})
+        }
       }
     })
     
@@ -124,13 +129,13 @@ export class UsageService {
     })
     
     // Aggregate by provider
-    const providerMap = new Map<Provider, { cost: number; tokens: number; requests: number }>()
+    const providerMap = new Map<string, { cost: number; tokens: number; requests: number }>()
     
     let totalCost = 0
     let totalTokens = 0
     
     for (const log of logs) {
-      const cost = log.cost.toNumber()
+      const cost = log.cost
       totalCost += cost
       totalTokens += log.totalTokens
       
@@ -147,7 +152,7 @@ export class UsageService {
       totalTokens,
       totalRequests: logs.length,
       providers: Array.from(providerMap.entries()).map(([name, data]) => ({
-        name,
+        name: name as Provider,
         ...data
       })),
       timeRange: { start, end }
@@ -172,13 +177,13 @@ export class UsageService {
     })
     
     // Similar aggregation logic as getUserUsage
-    const providerMap = new Map<Provider, { cost: number; tokens: number; requests: number }>()
+    const providerMap = new Map<string, { cost: number; tokens: number; requests: number }>()
     
     let totalCost = 0
     let totalTokens = 0
     
     for (const log of logs) {
-      const cost = log.cost.toNumber()
+      const cost = log.cost
       totalCost += cost
       totalTokens += log.totalTokens
       
@@ -195,7 +200,7 @@ export class UsageService {
       totalTokens,
       totalRequests: logs.length,
       providers: Array.from(providerMap.entries()).map(([name, data]) => ({
-        name,
+        name: name as Provider,
         ...data
       })),
       timeRange: { start, end }
@@ -226,7 +231,7 @@ export class UsageService {
       const key = `${log.provider}-${log.model}`
       const existing = modelMap.get(key) || {
         model: log.model,
-        provider: log.provider,
+        provider: log.provider as Provider,
         requests: 0,
         tokens: 0,
         cost: 0
@@ -236,7 +241,7 @@ export class UsageService {
         ...existing,
         requests: existing.requests + 1,
         tokens: existing.tokens + log.totalTokens,
-        cost: existing.cost + log.cost.toNumber()
+        cost: existing.cost + log.cost
       })
     }
     
@@ -275,7 +280,7 @@ export class UsageService {
       
       dailyMap.set(dateKey, {
         ...existing,
-        cost: existing.cost + log.cost.toNumber(),
+        cost: existing.cost + log.cost,
         tokens: existing.tokens + log.totalTokens,
         requests: existing.requests + 1
       })
@@ -288,8 +293,13 @@ export class UsageService {
    * Calculate cost for a specific usage
    */
   private calculateCost(provider: Provider, model: string, inputTokens: number, outputTokens: number): number {
-    const pricing = PROVIDER_PRICING[provider]?.[model]
+    const providerPricing = PROVIDER_PRICING[provider] as any
+    if (!providerPricing) {
+      console.warn(`No pricing found for provider ${provider}`)
+      return 0
+    }
     
+    const pricing = providerPricing[model]
     if (!pricing) {
       console.warn(`No pricing found for ${provider} - ${model}`)
       return 0
@@ -329,41 +339,33 @@ export class UsageService {
     })
     
     for (const alert of alerts) {
-      // Get total cost for alert period
-      let periodStart: Date
-      switch (alert.frequency) {
-        case 'HOURLY':
-          periodStart = new Date(Date.now() - 60 * 60 * 1000)
-          break
-        case 'DAILY':
-          periodStart = startOfDay(new Date())
-          break
-        case 'WEEKLY':
-          periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          break
-        case 'MONTHLY':
-          periodStart = startOfMonth(new Date())
-          break
-        default:
-          periodStart = startOfDay(new Date())
-      }
-      
+      // Get total cost for current day (default period)
+      const periodStart = startOfDay(new Date())
       const periodUsage = await this.getUserUsage(userId, periodStart, new Date())
       
       // Check if threshold exceeded
-      if (periodUsage.totalCost >= alert.threshold.toNumber()) {
+      if (periodUsage.totalCost >= alert.threshold) {
+        // Get user's organization
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { organizationId: true }
+        })
+        
         // Create notification
         await prisma.notification.create({
           data: {
             userId,
-            type: 'ALERT',
-            title: `Cost Alert: ${alert.name}`,
-            message: `Your ${alert.frequency.toLowerCase()} spending has exceeded $${alert.threshold}`,
+            organizationId: user?.organizationId || userId,
+            type: 'COST_THRESHOLD_EXCEEDED',
+            title: `Cost Alert`,
+            message: alert.message || `Your spending has exceeded $${alert.threshold}`,
             priority: 'HIGH',
+            channels: ['IN_APP', 'EMAIL'],
             data: {
               alertId: alert.id,
               currentCost: periodUsage.totalCost,
-              threshold: alert.threshold.toNumber()
+              threshold: alert.threshold,
+              provider: alert.provider
             }
           }
         })
@@ -371,7 +373,7 @@ export class UsageService {
         // Update alert last triggered
         await prisma.alert.update({
           where: { id: alert.id },
-          data: { lastTriggered: new Date() }
+          data: { triggeredAt: new Date() }
         })
       }
     }

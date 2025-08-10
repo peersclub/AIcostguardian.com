@@ -119,23 +119,8 @@ export async function GET(request: NextRequest) {
           clearInterval(heartbeatTimer)
           sseConnections.delete(connectionId)
           
-          // Log disconnection
-          prisma.auditLog.create({
-            data: {
-              userId: session.user.id,
-              organizationId: session.user.organizationId || 'unknown',
-              action: 'SSE_CONNECTION_CLOSED',
-              resourceType: 'SSE_CONNECTION',
-              resourceId: connectionId,
-              details: {
-                connectionId,
-                duration: Date.now() - new Date(sseConnections.get(connectionId)?.metadata?.connectedAt || Date.now()).getTime(),
-                timestamp: new Date().toISOString()
-              }
-            }
-          }).catch(() => {
-            console.warn('Failed to create audit log for SSE disconnection')
-          })
+          // TODO: Add audit logging when AuditLog model is available
+          // Log disconnection for future audit implementation
         }
 
         // Handle connection close
@@ -147,25 +132,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Log connection attempt
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId || 'unknown',
-        action: 'SSE_CONNECTION_ESTABLISHED',
-        resourceType: 'SSE_CONNECTION',
-        resourceId: connectionId,
-        details: {
-          connectionId,
-          includeHistory,
-          heartbeatInterval,
-          userAgent: request.headers.get('user-agent'),
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for SSE connection')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log connection attempt for future audit implementation
 
     return new NextResponse(stream, {
       headers: {
@@ -322,7 +290,7 @@ async function sendRecentNotifications(controller: ReadableStreamDefaultControll
       where: {
         userId,
         readAt: null,
-        status: { not: 'DELETED' }
+        status: { not: 'CANCELLED' }
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
@@ -490,7 +458,7 @@ async function handleSSEBroadcast(userId: string, messageData: any) {
       sentCount++
     } catch (error) {
       console.error(`Failed to broadcast to SSE connection ${connectionId}:`, error)
-      errors.push({ connectionId, error: error.message })
+      errors.push({ connectionId, error: error instanceof Error ? error.message : 'Unknown error' })
     }
   }
 

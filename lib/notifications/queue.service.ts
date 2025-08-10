@@ -76,7 +76,7 @@ export class NotificationQueueService implements NotificationQueue {
       this.triggerProcessing()
     } catch (error) {
       console.error('Failed to enqueue job:', error)
-      throw new QueueError(`Failed to enqueue job ${job.id}: ${error.message}`)
+      throw new QueueError(`Failed to enqueue job ${job.id}: ${(error as Error).message}`)
     }
   }
 
@@ -130,7 +130,7 @@ export class NotificationQueueService implements NotificationQueue {
       console.log(`Job ${job.id} retry #${job.attempts} scheduled for ${job.scheduledFor.toISOString()}`)
     } catch (error) {
       console.error('Failed to retry job:', error)
-      await this.fail(job, `Retry failed: ${error.message}`)
+      await this.fail(job, `Retry failed: ${(error as Error).message}`)
     }
   }
 
@@ -193,7 +193,8 @@ export class NotificationQueueService implements NotificationQueue {
     let cleaned = 0
 
     // Clean completed jobs
-    for (const [id, job] of this.completedJobs.entries()) {
+    const completedEntries = Array.from(this.completedJobs.entries())
+    for (const [id, job] of completedEntries) {
       if (job.createdAt < cutoff) {
         this.completedJobs.delete(id)
         cleaned++
@@ -202,7 +203,8 @@ export class NotificationQueueService implements NotificationQueue {
 
     // Clean old failed jobs (keep them longer for debugging)
     const failedCutoff = new Date(Date.now() - this.config.defaultJobExpiry * 1000 * 7) // 7 days
-    for (const [id, job] of this.failedJobs.entries()) {
+    const failedEntries = Array.from(this.failedJobs.entries())
+    for (const [id, job] of failedEntries) {
       if (job.createdAt < failedCutoff) {
         this.failedJobs.delete(id)
         cleaned++
@@ -253,9 +255,9 @@ export class NotificationQueueService implements NotificationQueue {
    */
   getJobsByType(type: string): QueueJob[] {
     const allJobs = [
-      ...this.pendingJobs.values(),
-      ...this.processingJobs.values(),
-      ...this.delayedJobs.values()
+      ...Array.from(this.pendingJobs.values()),
+      ...Array.from(this.processingJobs.values()),
+      ...Array.from(this.delayedJobs.values())
     ]
     
     return allJobs.filter(job => job.type === type)
@@ -416,7 +418,8 @@ export class NotificationQueueService implements NotificationQueue {
     const readyJobs: QueueJob[] = []
 
     // Find jobs ready to be processed
-    for (const [id, job] of this.delayedJobs.entries()) {
+    const delayedEntries = Array.from(this.delayedJobs.entries())
+    for (const [id, job] of delayedEntries) {
       if (!job.scheduledFor || job.scheduledFor <= now) {
         readyJobs.push(job)
         this.delayedJobs.delete(id)

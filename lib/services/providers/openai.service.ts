@@ -2,7 +2,7 @@
 // COMPLETE OPENAI IMPLEMENTATION
 
 import OpenAI from 'openai';
-import { Provider } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { 
   BaseProviderService, 
   TestResult, 
@@ -10,6 +10,9 @@ import {
   CostBreakdown,
   ModelConfig 
 } from './base-provider.service';
+
+// Define Provider type locally since it's not an enum in Prisma
+type Provider = 'OPENAI' | 'CLAUDE' | 'GEMINI' | 'GROK' | 'PERPLEXITY';
 
 // OpenAI model configurations with pricing
 const OPENAI_MODELS: ModelConfig[] = [
@@ -50,7 +53,7 @@ export interface ChatCompletionRequest {
 }
 
 export class OpenAIService extends BaseProviderService {
-  protected provider = Provider.OPENAI;
+  protected provider: Provider = 'OPENAI';
   protected baseUrl = 'https://api.openai.com/v1';
   protected models = OPENAI_MODELS;
   
@@ -85,7 +88,7 @@ export class OpenAIService extends BaseProviderService {
       // For now, we'll aggregate from our own usage logs
       const usageLogs = await prisma.usageLog.findMany({
         where: {
-          provider: Provider.OPENAI,
+          provider: 'OPENAI',
           timestamp: {
             gte: startDate,
             lte: endDate,
@@ -107,8 +110,8 @@ export class OpenAIService extends BaseProviderService {
           };
         }
         
-        acc[log.model].inputTokens += log.inputTokens;
-        acc[log.model].outputTokens += log.outputTokens;
+        acc[log.model].inputTokens += log.promptTokens;
+        acc[log.model].outputTokens += log.completionTokens;
         acc[log.model].totalTokens += log.totalTokens;
         acc[log.model].cost += Number(log.cost);
         acc[log.model].count += 1;
@@ -186,18 +189,20 @@ export class OpenAIService extends BaseProviderService {
   }
   
   private async logError(userId: string, error: any) {
-    await prisma.activityLog.create({
-      data: {
-        userId,
-        action: 'API_ERROR',
-        resource: 'openai',
-        metadata: {
-          error: error.message,
-          code: error.code,
-          type: error.type,
-        },
-      },
-    });
+    // TODO: Log to activity log when model is added
+    // await prisma.activityLog.create({
+    //   data: {
+    //     userId,
+    //     action: 'API_ERROR',
+    //     resource: 'openai',
+    //     metadata: {
+    //       error: error.message,
+    //       code: error.code,
+    //       type: error.type,
+    //     },
+    //   },
+    // });
+    console.error('OpenAI API Error:', error);
   }
   
   // Additional helper methods

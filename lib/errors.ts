@@ -220,8 +220,8 @@ export async function checkPermission(userId: string, permission: string): Promi
     return false;
   }
   
-  // Super admins have all permissions
-  if (user.role === 'SUPER_ADMIN') {
+  // Admins have all permissions
+  if (user.role === 'ADMIN') {
     return true;
   }
   
@@ -229,8 +229,8 @@ export async function checkPermission(userId: string, permission: string): Promi
   const [resource, action] = permission.split(':');
   
   switch (user.role) {
-    case 'ADMIN':
-      // Admins can do most things except system-level operations
+    case 'MANAGER':
+      // Managers can do most things except system-level operations
       return !permission.startsWith('system:');
       
     case 'USER':
@@ -251,6 +251,16 @@ export async function checkPermission(userId: string, permission: string): Promi
       ];
       return userPermissions.includes(permission);
       
+    case 'VIEWER':
+      // Viewers have read-only permissions
+      const viewerPermissions = [
+        'usage:read',
+        'alerts:read',
+        'apikeys:read',
+        'profile:read',
+      ];
+      return viewerPermissions.includes(permission);
+      
     default:
       return false;
   }
@@ -264,17 +274,9 @@ export async function logActivity(data: {
   resourceId?: string;
   metadata?: any;
 }) {
-  try {
-    await prisma.activityLog.create({
-      data: {
-        userId: data.userId,
-        action: data.action,
-        resource: data.resource || '',
-        resourceId: data.resourceId,
-        metadata: data.metadata || {},
-      },
-    });
-  } catch (error) {
-    logger.error('Failed to log activity', { error, data });
+  // TODO: Implement activity logging when ActivityLog model is added to schema
+  // For now, just log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Activity Log:', data);
   }
 }

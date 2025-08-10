@@ -128,7 +128,7 @@ export class NotificationRealtimeService implements RealtimeService {
     const failedConnections: string[] = []
 
     // Send to all user connections
-    for (const connectionId of userConnections) {
+    for (const connectionId of Array.from(userConnections)) {
       try {
         const success = await this.sendToConnection(connectionId, message)
         if (success) {
@@ -143,7 +143,7 @@ export class NotificationRealtimeService implements RealtimeService {
     }
 
     // Clean up failed connections
-    for (const connectionId of failedConnections) {
+    for (const connectionId of Array.from(failedConnections)) {
       await this.disconnect(connectionId)
     }
 
@@ -371,7 +371,7 @@ export class NotificationRealtimeService implements RealtimeService {
     const staleConnections: string[] = []
 
     // Find stale connections
-    for (const [connectionId, connection] of this.connections) {
+    for (const [connectionId, connection] of Array.from(this.connections)) {
       const timeSinceLastPing = now.getTime() - connection.lastPing.getTime()
       if (timeSinceLastPing > this.config.connectionTimeoutMs) {
         staleConnections.push(connectionId)
@@ -399,7 +399,7 @@ export class NotificationRealtimeService implements RealtimeService {
 
     let cleanedQueues = 0
 
-    for (const [userId, queue] of this.messageQueues) {
+    for (const [userId, queue] of Array.from(this.messageQueues)) {
       // Check if user has any recent activity or messages
       const hasRecentMessages = queue.some(msg => 
         msg.timestamp > cutoff

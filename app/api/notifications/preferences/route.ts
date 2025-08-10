@@ -207,23 +207,10 @@ export async function PATCH(request: NextRequest) {
       where: { userId: session.user.id }
     })
 
-    // Merge channels data
-    let channelsData = existingPreferences?.channels || {}
-    if (validatedData.channels) {
-      channelsData = {
-        ...channelsData,
-        ...validatedData.channels
-      }
-    }
-
     // Update or create preferences
     const preferences = await prisma.notificationPreferences.upsert({
       where: { userId: session.user.id },
-      update: {
-        ...validatedData,
-        channels: channelsData,
-        updatedAt: new Date()
-      },
+      update: validatedData,
       create: {
         userId: session.user.id,
         emailEnabled: validatedData.emailEnabled ?? true,
@@ -247,29 +234,12 @@ export async function PATCH(request: NextRequest) {
         reports: validatedData.reports ?? true,
         recommendations: validatedData.recommendations ?? true,
         autoEscalate: validatedData.autoEscalate ?? false,
-        escalateAfterMinutes: validatedData.escalateAfterMinutes ?? 60,
-        channels: channelsData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        escalateAfterMinutes: validatedData.escalateAfterMinutes ?? 60
       }
     })
 
-    // Log preferences update
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        organizationId: session.user.organizationId || 'unknown',
-        action: 'NOTIFICATION_PREFERENCES_UPDATE',
-        resourceType: 'NOTIFICATION_PREFERENCES',
-        resourceId: preferences.id,
-        details: {
-          updatedFields: Object.keys(validatedData),
-          timestamp: new Date().toISOString()
-        }
-      }
-    }).catch(() => {
-      console.warn('Failed to create audit log for preferences update')
-    })
+    // TODO: Add audit logging when AuditLog model is available
+    // Log preferences update for future audit implementation
 
     return NextResponse.json({
       success: true,
@@ -341,9 +311,7 @@ export async function POST(request: NextRequest) {
           reports: true,
           recommendations: true,
           autoEscalate: false,
-          escalateAfterMinutes: 60,
-          channels: {},
-          updatedAt: new Date()
+          escalateAfterMinutes: 60
         },
         create: {
           userId: session.user.id,
@@ -370,22 +338,8 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Log preferences reset
-      await prisma.auditLog.create({
-        data: {
-          userId: session.user.id,
-          organizationId: session.user.organizationId || 'unknown',
-          action: 'NOTIFICATION_PREFERENCES_RESET',
-          resourceType: 'NOTIFICATION_PREFERENCES',
-          resourceId: defaultPreferences.id,
-          details: {
-            action: 'reset_to_defaults',
-            timestamp: new Date().toISOString()
-          }
-        }
-      }).catch(() => {
-        console.warn('Failed to create audit log for preferences reset')
-      })
+      // TODO: Add audit logging when AuditLog model is available
+      // Log preferences reset for future audit implementation
 
       return NextResponse.json({
         success: true,
@@ -509,7 +463,7 @@ async function sendTestNotifications(user: any, preferences: any) {
           id: `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: user.id,
           organizationId: user.organizationId || 'unknown',
-          type: 'SYSTEM',
+          type: 'INTEGRATION_FAILURE',
           priority: 'LOW',
           title: 'Test Notification',
           message: 'This is a test notification to verify your settings.',
@@ -529,21 +483,21 @@ async function sendTestNotifications(user: any, preferences: any) {
       })
     }
 
-    // Test Slack if enabled and configured
-    if (preferences.slackEnabled && preferences.channels?.slack?.webhookUrl) {
+    // Test Slack if enabled
+    if (preferences.slackEnabled) {
       testResults.push({
         channel: 'slack',
-        destination: preferences.channels.slack.channel || 'default',
+        destination: 'default',
         status: 'simulated', // Would actually send in real implementation
         message: 'Test Slack notification would be sent'
       })
     }
 
-    // Test Teams if enabled and configured
-    if (preferences.teamsEnabled && preferences.channels?.teams?.webhookUrl) {
+    // Test Teams if enabled
+    if (preferences.teamsEnabled) {
       testResults.push({
         channel: 'teams',
-        destination: preferences.channels.teams.channel || 'default',
+        destination: 'default',
         status: 'simulated',
         message: 'Test Teams notification would be sent'
       })

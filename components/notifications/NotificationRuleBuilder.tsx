@@ -58,10 +58,10 @@ interface NotificationRuleBuilderProps {
 }
 
 const ruleTypes = [
-  { value: 'COST_ALERT', label: 'Cost Alert', icon: DollarSign },
-  { value: 'USAGE_ALERT', label: 'Usage Alert', icon: TrendingUp },
-  { value: 'SYSTEM_ALERT', label: 'System Alert', icon: AlertTriangle },
-  { value: 'TEAM_ALERT', label: 'Team Alert', icon: Users }
+  { value: 'COST_THRESHOLD_WARNING', label: 'Cost Alert', icon: DollarSign },
+  { value: 'USAGE_QUOTA_WARNING', label: 'Usage Alert', icon: TrendingUp },
+  { value: 'INTEGRATION_FAILURE', label: 'System Alert', icon: AlertTriangle },
+  { value: 'NEW_TEAM_MEMBER', label: 'Team Alert', icon: Users }
 ] as const
 
 const priorities = [
@@ -113,7 +113,7 @@ export function NotificationRuleBuilder({
   const [formData, setFormData] = useState<Partial<NotificationRule>>({
     name: '',
     description: '',
-    type: 'COST_ALERT',
+    type: 'COST_THRESHOLD_WARNING',
     enabled: true,
     priority: 'MEDIUM',
     threshold: 100,

@@ -1,5 +1,6 @@
 // Central database exports
-export { prisma } from '../prisma'
+import { prisma } from '../prisma'
+export { prisma }
 export * from '../services/database'
 export * from '../services/encryption'
 
@@ -29,9 +30,9 @@ export async function isDatabaseConnected(): Promise<boolean> {
 
 // Transaction helper
 export async function withTransaction<T>(
-  fn: (tx: typeof prisma) => Promise<T>
+  fn: (tx: any) => Promise<T>
 ): Promise<T> {
-  return prisma.$transaction(fn)
+  return prisma.$transaction(fn as any) as Promise<T>
 }
 
 // Cleanup function for testing or shutdown

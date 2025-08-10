@@ -64,11 +64,13 @@ export class EmailNotificationChannel implements NotificationChannel {
       return {
         success: false,
         channel: 'EMAIL',
+        destination: notification.userId,
         error: 'No email provider configured',
-        timestamp: new Date(),
+        attempts: 0,
         metadata: {
           skipped: true,
-          reason: 'No email provider configured'
+          reason: 'No email provider configured',
+          timestamp: new Date()
         }
       }
     }
@@ -99,7 +101,7 @@ export class EmailNotificationChannel implements NotificationChannel {
           return result
         } catch (error) {
           lastError = error as Error
-          console.warn(`Email provider ${provider} failed:`, error.message)
+          console.warn(`Email provider ${provider} failed:`, (error as Error).message)
           
           // Continue to next provider if available
           if (provider === providers[providers.length - 1]) {
@@ -120,7 +122,7 @@ export class EmailNotificationChannel implements NotificationChannel {
         success: false,
         channel: 'EMAIL',
         destination: this.getDestination(channelConfig),
-        error: error.message,
+        error: (error as Error).message,
         latency,
         attempts: 1,
         metadata: {
@@ -352,7 +354,7 @@ export class EmailNotificationChannel implements NotificationChannel {
       if (error instanceof ChannelError) {
         throw error
       }
-      throw new ChannelError(`SendGrid send failed: ${error.message}`, 'EMAIL')
+      throw new ChannelError(`SendGrid send failed: ${(error as Error).message}`, 'EMAIL')
     }
   }
 
@@ -421,7 +423,7 @@ export class EmailNotificationChannel implements NotificationChannel {
       if (error instanceof ChannelError) {
         throw error
       }
-      throw new ChannelError(`AWS SES send failed: ${error.message}`, 'EMAIL')
+      throw new ChannelError(`AWS SES send failed: ${(error as Error).message}`, 'EMAIL')
     }
   }
 

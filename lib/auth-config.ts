@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
             organization = await prisma.organization.create({
               data: {
                 name: company,
-                domain: user.email?.split('@')[1],
+                domain: user.email?.split('@')[1] || '',
                 subscription: 'FREE',
               }
             })
@@ -106,12 +106,13 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.organizationId = token.organizationId as string
-        session.user.organization = token.organization as any
-        session.user.company = token.company as string
-        session.user.isEnterpriseUser = isEnterpriseEmail(session.user.email || '')
+        const user = session.user as any
+        user.id = token.id as string
+        user.role = token.role as string
+        user.organizationId = token.organizationId as string
+        user.organization = token.organization as any
+        user.company = token.company as string
+        user.isEnterpriseUser = isEnterpriseEmail(user.email || '')
       }
       return session
     },

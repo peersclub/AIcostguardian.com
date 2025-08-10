@@ -94,10 +94,8 @@ async function main() {
   
   for (const keyData of apiKeys) {
     try {
-      // Encrypt the API key
-      const encryptedString = encrypt(keyData.sampleKey)
-      const [iv, tag, ...encryptedParts] = encryptedString.split(':')
-      const encryptedKey = encryptedParts.join(':')
+      // Encrypt the API key (encryption service handles iv/tag internally)
+      const encryptedKey = encrypt(keyData.sampleKey)
 
       await prisma.apiKey.upsert({
         where: {
@@ -111,15 +109,8 @@ async function main() {
           userId: mainUser.id,
           provider: keyData.provider,
           encryptedKey,
-          iv,
-          tag,
-          label: keyData.label,
           isActive: true,
-          organizationId: organization.id,
-          metadata: {
-            environment: 'production',
-            addedBy: 'seed-script'
-          }
+          organizationId: organization.id
         }
       })
       console.log(`✅ Created ${keyData.provider} API key (sample - replace with real key)`)
@@ -141,15 +132,15 @@ async function main() {
       organizationId: organization.id,
       provider: 'OPENAI' as const,
       model: 'gpt-4o',
-      operation: 'completion',
-      inputTokens: 5000,
-      outputTokens: 3000,
+      promptTokens: 5000,
+      completionTokens: 3000,
       totalTokens: 8000,
       cost: 0.12,
-      responseTime: 2500,
-      statusCode: 200,
       timestamp: yesterday,
       metadata: {
+        operation: 'completion',
+        responseTime: 2500,
+        statusCode: 200,
         endpoint: '/api/chat',
         success: true
       }
@@ -157,17 +148,17 @@ async function main() {
     {
       userId: mainUser.id,
       organizationId: organization.id,
-      provider: 'ANTHROPIC' as const,
+      provider: 'CLAUDE' as const,
       model: 'claude-3-5-sonnet-20241022',
-      operation: 'completion',
-      inputTokens: 3000,
-      outputTokens: 2000,
+      promptTokens: 3000,
+      completionTokens: 2000,
       totalTokens: 5000,
       cost: 0.09,
-      responseTime: 1800,
-      statusCode: 200,
       timestamp: twoDaysAgo,
       metadata: {
+        operation: 'completion',
+        responseTime: 1800,
+        statusCode: 200,
         endpoint: '/api/chat',
         success: true
       }
@@ -175,17 +166,17 @@ async function main() {
     {
       userId: mainUser.id,
       organizationId: organization.id,
-      provider: 'GOOGLE' as const,
+      provider: 'GEMINI' as const,
       model: 'gemini-1.5-pro',
-      operation: 'completion',
-      inputTokens: 10000,
-      outputTokens: 5000,
+      promptTokens: 10000,
+      completionTokens: 5000,
       totalTokens: 15000,
       cost: 0.07,
-      responseTime: 3200,
-      statusCode: 200,
       timestamp: today,
       metadata: {
+        operation: 'completion',
+        responseTime: 3200,
+        statusCode: 200,
         endpoint: '/api/chat',
         success: true
       }
@@ -202,30 +193,30 @@ async function main() {
   // 6. Create alerts
   const alerts = [
     {
-      organizationId: organization.id,
-      type: 'USAGE_SPIKE' as const,
-      severity: 'MEDIUM' as const,
-      title: 'Unusual API usage detected',
-      message: 'API usage has increased by 150% compared to last week',
-      isRead: false,
+      userId: mainUser.id,
+      type: 'COST_THRESHOLD',
+      provider: 'OPENAI',
+      threshold: 100,
+      message: 'OpenAI API usage has exceeded $100',
       metadata: {
-        currentUsage: 15000,
-        previousUsage: 6000,
-        percentageIncrease: 150
-      }
+        severity: 'HIGH',
+        currentUsage: 105,
+        percentageOverage: 5
+      },
+      isActive: true
     },
     {
-      organizationId: organization.id,
-      type: 'BUDGET_EXCEEDED' as const,
-      severity: 'HIGH' as const,
-      title: 'Approaching monthly budget limit',
-      message: 'You have used 85% of your monthly API budget',
-      isRead: false,
+      userId: mainUser.id,
+      type: 'COST_THRESHOLD',
+      provider: 'CLAUDE',
+      threshold: 50,
+      message: 'Claude API usage approaching $50 limit',
       metadata: {
-        budgetUsed: 850,
-        budgetLimit: 1000,
-        percentageUsed: 85
-      }
+        severity: 'MEDIUM',
+        currentUsage: 45,
+        percentageUsed: 90
+      },
+      isActive: true
     }
   ]
 
@@ -248,29 +239,15 @@ async function main() {
       update: {},
       create: {
         userId: mainUser.id,
-        email: true,
-        push: true,
-        sms: false,
-        slack: false,
-        teams: false,
-        webhook: false,
-        // Alert preferences
-        costAlerts: true,
-        usageAlerts: true,
-        performanceAlerts: true,
-        securityAlerts: true,
-        // Thresholds
-        costThreshold: 100,
-        usageThreshold: 10000,
-        // Frequency
-        dailyDigest: true,
-        weeklyReport: true,
-        monthlyReport: true,
-        // Quiet hours
+        emailEnabled: true,
+        pushEnabled: true,
+        smsEnabled: false,
+        slackEnabled: false,
+        teamsEnabled: false,
+        inAppEnabled: true,
         quietHoursEnabled: true,
         quietHoursStart: '22:00',
-        quietHoursEnd: '08:00',
-        timezone: 'America/New_York'
+        quietHoursEnd: '08:00'
       }
     })
     console.log('✅ Created notification preferences')
@@ -321,6 +298,9 @@ async function main() {
   console.log('✅ Created budgets')
 
   // 9. Create subscription (if it exists in your schema)
+  // Note: Subscription model doesn't exist in current schema
+  // Uncomment and modify when subscription model is added
+  /*
   try {
     await prisma.subscription.create({
       data: {
@@ -340,6 +320,7 @@ async function main() {
   } catch (error) {
     console.log('⚠️  Subscription table might not exist:', error)
   }
+  */
 
   console.log('\n' + '='.repeat(60))
   console.log('🎉 DATABASE SETUP COMPLETE!')

@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import Link from 'next/link'
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState([])
+  const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -185,7 +185,7 @@ export default function NotificationsPage() {
                                 <h3 className="font-semibold">{notification.title}</h3>
                                 <Badge variant={
                                   notification.priority === 'CRITICAL' ? 'destructive' :
-                                  notification.priority === 'HIGH' ? 'warning' :
+                                  notification.priority === 'HIGH' ? 'secondary' :
                                   'default'
                                 }>
                                   {notification.priority}

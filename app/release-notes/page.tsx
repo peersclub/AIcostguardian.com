@@ -459,28 +459,28 @@ export default function ReleaseNotesPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="justify-start">
                 <a href="https://github.com/peersclub/AIcostguardian.com/issues" target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Report Issues on GitHub
                 </a>
               </Button>
               
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="justify-start">
                 <a href="mailto:feedback@aicostguardian.com">
                   <Mail className="h-4 w-4 mr-2" />
                   Request Features
                 </a>
               </Button>
               
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="justify-start">
                 <a href="https://roadmap.aicostguardian.com" target="_blank" rel="noopener noreferrer">
                   <Star className="h-4 w-4 mr-2" />
                   Vote on Features
                 </a>
               </Button>
               
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="justify-start">
                 <a href="https://discord.gg/aicostguardian" target="_blank" rel="noopener noreferrer">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Join Discussion
