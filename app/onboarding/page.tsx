@@ -8,16 +8,20 @@ import Link from 'next/link'
 import { Logo } from '@/components/ui/Logo'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { AI_PROVIDER_IDS } from '@/lib/ai-providers-config'
+import { useSession } from 'next-auth/react'
+import { toast } from 'sonner'
 
 export default function Onboarding() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
   const [onboardingData, setOnboardingData] = useState({
-    // Step 1: Company Info
-    companyName: '',
+    // Step 1: Organization Info
+    organizationName: '',
+    organizationDomain: '',
     industry: '',
     companySize: '',
     role: '',
@@ -31,6 +35,7 @@ export default function Onboarding() {
     goals: [] as string[],
     budgetLimit: '',
     alertThreshold: '80',
+    subscription: 'FREE' as 'FREE' | 'STARTER' | 'GROWTH' | 'SCALE' | 'ENTERPRISE',
     
     // Step 4: API Keys (optional)
     apiKeys: {
@@ -89,17 +94,133 @@ export default function Onboarding() {
   }
 
   const completeOnboarding = async () => {
+    if (!session?.user?.email || !session?.user?.name) {
+      toast.error('Please sign in to continue')
+      router.push('/auth/signin')
+      return
+    }
+
     setIsLoading(true)
     
-    // Simulate API call to save onboarding data
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      // Step 1: Create organization
+      const orgResponse = await fetch('/api/organizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: onboardingData.organizationName,
+          domain: onboardingData.organizationDomain,
+          adminEmail: session.user.email,
+          adminName: session.user.name,
+          subscription: determineSubscriptionPlan(),
+          spendLimit: parseFloat(onboardingData.budgetLimit) || undefined
+        })
+      })
+
+      if (!orgResponse.ok) {
+        const error = await orgResponse.json()
+        throw new Error(error.error || 'Failed to create organization')
+      }
+
+      const organization = await orgResponse.json()
+
+      // Step 2: Save API keys if provided
+      const apiKeyPromises = []
+      
+      if (onboardingData.apiKeys.openai) {
+        apiKeyPromises.push(
+          fetch('/api/api-keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: 'OPENAI',
+              key: onboardingData.apiKeys.openai,
+              organizationId: organization.id
+            })
+          })
+        )
+      }
+
+      if (onboardingData.apiKeys.claude) {
+        apiKeyPromises.push(
+          fetch('/api/api-keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: 'ANTHROPIC',
+              key: onboardingData.apiKeys.claude,
+              organizationId: organization.id
+            })
+          })
+        )
+      }
+
+      if (onboardingData.apiKeys.gemini) {
+        apiKeyPromises.push(
+          fetch('/api/api-keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: 'GOOGLE',
+              key: onboardingData.apiKeys.gemini,
+              organizationId: organization.id
+            })
+          })
+        )
+      }
+
+      if (onboardingData.apiKeys.grok) {
+        apiKeyPromises.push(
+          fetch('/api/api-keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: 'XAI',
+              key: onboardingData.apiKeys.grok,
+              organizationId: organization.id
+            })
+          })
+        )
+      }
+
+      await Promise.all(apiKeyPromises)
+
+      // Step 3: Create initial budget if provided
+      if (onboardingData.budgetLimit) {
+        await fetch('/api/budgets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organizationId: organization.id,
+            name: 'Monthly AI Budget',
+            amount: parseFloat(onboardingData.budgetLimit),
+            period: 'MONTHLY',
+            alertThreshold: parseFloat(onboardingData.alertThreshold) / 100
+          })
+        })
+      }
+
+      toast.success('Organization setup complete!')
       router.push('/dashboard')
-    }, 2000)
+    } catch (error) {
+      console.error('Onboarding error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to complete setup')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const determineSubscriptionPlan = () => {
+    const spend = onboardingData.monthlyAISpend
+    if (spend === '5000+') return 'ENTERPRISE'
+    if (spend === '1000-5000') return 'SCALE'
+    if (spend === '500-1000') return 'GROWTH'
+    if (spend === '100-500') return 'STARTER'
+    return 'FREE'
   }
 
   const steps = [
-    { number: 1, title: 'Company Info', description: 'Tell us about your business' },
+    { number: 1, title: 'Organization Setup', description: 'Create your organization' },
     { number: 2, title: 'AI Usage', description: 'Current AI tools and spending' },
     { number: 3, title: 'Goals & Budget', description: 'Set your tracking preferences' },
     { number: 4, title: 'API Setup', description: 'Connect your AI providers' }
@@ -144,14 +265,28 @@ export default function Onboarding() {
         return (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Company Name</label>
+              <label className="block text-sm font-medium text-gray-300 mb-3">Organization Name</label>
               <input
                 type="text"
-                value={onboardingData.companyName}
-                onChange={(e) => handleInputChange('companyName', e.target.value)}
-                placeholder="Enter your company name"
+                value={onboardingData.organizationName}
+                onChange={(e) => handleInputChange('organizationName', e.target.value)}
+                placeholder="Enter your organization name"
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">Organization Domain</label>
+              <input
+                type="text"
+                value={onboardingData.organizationDomain}
+                onChange={(e) => handleInputChange('organizationDomain', e.target.value)}
+                placeholder="e.g., assetworks.com"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                required
+              />
+              <p className="text-sm text-gray-400 mt-2">This will be used to identify your organization</p>
             </div>
 
             <div>
@@ -534,7 +669,8 @@ export default function Onboarding() {
               {currentStep < 4 ? (
                 <button
                   onClick={nextStep}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium"
+                  disabled={currentStep === 1 && (!onboardingData.organizationName || !onboardingData.organizationDomain)}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2">
                     <span>Next Step</span>

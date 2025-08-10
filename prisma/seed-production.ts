@@ -8,25 +8,13 @@ async function main() {
 
   // 1. Create AssetWorks Organization
   const organization = await prisma.organization.upsert({
-    where: { id: 'assetworks-org' },
+    where: { domain: 'assetworks.com' },
     update: {},
     create: {
-      id: 'assetworks-org',
       name: 'AssetWorks',
       domain: 'assetworks.com',
-      plan: 'ENTERPRISE',
-      billingEmail: 'billing@assetworks.com',
-      stripeCustomerId: 'cus_assetworks_001',
-      settings: {
-        allowedProviders: ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'XAI', 'PERPLEXITY'],
-        maxMonthlySpend: 10000,
-        alertThreshold: 0.8
-      },
-      metadata: {
-        industry: 'Technology',
-        size: 'Enterprise',
-        created: new Date().toISOString()
-      }
+      subscription: 'ENTERPRISE',
+      spendLimit: 10000
     }
   })
   console.log('✅ Created organization:', organization.name)
