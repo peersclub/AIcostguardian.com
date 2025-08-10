@@ -120,9 +120,11 @@ export async function POST(request: NextRequest) {
         })
         
         if (!organization) {
+          const domain = session.user.email.split('@')[1]
           organization = await prisma.organization.create({
             data: {
               name: organizationName,
+              domain: domain,
               subscription: 'FREE'
             }
           })
@@ -156,16 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Decrypt the API key
-    let apiKey: string
-    try {
-      const encryptedString = `${apiKeyRecord.iv}:${apiKeyRecord.tag}:${apiKeyRecord.encryptedKey}`
-      apiKey = decrypt(encryptedString)
-    } catch (error) {
-      console.error('Failed to decrypt API key:', error)
-      return NextResponse.json({ 
-        error: 'Failed to decrypt API key. Please re-add your API key in Settings.' 
-      }, { status: 500 })
-    }
+    const apiKey = decrypt(apiKeyRecord.encryptedKey)
 
     // Make the API call based on provider
     const startTime = Date.now()
@@ -281,9 +274,11 @@ export async function GET(request: NextRequest) {
         })
         
         if (!organization) {
+          const domain = session.user.email.split('@')[1]
           organization = await prisma.organization.create({
             data: {
               name: organizationName,
+              domain: domain,
               subscription: 'FREE'
             }
           })
@@ -324,7 +319,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       models: availableModels,
-      providers: [...new Set(availableModels.map(m => m.provider))]
+      providers: Array.from(new Set(availableModels.map(m => m.provider)))
     })
 
   } catch (error) {
