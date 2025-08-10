@@ -462,50 +462,5 @@ function validateConnectionToken(userId: string, connectionId: string, token: st
   }
 }
 
-/**
- * Utility function to broadcast to user's active connections
- */
-export function broadcastToUser(userId: string, message: any): number {
-  const userConnections = Array.from(activeConnections.values())
-    .filter(conn => conn.userId === userId)
-
-  let sentCount = 0
-  for (const connection of userConnections) {
-    try {
-      // In a real implementation, this would use the actual socket
-      // connection.socket.emit('notification', message)
-      console.log(`Broadcasting to user ${userId}:`, message)
-      sentCount++
-    } catch (error) {
-      console.error('Failed to broadcast to connection:', error)
-    }
-  }
-
-  return sentCount
-}
-
-/**
- * Cleanup inactive connections
- */
-export function cleanupInactiveConnections(): number {
-  const now = Date.now()
-  const inactiveThreshold = 5 * 60 * 1000 // 5 minutes
-  let cleanedCount = 0
-
-  for (const [connectionId, connection] of activeConnections.entries()) {
-    if (now - connection.lastPing.getTime() > inactiveThreshold) {
-      try {
-        connection.socket?.disconnect()
-        activeConnections.delete(connectionId)
-        cleanedCount++
-      } catch (error) {
-        console.error(`Failed to cleanup connection ${connectionId}:`, error)
-      }
-    }
-  }
-
-  return cleanedCount
-}
-
-// Export utilities for use in other parts of the application
-export { activeConnections, broadcastToUser, cleanupInactiveConnections }
+// Broadcast and cleanup utilities have been moved to @/lib/services/websocket-manager
+// to comply with Next.js route export requirements

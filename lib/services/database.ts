@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma'
-import { UserRole, Plan, AlertType } from '@prisma/client'
+import { UserRole, SubscriptionTier, AlertType } from '@prisma/client'
 import { encrypt, decrypt } from '@/lib/encryption'
 
 // User Services
@@ -41,7 +41,7 @@ export async function getUserByEmail(email: string) {
         data: {
           name: company,
           domain: email.split('@')[1],
-          plan: 'FREE',
+          subscription: 'FREE',
         }
       })
     }
@@ -83,7 +83,7 @@ export async function createUser(data: {
       data: {
         name: company,
         domain: data.email.split('@')[1],
-        plan: 'FREE',
+        subscription: 'FREE',
       },
     })
   }
@@ -121,10 +121,7 @@ export async function saveApiKey(
   organizationId: string
 ) {
   // Encrypt the API key using AES-256-GCM
-  const encryptedString = encrypt(apiKey)
-  // Parse the encrypted string format: iv:tag:encryptedData
-  const [iv, tag, ...encryptedParts] = encryptedString.split(':')
-  const encryptedKey = encryptedParts.join(':') // In case encrypted data contains colons
+  const encryptedKey = encrypt(apiKey)
   
   // Normalize provider to uppercase to match Prisma enum
   const normalizedProvider = provider.toUpperCase() as any
@@ -138,8 +135,6 @@ export async function saveApiKey(
     },
     update: {
       encryptedKey,
-      iv,
-      tag,
       isActive: true,
       lastUsed: new Date(),
     },
@@ -147,8 +142,6 @@ export async function saveApiKey(
       userId,
       provider: normalizedProvider,
       encryptedKey,
-      iv,
-      tag,
       organizationId,
       isActive: true,
     },
@@ -349,8 +342,7 @@ export async function getOrganization(organizationId: string) {
 
 export async function updateOrganization(organizationId: string, data: {
   name?: string
-  plan?: Plan
-  billingEmail?: string
+  subscription?: SubscriptionTier
 }) {
   return prisma.organization.update({
     where: { id: organizationId },

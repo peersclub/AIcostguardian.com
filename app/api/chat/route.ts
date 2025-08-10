@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           organization = await prisma.organization.create({
             data: {
               name: organizationName,
-              plan: 'FREE'
+              subscription: 'FREE'
             }
           })
         }
@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
           organization = await prisma.organization.create({
             data: {
               name: organizationName,
-              plan: 'FREE'
+              subscription: 'FREE'
             }
           })
         }

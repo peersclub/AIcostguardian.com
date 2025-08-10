@@ -77,7 +77,7 @@ export const authOptions: NextAuthOptions = {
               data: {
                 name: company,
                 domain: user.email?.split('@')[1],
-                plan: 'FREE',
+                subscription: 'FREE',
               }
             })
           }

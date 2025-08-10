@@ -39,7 +39,7 @@ export async function GET() {
           data: {
             name: organizationName,
             domain: session.user.email.split('@')[1],
-            plan: 'FREE'
+            subscription: 'FREE'
           }
         })
       }
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
           data: {
             name: organizationName,
             domain: session.user.email.split('@')[1],
-            plan: 'FREE'
+            subscription: 'FREE'
           }
         })
       }
@@ -148,10 +148,7 @@ export async function POST(request: Request) {
       }
     })
 
-    const encryptedString = encrypt(apiKey)
-    // Parse the encrypted string format: iv:tag:encryptedData
-    const [iv, tag, ...encryptedParts] = encryptedString.split(':')
-    const encryptedKey = encryptedParts.join(':') // In case encrypted data contains colons
+    const encryptedKey = encrypt(apiKey)
 
     if (existingKey) {
       // Update existing key
@@ -159,8 +156,6 @@ export async function POST(request: Request) {
         where: { id: existingKey.id },
         data: {
           encryptedKey,
-          iv,
-          tag,
           isActive: true,
           lastUsed: new Date()
         }
@@ -199,8 +194,6 @@ export async function POST(request: Request) {
         data: {
           provider: normalizedProvider as any,
           encryptedKey,
-          iv,
-          tag,
           userId: user.id,
           organizationId: organizationId
         }
@@ -251,7 +244,7 @@ export async function DELETE(request: Request) {
           data: {
             name: organizationName,
             domain: session.user.email.split('@')[1],
-            plan: 'FREE'
+            subscription: 'FREE'
           }
         })
       }

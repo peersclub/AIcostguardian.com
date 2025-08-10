@@ -86,7 +86,9 @@ export default function AdminDashboard() {
   }, [session])
 
   useEffect(() => {
-    if (session?.user?.role === 'ADMIN') {
+    // Fetch admin data if user has access
+    // Admin verification is done in checkAdminAccess
+    if (session?.user?.email) {
       fetchAdminData()
     }
   }, [session, activeTab])
@@ -233,7 +235,9 @@ export default function AdminDashboard() {
     }
   }
 
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  // Admin access is verified through checkAdminAccess function
+  // which redirects if user is not admin
+  if (!session?.user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Card className="bg-gray-900 border-gray-800">

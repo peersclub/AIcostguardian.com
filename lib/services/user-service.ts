@@ -74,8 +74,7 @@ async function ensureOrganizationExists(email: string) {
     data: {
       name: company,
       domain: domain,
-      plan: 'FREE',
-      billingEmail: email, // Use first user's email as billing email
+      subscription: 'FREE'
     }
   })
 

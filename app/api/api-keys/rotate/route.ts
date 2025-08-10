@@ -50,8 +50,7 @@ export async function POST(request: NextRequest) {
       data: {
         encryptedKey,
         isActive: true,
-        lastUsed: null, // Reset last used
-        updatedAt: new Date()
+        lastUsed: null // Reset last used
       }
     })
 
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
         provider: updatedKey.provider,
         isActive: updatedKey.isActive,
         createdAt: updatedKey.createdAt,
-        updatedAt: updatedKey.updatedAt
+        rotatedAt: new Date() // Use rotatedAt instead of updatedAt
       }
     })
 
