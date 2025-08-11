@@ -66,10 +66,28 @@ function DashboardV2Content() {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/dashboard/metrics?timeframe=${selectedTimeframe}`)
-      if (response.ok) {
-        const data = await response.json()
-        setDashboardData(data)
+      
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = 'Failed to fetch dashboard data'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If JSON parsing fails, try text
+          try {
+            errorMessage = await response.text()
+          } catch {
+            // Use default error message
+          }
+        }
+        console.error('Dashboard API error:', errorMessage)
+        return
       }
+      
+      const data = await response.json()
+      setDashboardData(data)
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
