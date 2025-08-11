@@ -60,7 +60,7 @@ export default function Navigation() {
       icon: Layers,
       visibility: 'visitor',
       children: [
-        { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all', badge: 'New' },
+        { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all' },
         { label: 'AI Models', href: '/models', icon: Brain, visibility: 'all' },
         { label: 'Integrations', href: '/integrations', icon: Globe, visibility: 'all' }
       ]
@@ -96,7 +96,13 @@ export default function Navigation() {
       href: '/dashboard',
       icon: LayoutDashboard,
       badge: 'Live',
-      visibility: 'auth'
+      visibility: 'auth',
+      children: [
+        { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, visibility: 'auth' },
+        { label: 'Usage Reports', href: '/analytics/usage', icon: FileText, visibility: 'auth' },
+        { label: 'Cost Trends', href: '/analytics/trends', icon: TrendingUp, visibility: 'auth' },
+        { label: 'Provider Insights', href: '/analytics/providers', icon: Globe, visibility: 'auth' }
+      ]
     },
     {
       label: 'AIOptimise',
@@ -106,39 +112,23 @@ export default function Navigation() {
       visibility: 'auth'
     },
     {
-      label: 'Analytics',
-      href: '#',
-      icon: BarChart3,
-      visibility: 'auth',
-      children: [
-        { label: 'Usage Reports', href: '/analytics/usage', icon: FileText, visibility: 'auth' },
-        { label: 'Cost Trends', href: '/analytics/trends', icon: TrendingUp, visibility: 'auth' },
-        { label: 'Provider Insights', href: '/analytics/providers', icon: Globe, visibility: 'auth' }
-      ]
-    },
-    {
-      label: 'Team',
-      href: '#',
-      icon: Users,
-      visibility: 'auth',
-      children: [
-        { label: 'Members', href: '/team/members', icon: Users, visibility: 'auth' },
-        { label: 'Permissions', href: '/team/permissions', icon: Shield, visibility: 'auth' },
-        { label: 'Usage Limits', href: '/team/limits', icon: CreditCard, visibility: 'auth' }
-      ]
-    },
-    {
       label: 'Cost Calculator',
       href: '/ai-cost-calculator',
       icon: Calculator,
-      visibility: 'auth',
-      badge: 'New'
+      visibility: 'auth'
     },
     {
       label: 'Settings',
       href: '/settings',
       icon: Settings,
-      visibility: 'auth'
+      visibility: 'auth',
+      children: [
+        { label: 'General Settings', href: '/settings', icon: Settings, visibility: 'auth' },
+        { label: 'Team Members', href: '/team/members', icon: Users, visibility: 'auth' },
+        { label: 'Permissions', href: '/team/permissions', icon: Shield, visibility: 'auth' },
+        { label: 'Usage Limits', href: '/team/limits', icon: CreditCard, visibility: 'auth' },
+        { label: 'Billing', href: '/billing', icon: CreditCard, visibility: 'auth' }
+      ]
     }
   ]
 
@@ -192,23 +182,31 @@ export default function Navigation() {
               {navigationItems.map((item) => (
                 <div key={item.label} className="relative">
                   {item.children ? (
-                    <button
+                    <div
                       onMouseEnter={() => setActiveDropdown(item.label)}
                       onMouseLeave={() => setActiveDropdown(null)}
-                      className={`
-                        flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                        ${isActive(item.href)
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }
-                      `}
                     >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                      <ChevronDown className={`w-3 h-3 transition-transform ${
-                        activeDropdown === item.label ? 'rotate-180' : ''
-                      }`} />
-                    </button>
+                      <button
+                        className={`
+                          flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                          ${item.children.some(child => isActive(child.href)) || isActive(item.href)
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          }
+                        `}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="ml-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                            {item.badge}
+                          </span>
+                        )}
+                        <ChevronDown className={`w-3 h-3 transition-transform ${
+                          activeDropdown === item.label ? 'rotate-180' : ''
+                        }`} />
+                      </button>
+                    </div>
                   ) : (
                     <Link
                       href={item.href}
@@ -269,12 +267,16 @@ export default function Navigation() {
           <div className="flex items-center gap-3">
             {/* Notifications - only for authenticated users */}
             {status === 'authenticated' && (
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link 
+                href="/notifications" 
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                title="View Notifications"
+              >
                 <Bell className="w-5 h-5" />
                 {notifications > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
-              </button>
+              </Link>
             )}
 
             {/* Demo Data Button - available for all */}
