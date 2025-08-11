@@ -263,12 +263,13 @@ export default function SettingsPage() {
         setTestResults({
           [providerId]: { 
             success: true, 
-            message: `✓ ${keyType} API key validated and saved successfully!`,
+            message: `✅ ${keyType} API key validated and saved successfully!`,
             keyType
           }
         })
         
-        setTimeout(() => setTestResults({}), 5000)
+        // Keep success message visible longer (10 seconds instead of 5)
+        setTimeout(() => setTestResults({}), 10000)
       } else {
         const data = await response.json()
         setTestResults({
@@ -490,13 +491,13 @@ export default function SettingsPage() {
           {/* Test Result Display */}
           {testResult && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`p-3 rounded-xl border ${
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className={`p-4 rounded-xl border-2 font-medium ${
                 testResult.success
-                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                  : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/50 text-green-400 shadow-lg shadow-green-500/20'
+                  : 'bg-gradient-to-r from-red-500/20 to-orange-500/20 border-red-500/50 text-red-400 shadow-lg shadow-red-500/20'
               }`}
             >
               <div className="flex items-center gap-2">
