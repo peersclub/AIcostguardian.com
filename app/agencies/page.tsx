@@ -560,9 +560,9 @@ export default function Agencies() {
                     <Card key={toolIndex} className="bg-gray-900/50 border-gray-800 hover:border-purple-500/50 transition-all">
                       <CardHeader>
                         <div className="flex items-center gap-3 mb-2">
-                          {tool.providerId ? (
-                            getAIProviderLogo(tool.providerId, 'w-6 h-6', true) || <tool.icon className="w-6 h-6 text-gray-400" />
-                          ) : tool.icon ? (
+                          {'providerId' in tool && tool.providerId ? (
+                            getAIProviderLogo(tool.providerId, 'w-6 h-6', true)
+                          ) : 'icon' in tool && tool.icon ? (
                             <tool.icon className="w-6 h-6 text-gray-400" />
                           ) : null}
                           <CardTitle className="text-lg text-white">{tool.name}</CardTitle>

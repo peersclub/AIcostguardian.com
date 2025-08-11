@@ -455,7 +455,9 @@ function UsageContent() {
                       <div key={provider} className="p-4 border border-gray-200 rounded-lg">
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center space-x-3">
-                            <span className="text-2xl">{providerInfo.logo}</span>
+                            {'logo' in providerInfo && (
+                              <span className="text-2xl">{providerInfo.logo}</span>
+                            )}
                             <div>
                               <h3 className="font-semibold text-gray-900">{providerInfo.name}</h3>
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: providerInfo.color }}></div>
@@ -518,7 +520,9 @@ function UsageContent() {
                       <div key={model} className="p-4 border border-gray-200 rounded-lg">
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center space-x-3">
-                            <span className="text-xl">{providerInfo.logo}</span>
+                            {'logo' in providerInfo && (
+                              <span className="text-xl">{providerInfo.logo}</span>
+                            )}
                             <div>
                               <h3 className="font-semibold text-gray-900">{modelInfo.name}</h3>
                               <div className="flex items-center space-x-2">
@@ -585,7 +589,9 @@ function UsageContent() {
                       <div key={usage.id} className="p-4 border border-gray-200 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">{providerInfo.logo}</span>
+                            {'logo' in providerInfo && (
+                              <span className="text-lg">{providerInfo.logo}</span>
+                            )}
                             <Badge variant="outline" className="font-mono text-xs">
                               {modelInfo.name}
                             </Badge>
