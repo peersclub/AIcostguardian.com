@@ -7,6 +7,7 @@ import {
   Key, Plus, Trash2, Eye, EyeOff, Check, X, 
   AlertCircle, Loader2, Shield, Sparkles, ExternalLink 
 } from 'lucide-react'
+import { apiPost, apiGet } from '@/lib/utils/api-client'
 
 interface ApiKey {
   id: string
@@ -43,10 +44,11 @@ export default function ApiKeyManager() {
 
   const fetchKeys = async () => {
     try {
-      const response = await fetch('/api/api-keys')
-      if (response.ok) {
-        const data = await response.json()
-        setKeys(data.keys || [])
+      const response = await apiGet('/api/api-keys')
+      if (response.ok && response.data) {
+        setKeys(response.data.keys || [])
+      } else {
+        console.error('Error fetching keys:', response.error)
       }
     } catch (error) {
       console.error('Error fetching keys:', error)
@@ -65,24 +67,20 @@ export default function ApiKeyManager() {
     setError('')
     
     try {
-      // Use centralized validation endpoint
-      const validationResponse = await fetch('/api/api-keys/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: apiKeyInput,
-          provider: selectedProvider,
-          test: true // Request test validation as well
-        })
+      // Use centralized validation endpoint with safe API client
+      const validationResponse = await apiPost('/api/api-keys/validate', {
+        apiKey: apiKeyInput,
+        provider: selectedProvider,
+        test: true // Request test validation as well
       })
-
-      const validationData = await validationResponse.json()
       
-      if (!validationResponse.ok || !validationData.valid) {
-        setError(`API key validation failed: ${validationData.error || 'Invalid API key'}`)
+      if (!validationResponse.ok || !validationResponse.data?.valid) {
+        setError(`API key validation failed: ${validationResponse.error || validationResponse.data?.error || 'Invalid API key'}`)
         setSaving(false)
         return
       }
+      
+      const validationData = validationResponse.data
 
       // Show detailed validation results
       const providerName = PROVIDERS.find(p => p.id === selectedProvider)?.name || selectedProvider

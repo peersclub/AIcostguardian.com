@@ -113,7 +113,7 @@ export default function UsageDashboard() {
     .slice(-7)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       {/* Controls */}
       <div className="flex flex-wrap gap-4 items-center">
         <Select value={days} onValueChange={setDays}>
@@ -152,61 +152,61 @@ export default function UsageDashboard() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gray-900/50 border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-200">
               Total Requests
             </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(summary.totalRequests)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{formatNumber(summary.totalRequests)}</div>
+            <p className="text-xs text-gray-400">
               {data.totalRecords} total records
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gray-900/50 border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-200">
               Total Cost
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCost(summary.totalCost)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{formatCost(summary.totalCost)}</div>
+            <p className="text-xs text-gray-400">
               Last {days} days
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gray-900/50 border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-200">
               Total Tokens
             </CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(summary.totalTokens)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{formatNumber(summary.totalTokens)}</div>
+            <p className="text-xs text-gray-400">
               Input + Output tokens
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gray-900/50 border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-200">
               Avg Latency
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.averageLatency}ms</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{summary.averageLatency}ms</div>
+            <p className="text-xs text-gray-400">
               Response time
             </p>
           </CardContent>
@@ -214,9 +214,9 @@ export default function UsageDashboard() {
       </div>
 
       {/* Provider Breakdown */}
-      <Card>
+      <Card className="bg-gray-900/50 border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
             <BarChart className="h-5 w-5" />
             Top Providers by Cost
           </CardTitle>

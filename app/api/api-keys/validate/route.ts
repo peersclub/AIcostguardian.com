@@ -4,17 +4,17 @@ import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
 import { ApiValidationService, type AIProvider } from '@/lib/services/api-validation.service'
+import { withErrorHandler, errorResponse, successResponse } from '@/lib/api/error-handler'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function POST(request: NextRequest) {
-  try {
+async function handler(request: NextRequest) {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponse('Unauthorized', 401)
     }
 
     const body = await request.json()
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        return errorResponse('User not found', 404)
       }
 
       const apiKey = await prisma.apiKey.findFirst({
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (!apiKey) {
-        return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+        return errorResponse('API key not found', 404)
       }
 
       decryptedKey = decrypt(apiKey.encryptedKey)
@@ -52,9 +52,7 @@ export async function POST(request: NextRequest) {
       decryptedKey = rawApiKey
       provider = providedProvider
     } else {
-      return NextResponse.json({ 
-        error: 'Either keyId or both apiKey and provider are required' 
-      }, { status: 400 })
+      return errorResponse('Either keyId or both apiKey and provider are required', 400)
     }
 
     // Map provider names to AIProvider type
@@ -73,9 +71,7 @@ export async function POST(request: NextRequest) {
     const normalizedProvider = providerMap[provider.toLowerCase()]
     
     if (!normalizedProvider) {
-      return NextResponse.json({ 
-        error: `Unsupported provider: ${provider}` 
-      }, { status: 400 })
+      return errorResponse(`Unsupported provider: ${provider}`, 400)
     }
 
     // Use centralized validation service
@@ -108,16 +104,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json(validationResult)
-
-  } catch (error) {
-    console.error('Error validating API key:', error)
-    
-    // Return a properly formatted JSON error response
-    return NextResponse.json({ 
-      valid: false,
-      error: error instanceof Error ? error.message : 'Failed to validate API key',
-      provider: 'unknown'
-    }, { status: 500 })
-  }
+    return successResponse(validationResult)
 }
+
+// Export wrapped handler
+export const POST = withErrorHandler(handler)

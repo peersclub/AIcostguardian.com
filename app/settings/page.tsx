@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import AuthWrapper from '@/components/AuthWrapper'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { LogoThemed } from '@/components/ui/LogoThemed'
 import {
   Settings as SettingsIcon,
   Key,
@@ -858,14 +859,17 @@ export default function SettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
-                <SettingsIcon className="w-8 h-8 text-white" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+                  <SettingsIcon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Settings</h1>
+                  <p className="text-gray-400">Manage your API keys with enterprise-grade security</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Settings</h1>
-                <p className="text-gray-400">Manage your API keys with enterprise-grade security</p>
-              </div>
+              <LogoThemed size="lg" showText={true} forceDark={true} />
             </div>
           </motion.div>
 
