@@ -1,14 +1,24 @@
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { 
+  BarChart3, Building2, Shield, Plug, Users, TrendingUp, 
+  CheckCircle, ArrowRight, Globe, Lock, Activity, Cpu,
+  Database, FileCheck, Briefcase, Award, ChevronRight,
+  Settings, LineChart, PieChart, Target, AlertTriangle
+} from 'lucide-react'
 
 export default function Enterprise() {
   const enterpriseFeatures = [
     {
       title: "Advanced Cost Analytics",
       description: "Deep insights into AI spending patterns across departments, teams, and projects",
-      icon: "📊",
+      icon: BarChart3,
+      color: "from-blue-500 to-indigo-500",
       features: [
         "Multi-dimensional cost analysis",
         "Department & project cost allocation",
@@ -19,7 +29,8 @@ export default function Enterprise() {
     {
       title: "Enterprise Governance",
       description: "Comprehensive controls and policies for large-scale AI operations",
-      icon: "🏛️",
+      icon: Building2,
+      color: "from-purple-500 to-pink-500",
       features: [
         "Custom approval workflows",
         "Spending policies & limits",
@@ -30,7 +41,8 @@ export default function Enterprise() {
     {
       title: "Advanced Security",
       description: "Enterprise-grade security with custom compliance requirements",
-      icon: "🔒",
+      icon: Shield,
+      color: "from-green-500 to-emerald-500",
       features: [
         "Private cloud deployment",
         "Custom security policies",
@@ -41,7 +53,8 @@ export default function Enterprise() {
     {
       title: "Custom Integrations",
       description: "Seamless integration with your existing enterprise systems",
-      icon: "🔌",
+      icon: Plug,
+      color: "from-orange-500 to-red-500",
       features: [
         "ERP system integration",
         "Custom API development",
@@ -54,28 +67,32 @@ export default function Enterprise() {
   const useCases = [
     {
       industry: "Financial Services",
-      logo: "🏦",
+      icon: Briefcase,
+      color: "from-blue-600 to-blue-800",
       challenge: "Managing AI costs across trading algorithms, risk analysis, and customer service",
       solution: "Department-level cost tracking with real-time budget monitoring and compliance reporting",
       results: "35% reduction in AI spending with improved risk management compliance"
     },
     {
       industry: "Healthcare",
-      logo: "🏥",
+      icon: Activity,
+      color: "from-green-600 to-teal-800",
       challenge: "Tracking AI costs for medical imaging, diagnostics, and research initiatives",
       solution: "Project-based cost allocation with HIPAA-compliant data handling and audit trails",
       results: "28% cost optimization while maintaining regulatory compliance"
     },
     {
       industry: "Technology",
-      logo: "💻",
+      icon: Cpu,
+      color: "from-purple-600 to-indigo-800",
       challenge: "Managing AI infrastructure costs across multiple product teams and environments",
       solution: "Multi-tenant cost tracking with automated scaling recommendations",
       results: "42% reduction in AI infrastructure costs through optimization insights"
     },
     {
       industry: "Manufacturing",
-      logo: "🏭",
+      icon: Settings,
+      color: "from-orange-600 to-red-800",
       challenge: "Optimizing AI costs for predictive maintenance and quality control systems",
       solution: "Real-time cost monitoring with predictive analytics for budget planning",
       results: "31% cost savings with improved operational efficiency"
@@ -83,10 +100,10 @@ export default function Enterprise() {
   ]
 
   const enterpriseStats = [
-    { metric: "99.99%", label: "Uptime SLA", description: "Enterprise-grade reliability" },
-    { metric: "$50M+", label: "AI Costs Tracked", description: "Across enterprise customers" },
-    { metric: "24/7", label: "Support", description: "Dedicated enterprise support" },
-    { metric: "30+", label: "Integrations", description: "Enterprise system connectors" }
+    { metric: "99.99%", label: "Uptime SLA", description: "Enterprise-grade reliability", icon: Activity },
+    { metric: "$50M+", label: "AI Costs Tracked", description: "Across enterprise customers", icon: TrendingUp },
+    { metric: "24/7", label: "Support", description: "Dedicated enterprise support", icon: Users },
+    { metric: "30+", label: "Integrations", description: "Enterprise system connectors", icon: Plug }
   ]
 
   const implementationProcess = [
@@ -94,339 +111,310 @@ export default function Enterprise() {
       step: "1",
       title: "Discovery & Planning",
       duration: "Week 1-2",
+      icon: Target,
       activities: [
         "Architecture assessment",
         "Requirements gathering",
         "Custom integration planning",
-        "Implementation roadmap"
+        "Compliance review"
       ]
     },
     {
       step: "2",
-      title: "Custom Setup",
+      title: "Implementation",
       duration: "Week 3-6",
+      icon: Settings,
       activities: [
-        "Private cloud deployment",
-        "Custom integrations development",
-        "Security configuration",
-        "Data migration & testing"
+        "Platform deployment",
+        "System integration",
+        "Data migration",
+        "Security configuration"
       ]
     },
     {
       step: "3",
-      title: "Training & Rollout",
+      title: "Training & Onboarding",
       duration: "Week 7-8",
+      icon: Users,
       activities: [
-        "Administrator training",
-        "User onboarding",
-        "Pilot program launch",
-        "Performance optimization"
+        "Team training sessions",
+        "Admin certification",
+        "Process documentation",
+        "Best practices workshop"
       ]
     },
     {
       step: "4",
-      title: "Ongoing Support",
+      title: "Optimization",
       duration: "Ongoing",
+      icon: TrendingUp,
       activities: [
-        "24/7 technical support",
-        "Regular health checks",
-        "Feature updates",
-        "Strategic consultations"
+        "Performance tuning",
+        "Cost optimization",
+        "Quarterly reviews",
+        "Feature expansion"
       ]
     }
   ]
 
+  const securityFeatures = [
+    { feature: "SOC 2 Type II Certified", icon: Award },
+    { feature: "GDPR & CCPA Compliant", icon: FileCheck },
+    { feature: "End-to-end Encryption", icon: Lock },
+    { feature: "Single Sign-On (SSO)", icon: Shield },
+    { feature: "Role-Based Access Control", icon: Users },
+    { feature: "Audit Logging", icon: Database }
+  ]
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge className="mb-6 bg-blue-100 text-blue-700 px-4 py-2">
-                🏢 Enterprise Solution
-              </Badge>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-                Scale AI cost management across your entire organization
-              </h1>
-              <p className="text-xl text-slate-300 mb-8">
-                Purpose-built for large enterprises with complex AI operations. 
-                Get enterprise-grade security, custom integrations, and dedicated support 
-                to optimize AI spending at scale.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4">
-                  Schedule enterprise demo
+      <div className="bg-gradient-to-br from-blue-900/20 to-indigo-900/20 backdrop-blur-xl border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <div className="text-center">
+            <Badge className="mb-6 bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0 px-4 py-2">
+              <Building2 className="w-4 h-4 mr-2 inline" />
+              Enterprise Grade
+            </Badge>
+            <h1 className="text-5xl font-bold text-white mb-6">
+              Enterprise AI Cost Management at Scale
+            </h1>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              Comprehensive AI spending governance, compliance, and optimization for Fortune 500 companies.
+              Trusted by industry leaders managing millions in AI infrastructure.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Link href="/contact">
+                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg">
+                  Schedule Enterprise Demo
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-slate-300 text-slate-300 hover:bg-white hover:text-slate-900 px-8 py-4">
-                  Download ROI calculator
+              </Link>
+              <Link href="/resources">
+                <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-6 text-lg">
+                  Download Whitepaper
                 </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <Card className="bg-gray-800 border-gray-700 p-6">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Monthly AI Spend</span>
-                    <span className="text-2xl font-bold text-green-400">$847K</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Cost Optimization</span>
-                    <span className="text-xl font-bold text-blue-400">32% ↓</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Departments</span>
-                    <span className="text-xl font-bold text-purple-400">12</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Active Users</span>
-                    <span className="text-xl font-bold text-yellow-400">1,847</span>
-                  </div>
-                </div>
-              </Card>
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enterprise Stats */}
-      <div className="py-16 bg-gray-50">
+      {/* Stats Section */}
+      <div className="py-12 bg-gray-900/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {enterpriseStats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">{stat.metric}</div>
-                <div className="text-lg font-semibold text-gray-900 mb-1">{stat.label}</div>
-                <div className="text-sm text-gray-600">{stat.description}</div>
-              </div>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
+              >
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700 hover:border-blue-500/50 transition-all">
+                  <CardContent className="pt-6">
+                    <stat.icon className="w-8 h-8 text-blue-400 mx-auto mb-3" />
+                    <div className="text-3xl font-bold text-white mb-1">{stat.metric}</div>
+                    <div className="text-sm text-blue-400 font-medium">{stat.label}</div>
+                    <div className="text-xs text-gray-400 mt-1">{stat.description}</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Enterprise Features */}
-      <div className="py-20">
+      {/* Features Section */}
+      <div className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Enterprise-Grade Features
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Advanced capabilities designed for large organizations with complex AI operations, 
-              strict compliance requirements, and custom integration needs.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Enterprise-Grade Capabilities
+          </h2>
+          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+            Comprehensive tools designed for complex enterprise AI operations
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {enterpriseFeatures.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow border-2 hover:border-blue-200">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">{feature.icon}</span>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700 hover:border-blue-500/50 transition-all h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.color}`}>
+                        <feature.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-white">{feature.title}</CardTitle>
+                        <CardDescription className="text-gray-400 mt-1">
+                          {feature.description}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                      <CardDescription className="text-gray-600 mt-1">
-                        {feature.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {feature.features.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center text-sm">
-                        <span className="text-green-500 mr-2">✓</span>
-                        <span className="text-gray-700">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {feature.features.map((item, i) => (
+                        <li key={i} className="flex items-center gap-2 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Industry Use Cases */}
-      <div className="bg-slate-50 py-20">
+      {/* Use Cases Section */}
+      <div className="py-16 bg-gray-900/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Trusted by Industry Leaders
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              See how enterprises across different industries are using AI Credit Tracker 
-              to optimize costs and improve AI governance.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">
+            Industry Solutions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-3xl">{useCase.logo}</span>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700 hover:border-blue-500/50 transition-all h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`p-3 rounded-lg bg-gradient-to-br ${useCase.color}`}>
+                        <useCase.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <CardTitle className="text-xl text-white">{useCase.industry}</CardTitle>
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{useCase.industry}</CardTitle>
-                      <Badge className="bg-green-100 text-green-700 text-xs">
-                        {useCase.results.split(' ')[0]} savings
-                      </Badge>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-sm font-medium text-gray-400 mb-1">Challenge</div>
+                        <p className="text-gray-300">{useCase.challenge}</p>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-400 mb-1">Solution</div>
+                        <p className="text-gray-300">{useCase.solution}</p>
+                      </div>
+                      <div className="pt-3 border-t border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400 font-medium">{useCase.results}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Challenge</h4>
-                    <p className="text-sm text-gray-600">{useCase.challenge}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Solution</h4>
-                    <p className="text-sm text-gray-600">{useCase.solution}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Results</h4>
-                    <p className="text-sm font-medium text-green-700">{useCase.results}</p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
       {/* Implementation Process */}
-      <div className="py-20">
+      <div className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Enterprise Implementation Process
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Our proven implementation methodology ensures smooth deployment 
-              with minimal disruption to your operations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">
+            Enterprise Implementation Process
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {implementationProcess.map((phase, index) => (
-              <div key={index} className="relative">
-                <Card className="hover:shadow-lg transition-shadow h-full">
-                  <CardHeader className="text-center">
-                    <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                      {phase.step}
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700 hover:border-blue-500/50 transition-all h-full">
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">
+                        Step {phase.step}
+                      </Badge>
+                      <phase.icon className="w-5 h-5 text-blue-400" />
                     </div>
-                    <CardTitle className="text-lg">{phase.title}</CardTitle>
-                    <Badge variant="outline" className="text-xs">
+                    <CardTitle className="text-white text-lg">{phase.title}</CardTitle>
+                    <CardDescription className="text-gray-400">
                       {phase.duration}
-                    </Badge>
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {phase.activities.map((activity, activityIndex) => (
-                        <li key={activityIndex} className="text-sm text-gray-600 flex items-start">
-                          <span className="text-blue-500 mr-2 mt-1">•</span>
+                      {phase.activities.map((activity, i) => (
+                        <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
+                          <ChevronRight className="w-3 h-3 text-gray-500 mt-0.5 flex-shrink-0" />
                           {activity}
                         </li>
                       ))}
                     </ul>
                   </CardContent>
                 </Card>
-                {index < implementationProcess.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <div className="w-8 h-0.5 bg-gray-300"></div>
-                    <div className="w-0 h-0 border-l-4 border-l-gray-300 border-t-2 border-t-transparent border-b-2 border-b-transparent absolute right-0 top-1/2 transform -translate-y-1/2"></div>
-                  </div>
-                )}
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Enterprise Support */}
-      <div className="bg-gray-900 text-white py-20">
+      {/* Security Section */}
+      <div className="py-16 bg-gray-900/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-              White-Glove Enterprise Support
-            </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Dedicated support team with deep expertise in enterprise AI operations 
-              and cost optimization strategies.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-gray-800 border-gray-700 text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">👥</span>
-                </div>
-                <CardTitle className="text-white">Dedicated Success Manager</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  Personal success manager who understands your business and helps optimize your AI investment
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-800 border-gray-700 text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">🚀</span>
-                </div>
-                <CardTitle className="text-white">Priority Support</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  24/7 technical support with guaranteed response times and escalation procedures
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-800 border-gray-700 text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">📊</span>
-                </div>
-                <CardTitle className="text-white">Strategic Consulting</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  Regular strategic reviews and optimization recommendations from our AI cost experts
-                </p>
-              </CardContent>
-            </Card>
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Enterprise Security & Compliance
+          </h2>
+          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+            Bank-grade security with comprehensive compliance certifications
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {securityFeatures.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="text-center p-4 bg-gray-900/50 border-gray-800 hover:border-blue-500/50 transition-all">
+                  <item.icon className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-300">{item.feature}</p>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
+      <div className="py-20 bg-gradient-to-br from-blue-900/20 to-indigo-900/20 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Ready to optimize AI costs at enterprise scale?
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Enterprise AI Operations?
           </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Schedule a personalized demo to see how AI Credit Tracker can help your enterprise 
-            reduce AI costs while improving governance and compliance.
+          <p className="text-xl text-gray-300 mb-8">
+            Join Fortune 500 companies optimizing millions in AI spending
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold">
-              Schedule enterprise demo
-              <span className="ml-2">→</span>
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold">
-              Download case studies
-            </Button>
+          <div className="flex gap-4 justify-center">
+            <Link href="/contact">
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg">
+                Schedule Enterprise Demo
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="/resources">
+              <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-6 text-lg">
+                Download ROI Calculator
+              </Button>
+            </Link>
           </div>
-          <p className="text-blue-200 text-sm mt-6">
-            Custom pricing • White-glove onboarding • 99.99% uptime SLA
+          <p className="text-gray-400 text-sm mt-6">
+            Speak with our enterprise team to discuss custom requirements
           </p>
         </div>
       </div>

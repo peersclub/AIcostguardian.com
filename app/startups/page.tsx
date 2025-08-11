@@ -1,30 +1,42 @@
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { getAIProviderLogo } from '@/components/ui/ai-logos'
+import { motion } from 'framer-motion'
+import { getAIProviderLogo, getAIProviderLogoWithFallback } from '@/components/ui/ai-logos'
+import { 
+  DollarSign, Search, Zap, TrendingUp, Shield, Beaker, Rocket, Target,
+  CheckCircle, ArrowRight, Clock, Users, ChartBar, AlertCircle,
+  Cpu, Globe, Activity, BarChart3, Lightbulb, Package, ChevronRight
+} from 'lucide-react'
 
 export default function Startups() {
   const startupChallenges = [
     {
       challenge: "Unpredictable AI costs eating into runway",
       solution: "Real-time spend tracking with automatic alerts before budget overruns",
-      icon: "💸"
+      icon: DollarSign,
+      color: "from-red-500 to-orange-500"
     },
     {
       challenge: "No visibility into which AI experiments are worth the cost",
       solution: "Per-project cost tracking with ROI analysis for each AI initiative",
-      icon: "🔍"
+      icon: Search,
+      color: "from-blue-500 to-cyan-500"
     },
     {
       challenge: "Limited engineering resources for cost monitoring",
       solution: "5-minute setup with zero maintenance required - focus on building",
-      icon: "⚡"
+      icon: Zap,
+      color: "from-yellow-500 to-orange-500"
     },
     {
       challenge: "Need to prove AI ROI to investors and stakeholders",
       solution: "Beautiful reports showing cost efficiency and business impact",
-      icon: "📊"
+      icon: TrendingUp,
+      color: "from-green-500 to-emerald-500"
     }
   ]
 
@@ -32,7 +44,8 @@ export default function Startups() {
     {
       title: "Budget Protection",
       description: "Never exceed your AI budget again with intelligent alerts and automatic shutoffs",
-      icon: "🛡️",
+      icon: Shield,
+      color: "from-purple-500 to-pink-500",
       features: [
         "Real-time budget tracking",
         "Smart spending alerts",
@@ -43,105 +56,82 @@ export default function Startups() {
     {
       title: "Experiment Tracking",
       description: "Track costs for every AI experiment and prototype to optimize your research",
-      icon: "🧪",
+      icon: Beaker,
+      color: "from-blue-500 to-indigo-500",
       features: [
         "Project-based cost allocation",
         "A/B test cost comparison",
         "Model performance vs cost",
-        "Experiment ROI metrics"
+        "Experiment ROI tracking"
       ]
     },
     {
-      title: "Growth Planning",
-      description: "Forecast AI costs as you scale and plan your infrastructure investments",
-      icon: "📈",
-      features: [
-        "Usage growth forecasting",
-        "Scaling cost projections",
-        "Team expansion planning",
-        "Investor-ready reports"
-      ]
-    },
-    {
-      title: "Developer-First",
-      description: "Built for developers, by developers - integrate in minutes, not weeks",
-      icon: "👨‍💻",
+      title: "Quick Integration",
+      description: "Get started in minutes, not days - built for fast-moving startups",
+      icon: Rocket,
+      color: "from-orange-500 to-red-500",
       features: [
         "5-minute setup",
-        "SDK for all languages",
-        "Slack/Discord integration",
-        "API-first architecture"
+        "No-code integration",
+        "Automatic discovery",
+        "Zero maintenance"
+      ]
+    },
+    {
+      title: "Investor Reporting",
+      description: "Impress investors with professional AI spending reports and insights",
+      icon: ChartBar,
+      color: "from-green-500 to-teal-500",
+      features: [
+        "Executive dashboards",
+        "ROI metrics",
+        "Growth projections",
+        "Cost optimization insights"
       ]
     }
   ]
 
-  const startupStories = [
-    {
-      company: "TechFlow AI",
-      stage: "Series A",
-      industry: "Developer Tools",
-      challenge: "Burning through $15K/month on GPT-4 with no visibility into which features drove value",
-      solution: "Implemented per-feature cost tracking and discovered 60% of costs came from unused debug features",
-      result: "Reduced AI costs by 40% while improving product performance",
-      savings: "$6K/month"
-    },
-    {
-      company: "DataBot Labs",
-      stage: "Seed",
-      industry: "Analytics",
-      challenge: "Needed to prove AI ROI to investors while managing tight budget constraints",
-      solution: "Used automated reporting to show clear correlation between AI spend and customer growth",
-      result: "Secured Series A funding with data-driven AI investment strategy",
-      savings: "Funding secured"
-    },
-    {
-      company: "Creative AI Studio",
-      stage: "Pre-seed",
-      industry: "Content Creation",
-      challenge: "Multiple AI models for different use cases with no cost visibility across experiments",
-      solution: "Project-based tracking revealed most cost-effective model combinations",
-      result: "Optimized model selection saved 50% on AI costs while maintaining quality",
-      savings: "$3.2K/month"
-    }
-  ]
-
-  const pricingTiers = [
+  const pricingPlans = [
     {
       name: "Starter",
-      price: "Free",
+      price: "$29",
       description: "Perfect for early-stage startups",
       features: [
-        "Track up to $500/month in AI costs",
-        "Basic cost alerts",
-        "3 team members",
-        "Email support"
+        "Up to 3 team members",
+        "Basic cost tracking",
+        "Email alerts",
+        "7-day data retention",
+        "Community support"
       ],
-      cta: "Start free",
+      cta: "Start free trial",
       popular: false
     },
     {
       name: "Growth",
-      price: "$29",
-      description: "For scaling startups",
+      price: "$99",
+      description: "For startups ready to scale",
       features: [
-        "Track up to $5K/month in AI costs",
-        "Advanced analytics & forecasting",
-        "Unlimited team members",
-        "Slack/Discord integration",
-        "Priority support"
+        "Up to 10 team members",
+        "Advanced analytics",
+        "Slack & email alerts",
+        "90-day data retention",
+        "Priority support",
+        "Custom reports"
       ],
       cta: "Start free trial",
       popular: true
     },
     {
       name: "Scale",
-      price: "$99",
-      description: "For fast-growing companies",
+      price: "$299",
+      description: "For funded startups",
       features: [
-        "Unlimited AI cost tracking",
-        "Custom reporting & dashboards",
-        "API access & webhooks",
-        "Advanced team permissions",
+        "Unlimited team members",
+        "Enterprise analytics",
+        "All integrations",
+        "Unlimited data retention",
+        "24/7 phone support",
+        "Custom integrations",
         "Dedicated success manager"
       ],
       cta: "Contact sales",
@@ -154,283 +144,259 @@ export default function Startups() {
     { name: "Claude 3.5", providerId: "claude", setup: "2 min" },
     { name: "Gemini Pro", providerId: "gemini", setup: "2 min" },
     { name: "Cohere", providerId: "cohere", setup: "2 min" },
-    { name: "Slack", logo: "💬", setup: "1 min" },
-    { name: "Discord", logo: "🎮", setup: "1 min" },
-    { name: "GitHub", logo: "⚡", setup: "3 min" },
-    { name: "Vercel", logo: "▲", setup: "2 min" }
+    { name: "Slack", icon: Package, setup: "1 min" },
+    { name: "Discord", icon: Globe, setup: "1 min" },
+    { name: "GitHub", icon: Activity, setup: "3 min" },
+    { name: "Vercel", icon: Cpu, setup: "2 min" }
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-purple-900 to-blue-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 backdrop-blur-xl border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-20">
           <div className="text-center">
-            <Badge className="mb-6 bg-purple-100 text-purple-700 px-4 py-2">
-              🚀 Built for Startups
+            <Badge className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 px-4 py-2">
+              <Rocket className="w-4 h-4 mr-2 inline" />
+              Built for Startups
             </Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-              Don't let AI costs kill your runway
+            <h1 className="text-5xl font-bold text-white mb-6">
+              Stop AI Costs from Killing Your Runway
             </h1>
-            <p className="text-xl text-purple-100 mb-8 max-w-3xl mx-auto">
-              Get complete visibility into your AI spending with tools designed for fast-moving startups. 
-              Track costs, optimize experiments, and prove ROI to investors — all in 5 minutes.
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              Track, optimize, and control your AI spending before it becomes a problem. 
+              Built by startup founders who burned through $50K in AI costs.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-              <Link href="/signup">
-                <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4">
-                  Start free - no credit card
+            <div className="flex gap-4 justify-center">
+              <Link href="/auth/signup">
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-6 text-lg">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-purple-300 text-purple-300 hover:bg-white hover:text-purple-900 px-8 py-4">
-                Book a demo
-              </Button>
+              <Link href="/dashboard">
+                <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-6 text-lg">
+                  View Demo Dashboard
+                </Button>
+              </Link>
             </div>
-            <p className="text-purple-200 text-sm">
-              Used by 500+ startups • 5-minute setup • Cancel anytime
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Startup Challenges */}
-      <div className="py-20">
+      {/* Pain Points Section */}
+      <div className="py-16 bg-gray-900/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Startup AI challenges we solve
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Every startup faces these AI cost management challenges. 
-              Here's how we help you solve them.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">
+            Sound Familiar?
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {startupChallenges.map((item, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
-                <CardHeader>
-                  <div className="flex items-start space-x-4">
-                    <div className="text-3xl">{item.icon}</div>
-                    <div>
-                      <CardTitle className="text-lg text-red-600 mb-2">
-                        Problem: {item.challenge}
-                      </CardTitle>
-                      <CardDescription className="text-green-700 font-medium">
-                        ✓ Solution: {item.solution}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Startup Features */}
-      <div className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Features built for fast-moving startups
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to manage AI costs without slowing down your development velocity.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {startupFeatures.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">{feature.icon}</span>
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                      <CardDescription className="text-gray-600 mt-1">
-                        {feature.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {feature.features.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center text-sm">
-                        <span className="text-purple-500 mr-2">✓</span>
-                        <span className="text-gray-700">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Startup Success Stories */}
-      <div className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Real startup success stories
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              See how other startups are using AI Credit Tracker to optimize costs and accelerate growth.
-            </p>
-          </div>
-
-          <div className="space-y-8">
-            {startupStories.map((story, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                      <CardTitle className="text-xl">{story.company}</CardTitle>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="outline">{story.stage}</Badge>
-                        <Badge variant="outline">{story.industry}</Badge>
-                        <Badge className="bg-green-100 text-green-700">{story.savings} saved</Badge>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-all">
+                  <CardHeader>
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg bg-gradient-to-br ${item.color}`}>
+                        <item.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-white text-lg mb-2">{item.challenge}</CardTitle>
+                        <CardDescription className="text-gray-400">
+                          {item.solution}
+                        </CardDescription>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Challenge</h4>
-                      <p className="text-sm text-gray-600">{story.challenge}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Solution</h4>
-                      <p className="text-sm text-gray-600">{story.solution}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Result</h4>
-                      <p className="text-sm font-medium text-green-700">{story.result}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Quick Integrations */}
-      <div className="bg-gray-50 py-20">
+      {/* Features Section */}
+      <div className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Connect your stack in minutes
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Pre-built integrations with the tools startups love. No complex setup required.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {integrations.map((integration, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow p-6">
-                <div className="text-4xl mb-4">
-                  {integration.providerId ? (
-                    <div className="flex justify-center text-gray-700">
-                      {getAIProviderLogo(integration.providerId, 'w-12 h-12')}
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Built for Fast-Moving Startups
+          </h2>
+          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+            Everything you need to control AI costs without slowing down your development
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {startupFeatures.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700 hover:border-purple-500/50 transition-all h-full">
+                  <CardHeader>
+                    <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.color} w-fit mb-4`}>
+                      <feature.icon className="w-6 h-6 text-white" />
                     </div>
-                  ) : (
-                    integration.logo
-                  )}
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{integration.name}</h3>
-                <Badge className="bg-purple-100 text-purple-700 text-xs">
-                  {integration.setup} setup
-                </Badge>
-              </Card>
+                    <CardTitle className="text-white">{feature.title}</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {feature.features.map((item, i) => (
+                        <li key={i} className="flex items-center gap-2 text-gray-300 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Startup Pricing */}
-      <div className="py-20">
+      {/* Pricing Section */}
+      <div className="py-16 bg-gray-900/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-              Startup-friendly pricing
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Start free and scale with your growth. No hidden fees, no surprises.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingTiers.map((tier, index) => (
-              <Card key={index} className={`hover:shadow-lg transition-shadow ${
-                tier.popular ? 'border-2 border-purple-500 relative' : ''
-              }`}>
-                {tier.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-500">
-                    Most Popular
-                  </Badge>
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Startup-Friendly Pricing
+          </h2>
+          <p className="text-gray-400 text-center mb-12">
+            30-day free trial. No credit card required. Cancel anytime.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={plan.popular ? 'relative' : ''}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                      Most Popular
+                    </Badge>
+                  </div>
                 )}
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">${tier.price}</span>
-                    {tier.price !== 'Free' && <span className="text-gray-600">/month</span>}
+                <Card className={`h-full ${
+                  plan.popular 
+                    ? 'bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-500/50' 
+                    : 'bg-gray-900/50 border-gray-800'
+                } hover:border-gray-600 transition-all`}>
+                  <CardHeader>
+                    <CardTitle className="text-2xl text-white">{plan.name}</CardTitle>
+                    <div className="flex items-baseline gap-1 mt-2">
+                      <span className="text-4xl font-bold text-white">{plan.price}</span>
+                      <span className="text-gray-400">/month</span>
+                    </div>
+                    <CardDescription className="text-gray-400 mt-2">
+                      {plan.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/auth/signup" className="block">
+                      <Button className={`w-full ${
+                        plan.popular 
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white' 
+                          : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
+                      }`}>
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Integrations Section */}
+      <div className="py-16 bg-black">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Works With Your Stack
+          </h2>
+          <p className="text-gray-400 text-center mb-12">
+            Seamless integration with all major AI providers and tools
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            {integrations.map((integration, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="text-center hover:border-purple-500/50 transition-all p-4 bg-gray-900/50 border-gray-800">
+                  <div className="mb-2">
+                    {integration.providerId ? (
+                      <div className="flex justify-center text-white">
+                        {getAIProviderLogo(integration.providerId, 'w-8 h-8', true) || (
+                          <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg text-white font-bold">
+                            <span className="text-xs">{integration.name.charAt(0)}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : integration.icon ? (
+                      <div className="flex justify-center">
+                        <integration.icon className="w-8 h-8 text-gray-400" />
+                      </div>
+                    ) : null}
                   </div>
-                  <CardDescription>{tier.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3 text-sm">
-                    {tier.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center">
-                        <span className="text-purple-500 mr-2">✓</span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className={`w-full ${
-                    tier.popular 
-                      ? 'bg-purple-600 hover:bg-purple-700' 
-                      : 'bg-gray-600 hover:bg-gray-700'
-                  }`}>
-                    {tier.cta}
-                  </Button>
-                </CardContent>
-              </Card>
+                  <h3 className="font-medium text-white text-sm">{integration.name}</h3>
+                  <Badge className="mt-2 bg-gray-800 text-gray-400 text-xs border-gray-700">
+                    {integration.setup} setup
+                  </Badge>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-20">
+      <div className="py-20 bg-gradient-to-br from-purple-900/20 to-pink-900/20 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Start optimizing your AI costs today
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Take Control of Your AI Costs?
           </h2>
-          <p className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto">
-            Join hundreds of startups who've reduced their AI costs by 40% on average. 
-            Get started in 5 minutes — no credit card required.
+          <p className="text-xl text-gray-300 mb-8">
+            Join hundreds of startups saving thousands on AI spending every month
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold">
-                Start free trial
-                <span className="ml-2">→</span>
+          <div className="flex gap-4 justify-center">
+            <Link href="/auth/signup">
+              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-6 text-lg">
+                Start Free 30-Day Trial
+                <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600 px-8 py-4 text-lg font-semibold">
-              Book a demo
-            </Button>
+            <Link href="/pricing">
+              <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-6 text-lg">
+                View Full Pricing
+              </Button>
+            </Link>
           </div>
-          <p className="text-purple-200 text-sm mt-6">
-            Free forever plan • No setup fees • Cancel anytime
+          <p className="text-gray-400 text-sm mt-6">
+            No credit card required • Setup in 5 minutes • Cancel anytime
           </p>
         </div>
       </div>

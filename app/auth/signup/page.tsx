@@ -150,11 +150,13 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <Link
-                  href="/auth/signin"
-                  className="w-full py-3 px-4 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all font-medium text-center"
-                >
-                  Sign In Instead
+                <Link href="/auth/signin" className="block w-full">
+                  <button
+                    type="button"
+                    className="w-full py-3 px-4 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all font-medium"
+                  >
+                    Sign In Instead
+                  </button>
                 </Link>
 
                 <p className="text-xs text-gray-500 text-center">

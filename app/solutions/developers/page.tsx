@@ -1,9 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Code2, Terminal, GitBranch, Package, Cpu, Database, ChevronRight, CheckCircle, ArrowRight, Zap } from 'lucide-react'
+import { Code2, Terminal, GitBranch, Package, Cpu, Database, ChevronRight, CheckCircle, ArrowRight, Zap, Github, Container, Layers, Building, RefreshCw, BookOpen } from 'lucide-react'
 import Link from 'next/link'
-import { getAIProviderLogo } from '@/components/ui/ai-logos'
+import { getAIProviderLogo, getAIProviderLogoWithFallback } from '@/components/ui/ai-logos'
 import { AI_PROVIDER_IDS } from '@/lib/ai-providers-config'
 
 const features = [
@@ -97,12 +97,12 @@ $ aicost export --format csv --output costs.csv`
 ]
 
 const integrations = [
-  { name: 'GitHub Actions', icon: '🐙', description: 'Track costs per workflow' },
-  { name: 'Docker', icon: '🐳', description: 'Monitor containerized AI workloads' },
-  { name: 'Kubernetes', icon: '☸️', description: 'Cost allocation per pod/namespace' },
-  { name: 'Terraform', icon: '🏗️', description: 'Infrastructure cost tracking' },
-  { name: 'CI/CD', icon: '🔄', description: 'Jenkins, CircleCI, GitLab CI' },
-  { name: 'Jupyter', icon: '📓', description: 'Notebook cost tracking' }
+  { name: 'GitHub Actions', icon: Github, description: 'Track costs per workflow' },
+  { name: 'Docker', icon: Container, description: 'Monitor containerized AI workloads' },
+  { name: 'Kubernetes', icon: Layers, description: 'Cost allocation per pod/namespace' },
+  { name: 'Terraform', icon: Building, description: 'Infrastructure cost tracking' },
+  { name: 'CI/CD', icon: RefreshCw, description: 'Jenkins, CircleCI, GitLab CI' },
+  { name: 'Jupyter', icon: BookOpen, description: 'Notebook cost tracking' }
 ]
 
 export default function DevelopersPage() {
@@ -251,7 +251,9 @@ export default function DevelopersPage() {
                 transition={{ delay: index * 0.05 }}
                 className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-green-500/50 transition-colors text-center"
               >
-                <div className="text-3xl mb-2">{integration.icon}</div>
+                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <integration.icon className="w-6 h-6 text-green-400" />
+                </div>
                 <div className="text-sm font-medium text-white">{integration.name}</div>
                 <div className="text-xs text-gray-500 mt-1">{integration.description}</div>
               </motion.div>
@@ -267,11 +269,14 @@ export default function DevelopersPage() {
           >
             <p className="text-sm text-gray-400 mb-6">Track costs across all major AI providers</p>
             <div className="flex justify-center items-center gap-8 flex-wrap">
-              {AI_PROVIDER_IDS.map((provider) => (
-                <div key={provider} className="opacity-60 hover:opacity-100 transition-opacity">
-                  {getAIProviderLogo(provider, 'w-8 h-8')}
-                </div>
-              ))}
+              {AI_PROVIDER_IDS.map((provider) => {
+                const logo = getAIProviderLogo(provider, 'w-8 h-8', true)
+                return logo ? (
+                  <div key={provider} className="opacity-60 hover:opacity-100 transition-opacity">
+                    {logo}
+                  </div>
+                ) : null
+              })}
             </div>
           </motion.div>
         </div>

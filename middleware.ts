@@ -20,7 +20,6 @@ export default withAuth(
                                 path.startsWith('/onboarding') ||
                                 path.startsWith('/team') ||
                                 path.startsWith('/analytics') ||
-                                path.startsWith('/integrations') ||
                                 path.startsWith('/providers') ||
                                 path.startsWith('/superadmin')
         
@@ -52,7 +51,6 @@ export const config = {
     '/onboarding/:path*',
     '/team/:path*',
     '/analytics/:path*',
-    '/integrations/:path*',
     '/providers/:path*',
     '/superadmin/:path*',
   ],

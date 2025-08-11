@@ -71,8 +71,9 @@ export default function Navigation() {
       icon: Target,
       visibility: 'visitor',
       children: [
-        { label: 'For Startups', href: '/solutions/startups', icon: Zap, visibility: 'all' },
-        { label: 'For Enterprise', href: '/solutions/enterprise', icon: Building2, visibility: 'all' },
+        { label: 'For Startups', href: '/startups', icon: Zap, visibility: 'all' },
+        { label: 'For Enterprise', href: '/enterprise', icon: Building2, visibility: 'all' },
+        { label: 'For Agencies', href: '/agencies', icon: Users, visibility: 'all' },
         { label: 'For Developers', href: '/solutions/developers', icon: FileText, visibility: 'all' }
       ]
     },
@@ -261,6 +262,8 @@ export default function Navigation() {
                                   ? 'bg-green-100 text-green-700' 
                                   : child.badge === 'New'
                                   ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  : child.badge === 'Coming Soon'
+                                  ? 'bg-gray-100 text-gray-600'
                                   : 'bg-red-100 text-red-700'
                               }`}>
                                 {child.badge}
@@ -473,6 +476,8 @@ export default function Navigation() {
                                   ? 'bg-green-100 text-green-700' 
                                   : child.badge === 'New'
                                   ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  : child.badge === 'Coming Soon'
+                                  ? 'bg-gray-100 text-gray-600'
                                   : 'bg-red-100 text-red-700'
                               }`}>
                                 {child.badge}

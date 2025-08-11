@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   TrendingUp, 
   TrendingDown,
@@ -43,14 +44,23 @@ import UsageDashboard from '@/components/usage/UsageDashboard'
 
 function DashboardV2Content() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
-  const [selectedView, setSelectedView] = useState('overview')
+  const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'overview')
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState<any>(null)
 
   useEffect(() => {
     fetchDashboardData()
   }, [selectedTimeframe])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'insights', 'performance', 'forecast', 'usage'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
 
   const fetchDashboardData = async () => {
     try {
@@ -216,7 +226,10 @@ function DashboardV2Content() {
               {['overview', 'insights', 'performance', 'forecast', 'usage'].map((view) => (
                 <button
                   key={view}
-                  onClick={() => setSelectedView(view)}
+                  onClick={() => {
+                    setSelectedView(view)
+                    router.push(`/dashboard?tab=${view}`, { scroll: false })
+                  }}
                   className={`px-4 py-2 rounded-md font-medium transition-all capitalize ${
                     selectedView === view
                       ? 'bg-indigo-600 text-white shadow-lg'
@@ -234,7 +247,7 @@ function DashboardV2Content() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center justify-center py-20"
+              className="flex items-center justify-center py-20 mt-8"
             >
               <div className="text-center">
                 <RefreshCw className="w-12 h-12 text-gray-400 animate-spin mx-auto mb-4" />
@@ -248,7 +261,7 @@ function DashboardV2Content() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-12 text-center"
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-12 text-center mt-8"
             >
               <Activity className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-white mb-2">Welcome to AI Cost Guardian</h3>
@@ -281,7 +294,7 @@ function DashboardV2Content() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8"
               >
                 {/* Total AI Investment */}
                 <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
@@ -369,7 +382,7 @@ function DashboardV2Content() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6"
               >
                 {/* Top Business Insights */}
                 <div className="lg:col-span-2 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
@@ -492,48 +505,67 @@ function DashboardV2Content() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="space-y-6"
+              className="mt-8"
             >
-              {/* AI-Powered Recommendations */}
-              <div className="bg-gradient-to-br from-indigo-900/20 to-purple-800/20 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Brain className="w-6 h-6 text-indigo-400" />
-                  <h3 className="text-lg font-semibold text-white">AI-Powered Business Intelligence</h3>
-                  <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs font-medium rounded-full">
-                    Real-time
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {businessInsights.map((insight: any, index: number) => (
-                    <div key={index} className="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(insight.priority)}`}>
-                              {insight.priority}
-                            </div>
-                            <span className="text-gray-400 text-xs capitalize">{insight.category}</span>
-                          </div>
-                          <h4 className="text-white font-semibold mb-2">{insight.title}</h4>
-                          <p className="text-gray-300 text-sm">{insight.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-green-400 font-semibold">{insight.impact}</div>
-                          <div className="text-gray-400 text-xs">{insight.confidence}% confidence</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Timeline: {insight.timeframe}</span>
-                        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
-                          {insight.action}
-                        </button>
-                      </div>
+              {businessInsights.length > 0 ? (
+                <div className="space-y-6">
+                  {/* AI-Powered Recommendations */}
+                  <div className="bg-gradient-to-br from-indigo-900/20 to-purple-800/20 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Brain className="w-6 h-6 text-indigo-400" />
+                      <h3 className="text-lg font-semibold text-white">AI-Powered Business Intelligence</h3>
+                      <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs font-medium rounded-full">
+                        Real-time
+                      </span>
                     </div>
-                  ))}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {businessInsights.map((insight: any, index: number) => (
+                        <div key={index} className="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(insight.priority)}`}>
+                                  {insight.priority}
+                                </div>
+                                <span className="text-gray-400 text-xs capitalize">{insight.category}</span>
+                              </div>
+                              <h4 className="text-white font-semibold mb-2">{insight.title}</h4>
+                              <p className="text-gray-300 text-sm">{insight.description}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-green-400 font-semibold">{insight.impact}</div>
+                              <div className="text-gray-400 text-xs">{insight.confidence}% confidence</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400 text-sm">Timeline: {insight.timeframe}</span>
+                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                              {insight.action}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-12 text-center">
+                  <Brain className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">No Insights Available</h3>
+                  <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                    Start using AI services to generate insights and recommendations.
+                  </p>
+                  <Link
+                    href="/settings"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Configure AI Services
+                  </Link>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -542,7 +574,7 @@ function DashboardV2Content() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="space-y-6"
+              className="space-y-6 mt-8"
             >
               {/* Provider Performance Matrix */}
               <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
@@ -614,7 +646,7 @@ function DashboardV2Content() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="space-y-6"
+              className="space-y-6 mt-8"
             >
               {/* Predictive Analytics */}
               <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
@@ -669,6 +701,7 @@ function DashboardV2Content() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
+              className="mt-8"
             >
               <UsageDashboard />
             </motion.div>

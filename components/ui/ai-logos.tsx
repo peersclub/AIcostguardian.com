@@ -5,18 +5,24 @@
  */
 
 import React from 'react'
-import { OpenAI, Claude, Gemini } from '@lobehub/icons'
+import { 
+  OpenAI, 
+  Claude, 
+  Gemini, 
+  Cohere,
+  Perplexity,
+  Mistral,
+  Meta,
+  Stability,
+  Midjourney,
+  Dalle,
+  Grok,
+  HuggingFace
+} from '@lobehub/icons'
 import { getProviderById, getEnabledProviders } from '@/lib/ai-providers-config'
 
-// X/Grok Logo Component
-const GrokLogo = ({ className = "w-6 h-6", ...props }: { className?: string; size?: number }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </svg>
-)
-
 // Main function to get AI provider logos
-export const getAIProviderLogo = (providerId: string, className: string = "w-6 h-6") => {
+export const getAIProviderLogo = (providerId: string, className: string = "w-6 h-6", darkMode: boolean = true) => {
   const sizeMap: { [key: string]: number } = {
     'w-4 h-4': 16,
     'w-5 h-5': 20,
@@ -27,27 +33,68 @@ export const getAIProviderLogo = (providerId: string, className: string = "w-6 h
   }
   
   const size = sizeMap[className] || 24
+  
+  // Apply white color for dark backgrounds
+  const logoStyle = darkMode ? { color: 'white' } : {}
 
   switch (providerId.toLowerCase()) {
     case 'openai':
-      return <OpenAI size={size} />
+    case 'gpt':
+    case 'gpt-4':
+    case 'gpt-3.5':
+      return <OpenAI size={size} style={logoStyle} />
+    
     case 'claude':
     case 'anthropic':
-      return <Claude size={size} />
+      return <Claude size={size} style={logoStyle} />
+    
     case 'gemini':
     case 'google':
-      return <Gemini size={size} />
+    case 'bard':
+      return <Gemini size={size} style={logoStyle} />
+    
+    case 'cohere':
+      return <Cohere size={size} style={logoStyle} />
+    
+    case 'perplexity':
+      return <Perplexity size={size} style={logoStyle} />
+    
+    case 'mistral':
+    case 'mixtral':
+      return <Mistral size={size} style={logoStyle} />
+    
+    case 'meta':
+    case 'llama':
+    case 'llama2':
+    case 'llama3':
+      return <Meta size={size} style={logoStyle} />
+    
+    case 'stability':
+    case 'stable-diffusion':
+    case 'sdxl':
+      return <Stability size={size} style={logoStyle} />
+    
+    case 'midjourney':
+      return <Midjourney size={size} style={logoStyle} />
+    
+    case 'dalle':
+    case 'dall-e':
+    case 'dalle2':
+    case 'dalle3':
+      return <Dalle size={size} style={logoStyle} />
+    
     case 'grok':
     case 'xai':
     case 'x.ai':
-      return <GrokLogo className={className} />
+      return <Grok size={size} style={logoStyle} />
+    
+    case 'huggingface':
+    case 'hf':
+      return <HuggingFace size={size} style={logoStyle} />
+    
     default:
-      // Fallback to a generic AI icon
-      return (
-        <div className={`${className} flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg text-white font-bold`}>
-          <span className="text-xs">AI</span>
-        </div>
-      )
+      // Return null if no logo found - let the calling component handle fallback
+      return null
   }
 }
 
@@ -67,6 +114,31 @@ export const getProviderInfo = (providerId: string) => {
     color: provider.color,
     gradient: provider.gradient
   }
+}
+
+// Helper function to get logo with fallback
+export const getAIProviderLogoWithFallback = (
+  providerId: string, 
+  className: string = "w-6 h-6",
+  darkMode: boolean = true
+) => {
+  const logo = getAIProviderLogo(providerId, className, darkMode)
+  
+  if (logo) {
+    return logo
+  }
+  
+  // Fallback to text-based logo
+  const providerInfo = getProviderInfo(providerId)
+  const initial = providerInfo.name.charAt(0).toUpperCase()
+  
+  return (
+    <div 
+      className={`${className} flex items-center justify-center bg-gradient-to-br ${providerInfo.gradient} rounded-lg text-white font-bold`}
+    >
+      <span className="text-xs">{initial}</span>
+    </div>
+  )
 }
 
 // Export list of enabled providers for UI components

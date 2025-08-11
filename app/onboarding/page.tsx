@@ -263,113 +263,113 @@ export default function Onboarding() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Organization Name</label>
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Organization Name</label>
               <input
                 type="text"
                 value={onboardingData.organizationName}
                 onChange={(e) => handleInputChange('organizationName', e.target.value)}
                 placeholder="Enter your organization name"
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Organization Domain</label>
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Organization Domain</label>
               <input
                 type="text"
                 value={onboardingData.organizationDomain}
                 onChange={(e) => handleInputChange('organizationDomain', e.target.value)}
                 placeholder="e.g., assetworks.com"
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 required
               />
-              <p className="text-sm text-gray-400 mt-2">This will be used to identify your organization</p>
+              <p className="text-xs text-gray-400 mt-1">This will be used to identify your organization</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Industry</label>
-              <select
-                value={onboardingData.industry}
-                onChange={(e) => handleInputChange('industry', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Industry</label>
+                <select
+                  value={onboardingData.industry}
+                  onChange={(e) => handleInputChange('industry', e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
                 <option value="" className="bg-gray-800">Select your industry</option>
                 {industries.map(industry => (
                   <option key={industry} value={industry} className="bg-gray-800">{industry}</option>
                 ))}
-              </select>
-            </div>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Company Size</label>
-              <select
-                value={onboardingData.companySize}
-                onChange={(e) => handleInputChange('companySize', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
-                <option value="" className="bg-gray-800">Select company size</option>
-                {companySizes.map(size => (
-                  <option key={size} value={size} className="bg-gray-800">{size}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Company Size</label>
+                <select
+                  value={onboardingData.companySize}
+                  onChange={(e) => handleInputChange('companySize', e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  <option value="" className="bg-gray-800">Select size</option>
+                  {companySizes.map(size => (
+                    <option key={size} value={size} className="bg-gray-800">{size.replace(' employees', '')}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Your Role</label>
-              <select
-                value={onboardingData.role}
-                onChange={(e) => handleInputChange('role', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
-                <option value="" className="bg-gray-800">Select your role</option>
-                {roles.map(role => (
-                  <option key={role} value={role} className="bg-gray-800">{role}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Your Role</label>
+                <select
+                  value={onboardingData.role}
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  <option value="" className="bg-gray-800">Select role</option>
+                  {roles.map(role => (
+                    <option key={role} value={role} className="bg-gray-800">{role}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )
 
       case 2:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">Which AI providers do you currently use?</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-3">Which AI providers do you currently use?</label>
+              <div className="grid grid-cols-2 gap-2">
                 {aiProviders.map(provider => (
-                  <motion.button
+                  <button
                     key={provider.id}
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleArrayToggle('currentAIProviders', provider.name)}
-                    className={`p-4 border rounded-xl text-sm text-left transition-all ${
+                    className={`p-2 lg:p-3 border rounded-lg text-xs lg:text-sm text-left transition-all ${
                       onboardingData.currentAIProviders.includes(provider.name)
                         ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-purple-500/50 hover:bg-purple-500/10'
+                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-purple-500/50'
                     }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      {provider.id !== 'other' && getAIProviderLogo(provider.id, 'w-5 h-5')}
-                      <span className="font-medium">{provider.name}</span>
+                    <div className="flex items-center gap-2">
+                      {provider.id !== 'other' && getAIProviderLogo(provider.id, 'w-4 h-4', true)}
+                      <span className="font-medium truncate">{provider.name.replace(' (GPT-3.5, GPT-4)', '').replace(' (Claude)', '').replace(' (Gemini)', '').replace(' (Grok)', '')}</span>
                       {onboardingData.currentAIProviders.includes(provider.name) && (
-                        <Check className="w-4 h-4 ml-auto text-purple-400" />
+                        <Check className="w-3 h-3 ml-auto text-purple-400 flex-shrink-0" />
                       )}
                     </div>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Monthly AI Spending</label>
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Monthly AI Spending</label>
               <select
                 value={onboardingData.monthlyAISpend}
                 onChange={(e) => handleInputChange('monthlyAISpend', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
                 <option value="" className="bg-gray-800">Select spending range</option>
                 <option value="0-100" className="bg-gray-800">$0 - $100</option>
@@ -381,28 +381,26 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">Primary use cases (select all that apply)</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-3">Primary use cases</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {useCases.map(useCase => (
-                  <motion.button
+                  <button
                     key={useCase}
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleArrayToggle('primaryUseCases', useCase)}
-                    className={`p-4 border rounded-xl text-sm text-left transition-all ${
+                    className={`p-2 border rounded-lg text-xs lg:text-sm text-left transition-all ${
                       onboardingData.primaryUseCases.includes(useCase)
                         ? 'border-blue-500 bg-blue-500/20 text-blue-300'
-                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-blue-500/50 hover:bg-blue-500/10'
+                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-blue-500/50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{useCase}</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-medium truncate">{useCase}</span>
                       {onboardingData.primaryUseCases.includes(useCase) && (
-                        <Check className="w-4 h-4 text-blue-400" />
+                        <Check className="w-3 h-3 text-blue-400 flex-shrink-0" />
                       )}
                     </div>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
@@ -411,145 +409,143 @@ export default function Onboarding() {
 
       case 3:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">What are your main goals?</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-3">What are your main goals?</label>
+              <div className="grid grid-cols-2 gap-2">
                 {businessGoals.map(goal => (
-                  <motion.button
+                  <button
                     key={goal}
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleArrayToggle('goals', goal)}
-                    className={`p-4 border rounded-xl text-sm text-left transition-all ${
+                    className={`p-2 lg:p-3 border rounded-lg text-xs lg:text-sm text-left transition-all ${
                       onboardingData.goals.includes(goal)
                         ? 'border-green-500 bg-green-500/20 text-green-300'
-                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-green-500/50 hover:bg-green-500/10'
+                        : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-green-500/50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-1">
                       <span className="font-medium">{goal}</span>
                       {onboardingData.goals.includes(goal) && (
-                        <Check className="w-4 h-4 text-green-400" />
+                        <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
                       )}
                     </div>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Monthly Budget Limit ($)</label>
-              <input
-                type="number"
-                value={onboardingData.budgetLimit}
-                onChange={(e) => handleInputChange('budgetLimit', e.target.value)}
-                placeholder="e.g., 1000"
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              />
-              <p className="text-sm text-gray-400 mt-2">Set a monthly spending limit for alerts</p>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Monthly Budget ($)</label>
+                <input
+                  type="number"
+                  value={onboardingData.budgetLimit}
+                  onChange={(e) => handleInputChange('budgetLimit', e.target.value)}
+                  placeholder="e.g., 1000"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+                <p className="text-xs text-gray-400 mt-1">Set monthly spending limit</p>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Alert Threshold (%)</label>
-              <select
-                value={onboardingData.alertThreshold}
-                onChange={(e) => handleInputChange('alertThreshold', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
+              <div>
+                <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2">Alert Threshold</label>
+                <select
+                  value={onboardingData.alertThreshold}
+                  onChange={(e) => handleInputChange('alertThreshold', e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
                 <option value="50" className="bg-gray-800">50% of budget</option>
                 <option value="75" className="bg-gray-800">75% of budget</option>
                 <option value="80" className="bg-gray-800">80% of budget</option>
                 <option value="90" className="bg-gray-800">90% of budget</option>
                 <option value="95" className="bg-gray-800">95% of budget</option>
-              </select>
-              <p className="text-sm text-gray-400 mt-2">Get notified when you reach this percentage of your budget</p>
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Get notified at this %</p>
+              </div>
             </div>
           </div>
         )
 
       case 4:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium mb-4 border border-purple-500/30">
-                <Lock className="w-4 h-4" />
-                <span>Optional Setup</span>
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium mb-2 border border-purple-500/30">
+                <Lock className="w-3 h-3" />
+                <span>Optional</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Connect Your AI Providers</h3>
-              <p className="text-gray-400">
-                Add your API keys to start tracking usage automatically. This step is optional - you can add them later in settings.
+              <h3 className="text-base lg:text-lg font-semibold text-white mb-1">Connect AI Providers</h3>
+              <p className="text-xs lg:text-sm text-gray-400">
+                Add API keys now or later in settings
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  {getAIProviderLogo('openai', 'w-5 h-5')}
-                  <label className="block text-sm font-medium text-gray-300">OpenAI API Key</label>
+                <div className="flex items-center gap-2 mb-2">
+                  {getAIProviderLogo('openai', 'w-4 h-4', true)}
+                  <label className="block text-xs lg:text-sm font-medium text-gray-300">OpenAI</label>
                 </div>
                 <input
                   type="password"
                   value={onboardingData.apiKeys.openai}
                   onChange={(e) => handleAPIKeyChange('openai', e.target.value)}
                   placeholder="sk-..."
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
 
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  {getAIProviderLogo('claude', 'w-5 h-5')}
-                  <label className="block text-sm font-medium text-gray-300">Claude API Key</label>
+                <div className="flex items-center gap-2 mb-2">
+                  {getAIProviderLogo('claude', 'w-4 h-4', true)}
+                  <label className="block text-xs lg:text-sm font-medium text-gray-300">Claude</label>
                 </div>
                 <input
                   type="password"
                   value={onboardingData.apiKeys.claude}
                   onChange={(e) => handleAPIKeyChange('claude', e.target.value)}
                   placeholder="sk-ant-..."
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
 
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  {getAIProviderLogo('gemini', 'w-5 h-5')}
-                  <label className="block text-sm font-medium text-gray-300">Gemini API Key</label>
+                <div className="flex items-center gap-2 mb-2">
+                  {getAIProviderLogo('gemini', 'w-4 h-4', true)}
+                  <label className="block text-xs lg:text-sm font-medium text-gray-300">Gemini</label>
                 </div>
                 <input
                   type="password"
                   value={onboardingData.apiKeys.gemini}
                   onChange={(e) => handleAPIKeyChange('gemini', e.target.value)}
                   placeholder="AI..."
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
 
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  {getAIProviderLogo('grok', 'w-5 h-5')}
-                  <label className="block text-sm font-medium text-gray-300">Grok API Key</label>
+                <div className="flex items-center gap-2 mb-2">
+                  {getAIProviderLogo('grok', 'w-4 h-4', true)}
+                  <label className="block text-xs lg:text-sm font-medium text-gray-300">Grok</label>
                 </div>
                 <input
                   type="password"
                   value={onboardingData.apiKeys.grok}
                   onChange={(e) => handleAPIKeyChange('grok', e.target.value)}
                   placeholder="xai-..."
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                </div>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="text-sm font-medium text-blue-300 mb-2">Enterprise-Grade Security</h3>
-                  <p className="text-sm text-gray-400">
-                    Your API keys are encrypted using AES-256 and stored securely. You can update or remove them at any time in your settings.
+                  <h3 className="text-xs font-medium text-blue-300 mb-1">Bank-Grade Security</h3>
+                  <p className="text-xs text-gray-400">
+                    AES-256 encrypted. Update anytime in settings.
                   </p>
                 </div>
               </div>
@@ -563,7 +559,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden flex flex-col">
       {/* Animated background gradient */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
@@ -574,58 +570,57 @@ export default function Onboarding() {
       {/* Back button */}
       <Link
         href="/"
-        className="absolute top-8 left-8 z-20 text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+        className="absolute top-4 left-4 lg:top-8 lg:left-8 z-20 text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to home</span>
+        <span className="hidden sm:inline">Back to home</span>
       </Link>
 
-      <div className="relative z-10 min-h-screen py-12">
-        <div className="max-w-4xl mx-auto px-6">
+      <div className="relative z-10 flex-1 flex flex-col py-8 lg:py-12">
+        <div className="max-w-4xl mx-auto px-4 lg:px-6 flex-1 flex flex-col">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-6 lg:mb-8"
           >
-            <Link href="/" className="inline-flex items-center justify-center gap-3 mb-8">
-              <Logo size="lg" className="h-12" />
+            <Link href="/" className="inline-flex items-center justify-center gap-3 mb-4">
+              <Logo size="lg" className="h-8 lg:h-12" />
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2">Let's set up your account</h1>
-            <p className="text-gray-400">This will only take a few minutes</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-1">Let's set up your account</h1>
+            <p className="text-sm text-gray-400">This will only take a few minutes</p>
           </motion.div>
 
-          {/* Progress Steps */}
+          {/* Progress Steps - Simplified for mobile */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mb-12"
+            className="mb-4 lg:mb-6"
           >
-            <div className="flex items-center justify-between max-w-2xl mx-auto">
+            <div className="flex items-center justify-between max-w-2xl mx-auto px-4">
               {steps.map((step) => (
-                <div key={step.number} className="flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
+                <div key={step.number} className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border-2 transition-all text-sm lg:text-base ${
                     currentStep >= step.number
                       ? 'bg-purple-600 border-purple-600 text-white'
                       : 'bg-gray-800 border-gray-700 text-gray-400'
                   }`}>
                     {currentStep > step.number ? (
-                      <Check className="w-6 h-6" />
+                      <Check className="w-4 h-4 lg:w-5 lg:h-5" />
                     ) : (
                       step.number
                     )}
                   </div>
-                  <div className="mt-3 text-center">
-                    <p className="text-sm font-medium text-white">{step.title}</p>
-                    <p className="text-xs text-gray-500">{step.description}</p>
+                  <div className="mt-1 lg:mt-2 text-center hidden sm:block">
+                    <p className="text-xs font-medium text-white">{step.title}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 bg-gray-800 rounded-full h-2 max-w-2xl mx-auto">
+            <div className="mt-3 bg-gray-800 rounded-full h-1 max-w-2xl mx-auto">
               <motion.div 
-                className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 h-1 rounded-full transition-all duration-500"
                 style={{ width: `${(currentStep / 4) * 100}%` }}
                 initial={{ width: 0 }}
                 animate={{ width: `${(currentStep / 4) * 100}%` }}
@@ -640,29 +635,33 @@ export default function Onboarding() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8 mb-8"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-xl border border-gray-800 p-4 lg:p-6 mb-4 flex-1 flex flex-col overflow-hidden"
           >
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">{steps[currentStep - 1].title}</h2>
-              <p className="text-gray-400">{steps[currentStep - 1].description}</p>
+            <div className="mb-4">
+              <h2 className="text-lg lg:text-xl font-bold text-white mb-1">{steps[currentStep - 1].title}</h2>
+              <p className="text-xs lg:text-sm text-gray-400">{steps[currentStep - 1].description}</p>
             </div>
 
-            {renderStepContent()}
+            <div className="flex-1 overflow-y-auto">
+
+              {renderStepContent()}
+            </div>
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-10">
+            <div className="flex justify-between mt-4 pt-4 border-t border-gray-800">
               <button
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   currentStep === 1
                     ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                     : 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-700'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Previous</span>
+                <div className="flex items-center gap-1">
+                  <ArrowLeft className="w-3 h-3" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Back</span>
                 </div>
               </button>
 
@@ -670,29 +669,29 @@ export default function Onboarding() {
                 <button
                   onClick={nextStep}
                   disabled={currentStep === 1 && (!onboardingData.organizationName || !onboardingData.organizationDomain)}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex items-center gap-2">
-                    <span>Next Step</span>
-                    <ArrowRight className="w-4 h-4" />
+                  <div className="flex items-center gap-1">
+                    <span>Next</span>
+                    <ArrowRight className="w-3 h-3" />
                   </div>
                 </button>
               ) : (
                 <button
                   onClick={completeOnboarding}
                   disabled={isLoading}
-                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     {isLoading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span>Setting up...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Complete Setup</span>
+                        <Sparkles className="w-3 h-3" />
+                        <span>Complete</span>
                       </>
                     )}
                   </div>
@@ -706,11 +705,11 @@ export default function Onboarding() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center"
+              className="text-center mt-2"
             >
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-xs lg:text-sm text-gray-500 hover:text-gray-300 transition-colors"
               >
                 Skip for now - I'll add API keys later
               </button>
