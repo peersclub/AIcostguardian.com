@@ -40,7 +40,7 @@ export function VoiceInput({
   const startTimeRef = useRef<number | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const ProviderLogo = getAIProviderLogo(provider);
+  const providerLogo = getAIProviderLogo(provider);
 
   useEffect(() => {
     if (isActive) {
@@ -189,12 +189,12 @@ export function VoiceInput({
         <div className="relative flex items-center justify-center h-48">
           {/* Provider logo in center */}
           <div className="absolute inset-0 flex items-center justify-center">
-            {ProviderLogo && (
+            {providerLogo && (
               <div className={cn(
                 "transition-all duration-300",
                 isRecording && "scale-110"
               )}>
-                <ProviderLogo className="h-16 w-16 opacity-20" />
+                {providerLogo}
               </div>
             )}
           </div>

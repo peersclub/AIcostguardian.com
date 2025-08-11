@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PromptAnalyzer } from '@/components/prompt-analyzer/PromptAnalyzer'
 
 // Build AI_MODELS from centralized config
 const AI_MODELS = getEnabledProviders().map(provider => ({
@@ -149,6 +150,21 @@ export default function ModelsPage() {
             </p>
             <p className="text-sm text-gray-400">Last updated: {PRICING_LAST_UPDATED}</p>
           </motion.div>
+        </div>
+      </div>
+
+      {/* AI Prompt Analyzer - The WOW Factor */}
+      <div className="py-12 bg-gradient-to-b from-purple-900/10 to-transparent">
+        <div className="max-w-5xl mx-auto px-6">
+          <PromptAnalyzer 
+            onModelSelect={(provider, model) => {
+              // Scroll to the model in the list
+              const modelElement = document.querySelector(`[data-model="${model}"]`);
+              if (modelElement) {
+                modelElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -397,6 +413,7 @@ export default function ModelsPage() {
                               animate={{ opacity: 1 }}
                               transition={{ delay: modelIndex * 0.05 }}
                               className="p-6 hover:bg-gray-800/50 transition-all"
+                              data-model={model.version}
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">

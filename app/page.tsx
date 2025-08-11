@@ -6,7 +6,8 @@ import {
   Shield, TrendingDown, Brain, Lock, BarChart3, Users, 
   Zap, Globe, CheckCircle, ArrowRight, Star, Award,
   LineChart, PieChart, Activity, DollarSign, AlertCircle,
-  Sparkles, ChevronRight, PlayCircle
+  Sparkles, ChevronRight, PlayCircle, Gauge, Database,
+  Server, Cloud, Code, Terminal, Bot, Cpu
 } from 'lucide-react'
 import { PremiumButton } from '@/components/ui/premium-button'
 import { PremiumCard, PremiumCardHeader, PremiumCardContent } from '@/components/ui/premium-card'
@@ -28,21 +29,21 @@ const staggerChildren = {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 overflow-hidden">
-      {/* Premium Hero Section */}
+    <div className="min-h-screen bg-black overflow-hidden">
+      {/* Premium Hero Section with Dark Theme */}
       <section className="relative min-h-screen flex items-center">
-        {/* Animated Background */}
+        {/* Animated Dark Background */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-pink-50" />
-          <div className="absolute inset-0 gradient-mesh opacity-30" />
-          {/* Floating orbs */}
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 via-black to-purple-900/20" />
+          <div className="absolute inset-0 gradient-mesh opacity-20" />
+          {/* Floating orbs with violet/purple theme */}
           <motion.div
             animate={{ 
               y: [0, -30, 0],
               x: [0, 20, 0]
             }}
             transition={{ duration: 20, repeat: Infinity }}
-            className="absolute top-20 left-20 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl"
+            className="absolute top-20 left-20 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"
           />
           <motion.div
             animate={{ 
@@ -50,7 +51,7 @@ export default function Home() {
               x: [0, -20, 0]
             }}
             transition={{ duration: 15, repeat: Infinity }}
-            className="absolute bottom-20 right-20 w-96 h-96 bg-pink-400/20 rounded-full blur-3xl"
+            className="absolute bottom-20 right-20 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"
           />
         </div>
 
@@ -63,9 +64,9 @@ export default function Home() {
           >
             {/* Premium Badge */}
             <motion.div variants={fadeInUp} className="flex justify-center mb-8">
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-xl border border-purple-200/50 shadow-lg">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                <span className="text-xs sm:text-sm font-semibold text-gray-800">Trusted by Fortune 500 Companies</span>
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-violet-900/50 to-purple-900/50 backdrop-blur-xl border border-violet-500/30 shadow-lg shadow-violet-500/10">
+                <Sparkles className="w-5 h-5 text-violet-400" />
+                <span className="text-xs sm:text-sm font-semibold text-violet-100">Trusted by Fortune 500 Companies</span>
               </div>
             </motion.div>
 
@@ -74,15 +75,15 @@ export default function Home() {
               variants={fadeInUp}
               className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8"
             >
-              <span className="text-gray-900">AI Cost Management</span>
+              <span className="text-white">AI Cost Management</span>
               <br />
-              <span className="text-gradient">Reimagined for Enterprise</span>
+              <span className="bg-gradient-to-r from-violet-400 to-purple-400 text-transparent bg-clip-text">Reimagined for Enterprise</span>
             </motion.h1>
 
             {/* Subheading */}
             <motion.p 
               variants={fadeInUp}
-              className="text-xl lg:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
+              className="text-xl lg:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
               Save 40% on AI expenses with real-time monitoring, intelligent optimization, 
               and enterprise-grade control across all major providers.
@@ -94,32 +95,34 @@ export default function Home() {
               className="flex flex-col sm:flex-row justify-center gap-4 mb-12"
             >
               <Link href="/auth/signup">
-                <PremiumButton size="lg" icon={ArrowRight} iconPosition="right">
+                <button className="px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2">
                   Start Free Trial
-                </PremiumButton>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               </Link>
-              <Link href="/demo">
-                <PremiumButton size="lg" variant="secondary" icon={PlayCircle}>
-                  Watch Demo
-                </PremiumButton>
+              <Link href="/aioptimise-test">
+                <button className="px-8 py-4 bg-gray-800/50 backdrop-blur-xl border border-gray-700 text-gray-300 font-semibold rounded-lg hover:bg-gray-700/50 hover:border-gray-600 transition-all flex items-center justify-center gap-2">
+                  <PlayCircle className="w-5 h-5" />
+                  Try AIOptimise Pro
+                </button>
               </Link>
             </motion.div>
 
             {/* Trust Indicators */}
             <motion.div 
               variants={fadeInUp}
-              className="flex flex-wrap justify-center gap-8 text-sm text-gray-600"
+              className="flex flex-wrap justify-center gap-8 text-sm text-gray-400"
             >
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-600" />
+                <Shield className="w-5 h-5 text-green-500" />
                 <span>SOC 2 Certified</span>
               </div>
               <div className="flex items-center gap-2">
-                <Lock className="w-5 h-5 text-blue-600" />
+                <Lock className="w-5 h-5 text-blue-500" />
                 <span>Bank-Level Security</span>
               </div>
               <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-600" />
+                <Award className="w-5 h-5 text-violet-500" />
                 <span>G2 Leader 2025</span>
               </div>
             </motion.div>
@@ -132,11 +135,11 @@ export default function Home() {
           transition={{ duration: 2, repeat: Infinity }}
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
         >
-          <ChevronRight className="w-6 h-6 text-gray-400 rotate-90" />
+          <ChevronRight className="w-6 h-6 text-gray-600 rotate-90" />
         </motion.div>
       </section>
 
-      {/* Premium Stats Section */}
+      {/* Premium Stats Section with Dark Theme */}
       <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div 
@@ -154,21 +157,21 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                <div className="bg-gradient-to-br from-green-900/50 to-emerald-900/30 backdrop-blur-xl rounded-2xl border border-green-500/30 shadow-lg shadow-green-500/10 p-6 h-[160px] flex flex-col justify-between overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-lg bg-green-50">
-                      <TrendingDown className="w-5 h-5 text-green-600" />
+                    <div className="p-2 rounded-lg bg-green-500/20">
+                      <TrendingDown className="w-5 h-5 text-green-400" />
                     </div>
-                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    <span className="text-xs font-medium text-green-400 bg-green-500/20 px-2 py-1 rounded-full">
                       +12%
                     </span>
                   </div>
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900">40</span>
-                      <span className="text-xl font-semibold text-gray-600">%</span>
+                      <span className="text-3xl font-bold text-white">40</span>
+                      <span className="text-xl font-semibold text-gray-400">%</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Average Savings</p>
+                    <p className="text-sm text-gray-400 mt-1">Average Savings</p>
                   </div>
                 </div>
               </motion.div>
@@ -181,28 +184,28 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/30 backdrop-blur-xl rounded-2xl border border-blue-500/30 shadow-lg shadow-blue-500/10 p-6 h-[160px] flex flex-col justify-between overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-lg bg-blue-50">
-                      <Globe className="w-5 h-5 text-blue-600" />
+                    <div className="p-2 rounded-lg bg-blue-500/20">
+                      <Globe className="w-5 h-5 text-blue-400" />
                     </div>
                     <div className="flex -space-x-2">
                       {['openai', 'claude', 'gemini'].map((provider) => (
-                        <div key={provider} className="w-7 h-7 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                        <div key={provider} className="w-7 h-7 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
                           {getAIProviderLogo(provider, 'w-4 h-4')}
                         </div>
                       ))}
-                      <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-gray-600">+22</span>
+                      <div className="w-7 h-7 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-gray-400">+22</span>
                       </div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900">25</span>
-                      <span className="text-xl font-semibold text-gray-600">+</span>
+                      <span className="text-3xl font-bold text-white">25</span>
+                      <span className="text-xl font-semibold text-gray-400">+</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">AI Providers</p>
+                    <p className="text-sm text-gray-400 mt-1">AI Providers</p>
                   </div>
                 </div>
               </motion.div>
@@ -215,20 +218,20 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                <div className="bg-gradient-to-br from-violet-900/50 to-purple-900/30 backdrop-blur-xl rounded-2xl border border-violet-500/30 shadow-lg shadow-violet-500/10 p-6 h-[160px] flex flex-col justify-between overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-lg bg-purple-50">
-                      <Users className="w-5 h-5 text-purple-600" />
+                    <div className="p-2 rounded-lg bg-violet-500/20">
+                      <Users className="w-5 h-5 text-violet-400" />
                     </div>
-                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                    <span className="text-xs font-medium text-violet-400 bg-violet-500/20 px-2 py-1 rounded-full">
                       +28%
                     </span>
                   </div>
                   <div>
                     <div className="flex items-baseline">
-                      <span className="text-3xl font-bold text-gray-900">50K</span>
+                      <span className="text-3xl font-bold text-white">50K</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Active Users</p>
+                    <p className="text-sm text-gray-400 mt-1">Active Users</p>
                   </div>
                 </div>
               </motion.div>
@@ -241,22 +244,22 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-6 h-[160px] flex flex-col justify-between overflow-hidden">
+                <div className="bg-gradient-to-br from-yellow-900/50 to-orange-900/30 backdrop-blur-xl rounded-2xl border border-yellow-500/30 shadow-lg shadow-yellow-500/10 p-6 h-[160px] flex flex-col justify-between overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-lg bg-yellow-50">
-                      <DollarSign className="w-5 h-5 text-yellow-600" />
+                    <div className="p-2 rounded-lg bg-yellow-500/20">
+                      <DollarSign className="w-5 h-5 text-yellow-400" />
                     </div>
-                    <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                    <span className="text-xs font-medium text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-full">
                       +35%
                     </span>
                   </div>
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-xl font-semibold text-gray-600">$</span>
-                      <span className="text-3xl font-bold text-gray-900">2.5</span>
-                      <span className="text-xl font-semibold text-gray-600">M</span>
+                      <span className="text-xl font-semibold text-gray-400">$</span>
+                      <span className="text-3xl font-bold text-white">2.5</span>
+                      <span className="text-xl font-semibold text-gray-400">M</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Cost Reduced</p>
+                    <p className="text-sm text-gray-400 mt-1">Cost Reduced</p>
                   </div>
                 </div>
               </motion.div>
@@ -265,7 +268,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Premium Features Grid */}
+      {/* Premium Features Grid with Dark Theme */}
       <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -276,9 +279,9 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-6">
-              <span className="text-gradient-blue">Enterprise Features</span>
+              <span className="bg-gradient-to-r from-violet-400 to-purple-400 text-transparent bg-clip-text">Enterprise Features</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Everything you need to master AI costs at scale
             </p>
           </motion.div>
@@ -287,39 +290,52 @@ export default function Home() {
             {[
               {
                 icon: Brain,
-                title: 'AI-Powered Insights',
-                description: 'Machine learning algorithms analyze your usage patterns to identify optimization opportunities.',
-                color: 'from-purple-500/10 to-pink-500/10'
+                title: 'AIOptimise Pro',
+                description: 'Advanced AI chat interface with real-time model selection and cost optimization.',
+                color: 'from-violet-500/20 to-purple-500/20',
+                borderColor: 'border-violet-500/30',
+                iconColor: 'text-violet-400',
+                link: '/aioptimise-test'
               },
               {
                 icon: Shield,
                 title: 'Enterprise Security',
                 description: 'Bank-level encryption, SSO, and compliance with SOC 2, GDPR, and HIPAA standards.',
-                color: 'from-blue-500/10 to-cyan-500/10'
+                color: 'from-blue-500/20 to-cyan-500/20',
+                borderColor: 'border-blue-500/30',
+                iconColor: 'text-blue-400'
               },
               {
                 icon: BarChart3,
                 title: 'Advanced Analytics',
                 description: 'Deep dive into usage metrics with custom dashboards and automated reporting.',
-                color: 'from-green-500/10 to-teal-500/10'
+                color: 'from-green-500/20 to-teal-500/20',
+                borderColor: 'border-green-500/30',
+                iconColor: 'text-green-400'
               },
               {
                 icon: Zap,
                 title: 'Real-time Monitoring',
                 description: 'Track every API call with millisecond precision and instant cost calculations.',
-                color: 'from-yellow-500/10 to-orange-500/10'
+                color: 'from-yellow-500/20 to-orange-500/20',
+                borderColor: 'border-yellow-500/30',
+                iconColor: 'text-yellow-400'
               },
               {
                 icon: Users,
                 title: 'Team Management',
                 description: 'Role-based access control, usage limits, and department-level cost allocation.',
-                color: 'from-red-500/10 to-pink-500/10'
+                color: 'from-red-500/20 to-pink-500/20',
+                borderColor: 'border-red-500/30',
+                iconColor: 'text-red-400'
               },
               {
                 icon: AlertCircle,
                 title: 'Smart Alerts',
                 description: 'Predictive alerts before budget overruns with AI-powered anomaly detection.',
-                color: 'from-indigo-500/10 to-purple-500/10'
+                color: 'from-indigo-500/20 to-purple-500/20',
+                borderColor: 'border-indigo-500/30',
+                iconColor: 'text-indigo-400'
               }
             ].map((feature, index) => (
               <motion.div
@@ -330,28 +346,28 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="h-full"
               >
-                <PremiumCard hover glow={index === 1} className="h-full flex flex-col">
-                  <div className="flex-1">
-                    <PremiumCardHeader
-                      icon={feature.icon}
-                      title={feature.title}
-                      subtitle={feature.description}
-                    />
-                  </div>
-                  <PremiumCardContent>
-                    <div className="flex items-center gap-2 text-sm text-purple-600 font-medium">
-                      <span>Learn more</span>
-                      <ArrowRight className="w-4 h-4" />
+                <div className={`h-full bg-gradient-to-br ${feature.color} backdrop-blur-xl rounded-2xl border ${feature.borderColor} shadow-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col`}>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="p-3 rounded-lg bg-gray-800/50">
+                      <feature.icon className={`w-6 h-6 ${feature.iconColor}`} />
                     </div>
-                  </PremiumCardContent>
-                </PremiumCard>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                  <p className="text-gray-400 flex-1">{feature.description}</p>
+                  {feature.link && (
+                    <Link href={feature.link} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors">
+                      <span>Try Now</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Interactive Demo Section */}
+      {/* Interactive Demo Section with Dark Theme */}
       <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -361,13 +377,13 @@ export default function Home() {
             viewport={{ once: true }}
             className="relative"
           >
-            <PremiumCard variant="gradient" className="overflow-hidden">
+            <div className="bg-gradient-to-br from-violet-900/30 to-purple-900/30 backdrop-blur-xl rounded-3xl border border-violet-500/30 shadow-2xl shadow-violet-500/10 overflow-hidden">
               <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center p-6 sm:p-8 lg:p-12">
                 <div>
-                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-white">
                     See AICostGuardian in Action
                   </h3>
-                  <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+                  <p className="text-base sm:text-lg text-gray-300 mb-6 sm:mb-8">
                     Watch how leading enterprises reduce AI costs by 40% while improving efficiency and control.
                   </p>
                   <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
@@ -385,18 +401,22 @@ export default function Home() {
                         viewport={{ once: true }}
                         className="flex items-center gap-3"
                       >
-                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                        <span className="text-gray-700">{item}</span>
+                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        <span className="text-gray-300">{item}</span>
                       </motion.li>
                     ))}
                   </ul>
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    <PremiumButton icon={PlayCircle}>
-                      Watch Demo
-                    </PremiumButton>
-                    <PremiumButton variant="ghost" icon={ArrowRight} iconPosition="right">
+                    <Link href="/demo">
+                      <button className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2">
+                        <PlayCircle className="w-5 h-5" />
+                        Watch Demo
+                      </button>
+                    </Link>
+                    <button className="px-6 py-3 bg-gray-800/50 backdrop-blur-xl border border-gray-700 text-gray-300 font-semibold rounded-lg hover:bg-gray-700/50 hover:border-gray-600 transition-all flex items-center justify-center gap-2">
                       Schedule Call
-                    </PremiumButton>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
                 <div className="relative mt-8 lg:mt-0">
@@ -405,21 +425,21 @@ export default function Home() {
                     whileHover={{ scale: 1.02 }}
                     className="relative rounded-2xl overflow-hidden shadow-2xl"
                   >
-                    <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-4 sm:p-6 lg:p-8">
-                      <div className="bg-white/10 backdrop-blur rounded-xl p-3 sm:p-4 lg:p-6">
+                    <div className="bg-gradient-to-br from-violet-600 to-purple-600 p-4 sm:p-6 lg:p-8">
+                      <div className="bg-black/20 backdrop-blur rounded-xl p-3 sm:p-4 lg:p-6">
                         <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 mb-2 sm:mb-3 lg:mb-4">
-                          <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                          <div className="bg-white/10 backdrop-blur rounded-lg p-2 sm:p-3 lg:p-4">
                             <LineChart className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8 text-white mb-1 sm:mb-2" />
                             <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">$24,580</div>
                             <div className="text-xs sm:text-sm text-white/80">Monthly Spend</div>
                           </div>
-                          <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                          <div className="bg-white/10 backdrop-blur rounded-lg p-2 sm:p-3 lg:p-4">
                             <PieChart className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8 text-white mb-1 sm:mb-2" />
                             <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">-35%</div>
                             <div className="text-xs sm:text-sm text-white/80">vs Last Month</div>
                           </div>
                         </div>
-                        <div className="bg-white/20 rounded-lg p-2 sm:p-3 lg:p-4">
+                        <div className="bg-white/10 backdrop-blur rounded-lg p-2 sm:p-3 lg:p-4">
                           <Activity className="w-full h-16 sm:h-20 lg:h-24 text-white/40" />
                         </div>
                       </div>
@@ -429,25 +449,25 @@ export default function Home() {
                   <motion.div
                     animate={{ y: [-10, 10, -10] }}
                     transition={{ duration: 4, repeat: Infinity }}
-                    className="absolute -top-4 -right-4 bg-white rounded-full shadow-xl p-3"
+                    className="absolute -top-4 -right-4 bg-gray-800 rounded-full shadow-xl p-3 border border-gray-700"
                   >
-                    <Star className="w-6 h-6 text-yellow-500" />
+                    <Star className="w-6 h-6 text-yellow-400" />
                   </motion.div>
                   <motion.div
                     animate={{ y: [10, -10, 10] }}
                     transition={{ duration: 4, repeat: Infinity }}
-                    className="absolute -bottom-4 -left-4 bg-white rounded-full shadow-xl p-3"
+                    className="absolute -bottom-4 -left-4 bg-gray-800 rounded-full shadow-xl p-3 border border-gray-700"
                   >
-                    <Shield className="w-6 h-6 text-green-500" />
+                    <Shield className="w-6 h-6 text-green-400" />
                   </motion.div>
                 </div>
               </div>
-            </PremiumCard>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials with Dark Theme */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -458,7 +478,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-6">
-              Loved by <span className="text-gradient">Industry Leaders</span>
+              Loved by <span className="bg-gradient-to-r from-violet-400 to-purple-400 text-transparent bg-clip-text">Industry Leaders</span>
             </h2>
           </motion.div>
 
@@ -491,27 +511,25 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="h-full"
               >
-                <PremiumCard variant="glass" className="h-full flex flex-col">
-                  <PremiumCardContent className="flex-1 flex flex-col">
-                    <div className="flex mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                      ))}
-                    </div>
-                    <p className="text-gray-700 mb-6 italic flex-1">"{testimonial.quote}"</p>
-                    <div className="mt-auto">
-                      <div className="font-semibold text-gray-900">{testimonial.author}</div>
-                      <div className="text-sm text-gray-600">{testimonial.role}</div>
-                    </div>
-                  </PremiumCardContent>
-                </PremiumCard>
+                <div className="h-full bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-lg p-6 flex flex-col">
+                  <div className="flex mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-300 mb-6 italic flex-1">"{testimonial.quote}"</p>
+                  <div className="mt-auto">
+                    <div className="font-semibold text-white">{testimonial.author}</div>
+                    <div className="text-sm text-gray-400">{testimonial.role}</div>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* Final CTA with Dark Theme */}
       <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -520,7 +538,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <PremiumCard variant="dark" className="text-center p-8 sm:p-10 lg:p-12 xl:p-16">
+            <div className="bg-gradient-to-br from-violet-900/40 to-purple-900/40 backdrop-blur-xl rounded-3xl border border-violet-500/30 shadow-2xl shadow-violet-500/10 text-center p-8 sm:p-10 lg:p-12 xl:p-16">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6">
                 Ready to Optimize Your AI Spending?
               </h2>
@@ -529,20 +547,22 @@ export default function Home() {
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
                 <Link href="/auth/signup" className="w-full sm:w-auto">
-                  <PremiumButton size="lg" icon={Sparkles} className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2">
+                    <Sparkles className="w-5 h-5" />
                     Start 14-Day Free Trial
-                  </PremiumButton>
+                  </button>
                 </Link>
                 <Link href="/pricing" className="w-full sm:w-auto">
-                  <PremiumButton size="lg" variant="secondary" icon={DollarSign} className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto px-8 py-4 bg-gray-800/50 backdrop-blur-xl border border-gray-700 text-gray-300 font-semibold rounded-lg hover:bg-gray-700/50 hover:border-gray-600 transition-all flex items-center justify-center gap-2">
+                    <DollarSign className="w-5 h-5" />
                     View Pricing
-                  </PremiumButton>
+                  </button>
                 </Link>
               </div>
-              <p className="text-gray-400 text-xs sm:text-sm mt-6 sm:mt-8">
+              <p className="text-gray-500 text-xs sm:text-sm mt-6 sm:mt-8">
                 No credit card required • Setup in 5 minutes • Cancel anytime
               </p>
-            </PremiumCard>
+            </div>
           </motion.div>
         </div>
       </section>

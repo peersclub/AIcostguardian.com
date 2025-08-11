@@ -60,6 +60,7 @@ export default function Navigation() {
       icon: Layers,
       visibility: 'visitor',
       children: [
+        { label: 'AIOptimise Pro', href: '/aioptimise-test', icon: Sparkles, badge: 'Try Now', visibility: 'all' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all' },
         { label: 'AI Models', href: '/models', icon: Brain, visibility: 'all' },
         { label: 'Integrations', href: '/integrations', icon: Globe, visibility: 'all' }
@@ -110,7 +111,7 @@ export default function Navigation() {
       label: 'AIOptimise',
       href: '/aioptimise',
       icon: Sparkles,
-      badge: 'New',
+      badge: 'Pro',
       visibility: 'auth'
     },
     {
@@ -152,14 +153,16 @@ export default function Navigation() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
+    <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Main Nav */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center">
               <Logo size="sm" showText={false} className="h-8" />
-              <span className="ml-2 font-bold text-xl hidden sm:block">AICostGuardian</span>
+              <span className="ml-2 font-bold text-xl hidden sm:block bg-gradient-to-r from-violet-400 to-purple-400 text-transparent bg-clip-text">
+                AICostGuardian
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -168,7 +171,7 @@ export default function Navigation() {
               {pathname !== '/' && (
                 <Link
                   href="/"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800/50 hover:text-white transition-all"
                 >
                   <Home className="w-4 h-4" />
                   <span>Home</span>
@@ -186,8 +189,8 @@ export default function Navigation() {
                         className={`
                           flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
                           ${item.children.some(child => isActive(child.href)) || isActive(item.href)
-                            ? 'bg-purple-50 text-purple-700'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-violet-900/50 text-violet-300 border border-violet-500/30'
+                            : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                           }
                         `}
                       >
@@ -196,10 +199,10 @@ export default function Navigation() {
                         {item.badge && (
                           <span className={`ml-1 px-1.5 py-0.5 text-xs font-semibold rounded ${
                             item.badge === 'Live' 
-                              ? 'bg-green-100 text-green-700' 
-                              : item.badge === 'New'
-                              ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
-                              : 'bg-gray-100 text-gray-700'
+                              ? 'bg-green-500/20 text-green-400' 
+                              : item.badge === 'Pro'
+                              ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-300 border border-violet-500/30'
+                              : 'bg-gray-700 text-gray-300'
                           }`}>
                             {item.badge}
                           </span>
@@ -215,8 +218,8 @@ export default function Navigation() {
                       className={`
                         flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
                         ${isActive(item.href)
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-violet-900/50 text-violet-300 border border-violet-500/30'
+                          : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                         }
                       `}
                     >
@@ -225,10 +228,10 @@ export default function Navigation() {
                       {item.badge && (
                         <span className={`ml-1 px-1.5 py-0.5 text-xs font-semibold rounded ${
                           item.badge === 'Live' 
-                            ? 'bg-green-100 text-green-700' 
-                            : item.badge === 'New'
-                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-green-500/20 text-green-400' 
+                            : item.badge === 'Pro'
+                            ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-300 border border-violet-500/30'
+                            : 'bg-gray-700 text-gray-300'
                         }`}>
                           {item.badge}
                         </span>
@@ -246,25 +249,25 @@ export default function Navigation() {
                         transition={{ duration: 0.2 }}
                         onMouseEnter={() => setActiveDropdown(item.label)}
                         onMouseLeave={() => setActiveDropdown(null)}
-                        className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                        className="absolute top-full left-0 mt-1 w-56 bg-gray-900/95 backdrop-blur-xl rounded-lg shadow-xl border border-gray-800 py-1"
                       >
                         {item.children.map((child) => (
                           <Link
                             key={child.label}
                             href={child.href}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white transition-all"
                           >
                             <child.icon className="w-4 h-4" />
                             <span>{child.label}</span>
                             {child.badge && (
                               <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
                                 child.badge === 'Live' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : child.badge === 'New'
-                                  ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  ? 'bg-green-500/20 text-green-400' 
+                                  : child.badge === 'Try Now'
+                                  ? 'bg-violet-500/20 text-violet-300'
                                   : child.badge === 'Coming Soon'
-                                  ? 'bg-gray-100 text-gray-600'
-                                  : 'bg-red-100 text-red-700'
+                                  ? 'bg-gray-700 text-gray-400'
+                                  : 'bg-red-500/20 text-red-400'
                               }`}>
                                 {child.badge}
                               </span>
@@ -285,12 +288,12 @@ export default function Navigation() {
             {status === 'authenticated' && (
               <Link 
                 href="/notifications" 
-                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
                 title="View Notifications"
               >
                 <Bell className="w-5 h-5" />
                 {notifications > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
               </Link>
             )}
@@ -301,7 +304,7 @@ export default function Navigation() {
                 const event = new CustomEvent('toggleDemoSummary')
                 window.dispatchEvent(event)
               }}
-              className="relative p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+              className="relative p-2 text-orange-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors"
               title="Demo Data Info"
             >
               <AlertTriangle className="w-5 h-5" />
@@ -313,12 +316,12 @@ export default function Navigation() {
               <div className="relative">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'user' ? null : 'user')}
-                  className="flex items-center gap-2 p-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="flex items-center gap-2 p-2 text-gray-300 hover:bg-gray-800/50 rounded-lg transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     {session.user.name?.[0] || session.user.email?.[0] || 'U'}
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
 
                 <AnimatePresence>
@@ -328,48 +331,48 @@ export default function Navigation() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                      className="absolute top-full right-0 mt-1 w-56 bg-gray-900/95 backdrop-blur-xl rounded-lg shadow-xl border border-gray-800 py-1"
                     >
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="px-4 py-2 border-b border-gray-800">
+                        <p className="text-sm font-medium text-white">
                           {session.user.name || 'User'}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-400 truncate">
                           {session.user.email}
                         </p>
                       </div>
                       <Link
                         href="/dashboard"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white"
                       >
                         <LayoutDashboard className="w-4 h-4" />
                         <span>Dashboard</span>
                       </Link>
                       <Link
                         href="/profile"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white"
                       >
                         <User className="w-4 h-4" />
                         <span>Profile</span>
                       </Link>
                       <Link
                         href="/settings"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white"
                       >
                         <Settings className="w-4 h-4" />
                         <span>Settings</span>
                       </Link>
                       <Link
                         href="/billing"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white"
                       >
                         <CreditCard className="w-4 h-4" />
                         <span>Billing</span>
                       </Link>
-                      <div className="border-t border-gray-100 mt-1 pt-1">
+                      <div className="border-t border-gray-800 mt-1 pt-1">
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full text-left"
                         >
                           <LogOut className="w-4 h-4" />
                           <span>Sign Out</span>
@@ -383,13 +386,13 @@ export default function Navigation() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth/signin"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
                 >
                   Get Started
                 </Link>
@@ -399,7 +402,7 @@ export default function Navigation() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -415,13 +418,13 @@ export default function Navigation() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white border-t border-gray-200"
+            className="md:hidden bg-gray-900 border-t border-gray-800"
           >
             <div className="px-4 py-4 space-y-1">
               {pathname !== '/' && (
                 <Link
                   href="/"
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800/50 hover:text-white transition-all"
                 >
                   <Home className="w-4 h-4" />
                   <span>Home</span>
@@ -436,8 +439,8 @@ export default function Navigation() {
                       className={`
                         flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all
                         ${isActive(item.href)
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-violet-900/50 text-violet-300 border border-violet-500/30'
+                          : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                         }
                       `}
                     >
@@ -446,10 +449,10 @@ export default function Navigation() {
                       {item.badge && (
                         <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
                           item.badge === 'Live' 
-                            ? 'bg-green-100 text-green-700' 
-                            : item.badge === 'New'
-                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-green-500/20 text-green-400' 
+                            : item.badge === 'Pro'
+                            ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-300'
+                            : 'bg-gray-700 text-gray-300'
                         }`}>
                           {item.badge}
                         </span>
@@ -457,7 +460,7 @@ export default function Navigation() {
                     </Link>
                   ) : (
                     <>
-                      <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700">
+                      <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300">
                         <item.icon className="w-4 h-4" />
                         <span>{item.label}</span>
                       </div>
@@ -466,19 +469,19 @@ export default function Navigation() {
                           <Link
                             key={child.label}
                             href={child.href}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white"
                           >
                             <child.icon className="w-3 h-3" />
                             <span>{child.label}</span>
                             {child.badge && (
                               <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
                                 child.badge === 'Live' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : child.badge === 'New'
-                                  ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  ? 'bg-green-500/20 text-green-400' 
+                                  : child.badge === 'Try Now'
+                                  ? 'bg-violet-500/20 text-violet-300'
                                   : child.badge === 'Coming Soon'
-                                  ? 'bg-gray-100 text-gray-600'
-                                  : 'bg-red-100 text-red-700'
+                                  ? 'bg-gray-700 text-gray-400'
+                                  : 'bg-red-500/20 text-red-400'
                               }`}>
                                 {child.badge}
                               </span>
@@ -492,26 +495,26 @@ export default function Navigation() {
               ))}
               
               {status === 'authenticated' ? (
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-gray-800 pt-3 mt-3">
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg w-full"
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg w-full"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>
               ) : (
-                <div className="border-t border-gray-200 pt-3 mt-3 space-y-2">
+                <div className="border-t border-gray-800 pt-3 mt-3 space-y-2">
                   <Link
                     href="/auth/signin"
-                    className="block px-3 py-2 text-sm font-medium text-center text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg"
+                    className="block px-3 py-2 text-sm font-medium text-center text-gray-300 hover:text-white border border-gray-700 rounded-lg"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/signup"
-                    className="block px-3 py-2 text-sm font-medium text-center text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg"
+                    className="block px-3 py-2 text-sm font-medium text-center text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg"
                   >
                     Get Started
                   </Link>

@@ -88,7 +88,7 @@ interface SessionMetrics {
   monthlyUsed?: number;
 }
 
-export default function AIOptimiseProClient() {
+export default function AIOptimiseTestClient() {
   const { data: session } = useSession();
   const router = useRouter();
   
@@ -143,19 +143,17 @@ export default function AIOptimiseProClient() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryCountRef = useRef<number>(0);
   
-  // Organization info
-  const organizationName = session?.user?.company || "Your Organization";
-  const isRestricted = false; // Check user restrictions
+  // Organization info - use test data
+  const organizationName = "Test Organization";
+  const isRestricted = false;
   const hasReachedLimit = (sessionMetrics.dailyUsed || 0) >= (sessionMetrics.dailyLimit || 0);
 
-  // Load initial data
+  // Load initial data - use test endpoints
   useEffect(() => {
-    if (session) {
-      loadThreads();
-      loadUserSettings();
-      loadUsageLimits();
-    }
-  }, [session]);
+    loadThreads();
+    loadUserSettings();
+    loadUsageLimits();
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -172,13 +170,14 @@ export default function AIOptimiseProClient() {
     }
   }, [messages, currentThread, settings.autoSave]);
 
-  // API functions
+  // API functions - use test endpoints
   const loadThreads = async () => {
     try {
-      const response = await fetch('/api/aioptimise/threads');
+      const response = await fetch('/api/aioptimise-test/threads');
       if (response.ok) {
         const data = await response.json();
         setThreads(data.threads);
+        toast.success('Test threads loaded successfully');
       }
     } catch (error) {
       console.error('Failed to load threads:', error);
@@ -188,7 +187,7 @@ export default function AIOptimiseProClient() {
 
   const loadUserSettings = async () => {
     try {
-      const response = await fetch('/api/aioptimise/settings');
+      const response = await fetch('/api/aioptimise-test/settings');
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
@@ -200,7 +199,7 @@ export default function AIOptimiseProClient() {
 
   const loadUsageLimits = async () => {
     try {
-      const response = await fetch('/api/aioptimise/limits');
+      const response = await fetch('/api/aioptimise-test/limits');
       if (response.ok) {
         const data = await response.json();
         setSessionMetrics(prev => ({
@@ -218,7 +217,7 @@ export default function AIOptimiseProClient() {
 
   const createNewThread = async () => {
     try {
-      const response = await fetch('/api/aioptimise/threads', {
+      const response = await fetch('/api/aioptimise-test/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -233,7 +232,8 @@ export default function AIOptimiseProClient() {
         setCurrentThread(thread);
         setMessages([]);
         setCurrentAnalysis(null);
-        return thread; // Return the created thread
+        toast.success('New chat created');
+        return thread;
       }
     } catch (error) {
       console.error('Failed to create thread:', error);
@@ -246,14 +246,8 @@ export default function AIOptimiseProClient() {
     if (!currentThread || messages.length === 0) return;
     
     try {
-      await fetch(`/api/aioptimise/threads/${currentThread.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messages,
-          title: currentThread.title,
-        }),
-      });
+      // Mock save - in test mode, just log
+      console.log('Auto-saving thread:', currentThread.id);
     } catch (error) {
       console.error('Failed to save thread:', error);
     }
@@ -321,7 +315,7 @@ export default function AIOptimiseProClient() {
 
   const sendMessageWithRetry = async (messageText: string, images: string[], thread: Thread, retryCount = 0): Promise<void> => {
     try {
-      const response = await fetch('/api/aioptimise/chat', {
+      const response = await fetch('/api/aioptimise-test/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -410,6 +404,7 @@ export default function AIOptimiseProClient() {
               throw new Error(data.error);
             }
           } catch (e) {
+            if (line.includes('[DONE]')) break;
             console.error('Failed to parse SSE data:', e);
           }
         }
@@ -494,12 +489,7 @@ export default function AIOptimiseProClient() {
 
   const handleFeedback = async (messageId: string, feedback: 'positive' | 'negative') => {
     try {
-      await fetch(`/api/aioptimise/messages/${messageId}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedback }),
-      });
-      
+      // Mock feedback - just update local state
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, feedback } : msg
       ));
@@ -547,13 +537,7 @@ export default function AIOptimiseProClient() {
 
   const requestLimitIncrease = async () => {
     try {
-      await fetch('/api/aioptimise/limits/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: 'Requesting increased usage limits for productivity',
-        }),
-      });
+      // Mock limit increase request
       toast.success('Limit increase requested. You will be notified once approved.');
     } catch (error) {
       console.error('Failed to request limit increase:', error);
@@ -613,7 +597,7 @@ export default function AIOptimiseProClient() {
               <div className="p-2 bg-violet-500/20 rounded-lg">
                 <Sparkles className="h-5 w-5 text-violet-400" />
               </div>
-              <h1 className="text-xl font-bold text-white">AIOptimise Pro</h1>
+              <h1 className="text-xl font-bold text-white">AIOptimise Pro (Test Mode)</h1>
               {currentThread && (
                 <>
                   <ChevronRight className="h-3 w-3 text-gray-400" />
@@ -668,58 +652,58 @@ export default function AIOptimiseProClient() {
             {/* Messages */}
             <ScrollArea className="flex-1 overflow-y-auto pb-40">
               <div className="max-w-4xl mx-auto px-4 py-8">
-              {!currentThread ? (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                  <div className="p-3 rounded-2xl bg-violet-500/20 mb-4">
-                    <Sparkles className="h-8 w-8 text-violet-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Welcome to AIOptimise Pro</h2>
-                  <p className="text-gray-400 mb-6 max-w-md">
-                    Professional AI interface with intelligent model selection, real-time collaboration, and advanced analytics
-                  </p>
-                  <Button
-                    onClick={createNewThread}
-                    className="gap-2 bg-violet-600 hover:bg-violet-700 text-white transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Start New Chat
-                  </Button>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                  <div className="p-3 rounded-2xl bg-gray-800/50 mb-4">
-                    <Info className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-white mb-2">Ready to assist</h3>
-                  <p className="text-gray-400 max-w-md">
-                    I'll automatically select the best AI model for your needs and show you why
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {messages.map((message, index) => (
-                    <MessageEnhanced
-                      key={message.id}
-                      message={message}
-                      onRegenerate={(model) => regenerateMessage(message.id, model)}
-                      onFeedback={(type) => handleFeedback(message.id, type)}
-                      onCopy={() => {
-                        navigator.clipboard.writeText(message.content);
-                        toast.success('Copied to clipboard');
-                      }}
-                      isStreaming={isStreaming && message.status === 'streaming'}
-                      mode={mode}
-                    />
-                  ))}
-                  {isStreaming && messages[messages.length - 1]?.status === 'streaming' && (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-4 w-4 animate-spin text-violet-400 mr-2" />
-                      <span className="text-sm text-gray-400">AI is thinking...</span>
+                {!currentThread ? (
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                    <div className="p-3 rounded-2xl bg-violet-500/20 mb-4">
+                      <Sparkles className="h-8 w-8 text-violet-400" />
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
+                    <h2 className="text-2xl font-bold text-white mb-2">Welcome to AIOptimise Pro Test</h2>
+                    <p className="text-gray-400 mb-6 max-w-md">
+                      Test mode with mock data - all features available for testing
+                    </p>
+                    <Button
+                      onClick={createNewThread}
+                      className="gap-2 bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Start New Chat
+                    </Button>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                    <div className="p-3 rounded-2xl bg-gray-800/50 mb-4">
+                      <Info className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-white mb-2">Ready to assist</h3>
+                    <p className="text-gray-400 max-w-md">
+                      Test mode active - using mock AI responses
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((message, index) => (
+                      <MessageEnhanced
+                        key={message.id}
+                        message={message}
+                        onRegenerate={(model) => regenerateMessage(message.id, model)}
+                        onFeedback={(type) => handleFeedback(message.id, type)}
+                        onCopy={() => {
+                          navigator.clipboard.writeText(message.content);
+                          toast.success('Copied to clipboard');
+                        }}
+                        isStreaming={isStreaming && message.status === 'streaming'}
+                        mode={mode}
+                      />
+                    ))}
+                    {isStreaming && messages[messages.length - 1]?.status === 'streaming' && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-violet-400 mr-2" />
+                        <span className="text-sm text-gray-400">AI is thinking...</span>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
               </div>
             </ScrollArea>
             
@@ -792,6 +776,7 @@ export default function AIOptimiseProClient() {
           if (thread) {
             setCurrentThread(thread);
             // Load thread messages
+            toast.info(`Loaded thread: ${thread.title}`);
           }
         }}
         organizationName={organizationName}

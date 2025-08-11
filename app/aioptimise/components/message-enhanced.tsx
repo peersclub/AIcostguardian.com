@@ -61,7 +61,7 @@ interface MessageEnhancedProps {
   onEdit?: () => void;
   onDelete?: () => void;
   isStreaming?: boolean;
-  mode?: 'standard' | 'focus' | 'coding';
+  mode?: 'standard' | 'focus' | 'coding' | 'research' | 'creative';
 }
 
 const getContentTypeIcon = (contentType?: string) => {
@@ -92,7 +92,7 @@ export function MessageEnhanced({
   const isFailed = message.status === 'failed';
   const isProcessing = message.status === 'processing' || message.status === 'streaming';
 
-  const ProviderLogo = message.selectedProvider 
+  const providerLogo = message.selectedProvider 
     ? getAIProviderLogo(message.selectedProvider) 
     : null;
 
@@ -117,8 +117,8 @@ export function MessageEnhanced({
           <div className="relative">
             <Avatar className="h-8 w-8 bg-gradient-to-r from-violet-500/20 to-purple-500/20">
               <AvatarFallback>
-                {ProviderLogo ? (
-                  <ProviderLogo className="h-5 w-5" />
+                {providerLogo ? (
+                  providerLogo
                 ) : (
                   <Bot className="h-4 w-4 text-violet-400" />
                 )}
@@ -221,8 +221,10 @@ export function MessageEnhanced({
               ) : (
                 <Markdown
                   components={{
-                    code({ node, inline, className, children, ...props }) {
-                      return !inline ? (
+                    code({ className, children, ...props }: any) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const isInline = !match;
+                      return !isInline ? (
                         <pre className="bg-muted/50 rounded-lg p-3 overflow-x-auto my-2">
                           <code className="text-sm font-mono" {...props}>
                             {children}

@@ -60,11 +60,10 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      dailyLimit: usageLimit?.dailyLimit || 10,
-      monthlyLimit: usageLimit?.monthlyLimit || 100,
+      dailyLimit: usageLimit?.dailyCostLimit || 10,
+      monthlyLimit: usageLimit?.monthlyCostLimit || 100,
       dailyUsed: dailyUsage._sum.cost || 0,
       monthlyUsed: monthlyUsage._sum.cost || 0,
-      isRestricted: usageLimit?.isRestricted || false,
     });
   } catch (error) {
     console.error('Failed to fetch usage limits:', error);
@@ -74,7 +73,6 @@ export async function GET() {
       monthlyLimit: 100,
       dailyUsed: 0,
       monthlyUsed: 0,
-      isRestricted: false,
     });
   }
 }
@@ -95,14 +93,13 @@ export async function POST(request: Request) {
         userId: session.user.id,
       },
       update: {
-        dailyLimit: dailyLimit || 10,
-        monthlyLimit: monthlyLimit || 100,
+        dailyCostLimit: dailyLimit || 10,
+        monthlyCostLimit: monthlyLimit || 100,
       },
       create: {
         userId: session.user.id,
-        dailyLimit: dailyLimit || 10,
-        monthlyLimit: monthlyLimit || 100,
-        isRestricted: false,
+        dailyCostLimit: dailyLimit || 10,
+        monthlyCostLimit: monthlyLimit || 100,
       },
     });
 

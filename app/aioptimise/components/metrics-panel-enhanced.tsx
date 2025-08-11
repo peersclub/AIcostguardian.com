@@ -82,7 +82,7 @@ interface MetricsPanelEnhancedProps {
   collapsed: boolean;
   onToggle: () => void;
   onRequestLimitIncrease?: () => void;
-  mode?: 'standard' | 'focus';
+  mode?: 'standard' | 'focus' | 'coding' | 'research' | 'creative';
 }
 
 export function MetricsPanelEnhanced({

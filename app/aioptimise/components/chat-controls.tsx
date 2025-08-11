@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ModelSelector } from './model-selector';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PromptAnalyzer as Analyzer, type AnalysisResult } from '@/lib/prompt-analyzer/engine';
 
 interface ChatControlsProps {
   input: string;
@@ -66,49 +67,113 @@ export function ChatControls({
     optimizationTips: string[];
     confidence: number;
   } | null>(null);
+  const [fullAnalysis, setFullAnalysis] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const analyzerRef = useRef<Analyzer | null>(null);
+
+  // Initialize analyzer
+  useEffect(() => {
+    analyzerRef.current = new Analyzer();
+  }, []);
 
   // Analyze prompt in real-time with debounce
   useEffect(() => {
-    if (input.length > 10) {
+    if (input.length > 10 && analyzerRef.current) {
       setIsAnalyzing(true);
       const timer = setTimeout(() => {
-        const wordCount = input.split(' ').length;
-        const hasCode = input.includes('code') || input.includes('function') || input.includes('class');
-        const hasAnalysis = input.includes('analyze') || input.includes('research') || input.includes('explain');
-        const hasCreative = input.includes('write') || input.includes('create') || input.includes('generate');
+        // Use the real analyzer engine
+        const result = analyzerRef.current!.analyze(input);
+        setFullAnalysis(result);
+        
+        // Map to simplified format for UI
+        const complexityMap = {
+          1: 'simple',
+          2: 'simple',
+          3: 'moderate',
+          4: 'complex',
+          5: 'complex'
+        } as const;
+        
+        // Get optimization tips based on analysis
+        const tips: string[] = [];
+        
+        if (result.tokens.estimated > 2000) {
+          tips.push('Consider breaking into smaller prompts');
+        }
+        
+        if (result.features.hasCode) {
+          tips.push('Code mode recommended for better syntax');
+        }
+        
+        if (result.features.requiresCitation || result.features.requiresLatestInfo) {
+          tips.push('Research mode may provide citations');
+        }
+        
+        if (result.features.requiresCreativity) {
+          tips.push('Creative mode unlocks enhanced generation');
+        }
+        
+        if (result.tokens.estimated > 4000) {
+          tips.push('Long prompts may increase latency');
+        }
+        
+        // Get the best recommended model
+        const topRecommendation = result.recommendations[0];
+        let suggestedModel = 'gpt-4o-mini'; // Default
+        
+        if (topRecommendation) {
+          // Map provider model names to our simplified names
+          const modelMap: Record<string, string> = {
+            'gpt-4o': 'gpt-4o',
+            'gpt-4o-mini': 'gpt-4o-mini',
+            'claude-3-5-sonnet-20241022': 'claude-3.5-sonnet',
+            'claude-3-haiku-20240307': 'claude-3-haiku',
+            'gemini-1.5-pro': 'gemini-1.5-pro',
+            'gemini-1.5-flash': 'gemini-1.5-flash',
+            'grok-2-1212': 'grok-2',
+            'sonar-pro': 'perplexity-sonar-pro'
+          };
+          
+          suggestedModel = modelMap[topRecommendation.model] || topRecommendation.model;
+        }
         
         const analysis = {
-          complexity: wordCount < 20 ? 'simple' : wordCount < 50 ? 'moderate' : 'complex' as const,
-          estimatedTokens: Math.ceil(wordCount * 1.3),
-          suggestedModel: 
-            hasCode ? 'claude-3.5-sonnet' :
-            hasAnalysis ? 'perplexity-sonar-pro' :
-            hasCreative ? 'claude-3.5-sonnet' :
-            wordCount < 20 ? 'gpt-4o-mini' : 
-            wordCount < 50 ? 'gpt-4o' : 
-            'claude-3.5-sonnet',
-          optimizationTips: [
-            wordCount > 50 ? 'Consider breaking into smaller prompts' : '',
-            hasCode ? 'Code mode recommended for better syntax' : '',
-            hasAnalysis ? 'Research mode may provide citations' : '',
-            hasCreative ? 'Creative mode unlocks enhanced generation' : '',
-            wordCount > 100 ? 'Long prompts may increase latency' : ''
-          ].filter(Boolean),
-          confidence: Math.min(95, 70 + (wordCount * 0.5))
+          complexity: complexityMap[result.complexity],
+          estimatedTokens: result.tokens.estimated,
+          suggestedModel,
+          optimizationTips: tips.filter(Boolean),
+          confidence: Math.round(result.confidence * 100)
         };
+        
         setPromptAnalysis(analysis);
         setIsAnalyzing(false);
+        
+        // Auto-select the recommended model if configured
+        if (topRecommendation) {
+          // Map provider names
+          const providerMap: Record<string, string> = {
+            'openai': 'OpenAI',
+            'anthropic': 'Anthropic',
+            'google': 'Google',
+            'xai': 'X.AI',
+            'perplexity': 'Perplexity'
+          };
+          
+          const provider = providerMap[topRecommendation.provider] || topRecommendation.provider;
+          // Silently set the model without triggering UI changes
+          // This ensures the model selector reflects the recommendation
+        }
       }, 500); // Debounce for 500ms
       
       return () => clearTimeout(timer);
     } else {
       setPromptAnalysis(null);
+      setFullAnalysis(null);
       setIsAnalyzing(false);
     }
-  }, [input]);
+  }, [input, onModelSelect]);
 
   // Handle drag and drop
   const handleDrag = (e: React.DragEvent) => {

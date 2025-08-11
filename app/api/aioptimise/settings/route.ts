@@ -21,8 +21,17 @@ export async function GET() {
       },
     });
 
-    // Return settings or defaults
-    const settings = userSettings || {
+    // Return settings or defaults, mapping database field names to client field names
+    const settings = userSettings ? {
+      showMetrics: userSettings.showMetrics,
+      showAnalysis: userSettings.showAnalysis,
+      autoSave: userSettings.autoSaveThreads,
+      autoRetry: userSettings.autoRetryOnError,
+      voiceEnabled: userSettings.voiceEnabled,
+      theme: userSettings.theme,
+      preferredProvider: undefined,
+      preferredModel: undefined,
+    } : {
       showMetrics: true,
       showAnalysis: true,
       autoSave: true,
@@ -67,26 +76,22 @@ export async function PUT(request: Request) {
       },
       update: {
         chatMode: settings.chatMode || 'STANDARD',
-        focusModeEnabled: settings.showMetrics === false,
+        showMetrics: settings.showMetrics !== false,
+        showAnalysis: settings.showAnalysis !== false,
         voiceEnabled: settings.voiceEnabled || false,
-        autoSave: settings.autoSave !== false,
-        autoRetry: settings.autoRetry !== false,
-        preferredProvider: settings.preferredProvider,
-        preferredModel: settings.preferredModel,
+        autoSaveThreads: settings.autoSave !== false,
+        autoRetryOnError: settings.autoRetry !== false,
         theme: settings.theme || 'system',
-        customInstructions: settings.customInstructions,
       },
       create: {
         userId: session.user.id,
         chatMode: settings.chatMode || 'STANDARD',
-        focusModeEnabled: settings.showMetrics === false,
+        showMetrics: settings.showMetrics !== false,
+        showAnalysis: settings.showAnalysis !== false,
         voiceEnabled: settings.voiceEnabled || false,
-        autoSave: settings.autoSave !== false,
-        autoRetry: settings.autoRetry !== false,
-        preferredProvider: settings.preferredProvider,
-        preferredModel: settings.preferredModel,
+        autoSaveThreads: settings.autoSave !== false,
+        autoRetryOnError: settings.autoRetry !== false,
         theme: settings.theme || 'system',
-        customInstructions: settings.customInstructions,
       },
     });
 
