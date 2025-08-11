@@ -147,11 +147,14 @@ export default function SettingsPage() {
             }
           }
           
+          const providerInfo = getProviderInfo(provider.id)
+          
           return {
             ...provider,
             dbKey,
             keyType,
             icon: getAIProviderLogo(provider.id, 'w-5 h-5'),
+            color: providerInfo.gradient,
             features: [],
             status: 'active' as const
           } as ApiProvider
@@ -406,7 +409,7 @@ export default function SettingsPage() {
       >
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${provider.color} shadow-lg`}>
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${provider.color} shadow-lg text-white`}>
               {provider.icon}
             </div>
             <div>

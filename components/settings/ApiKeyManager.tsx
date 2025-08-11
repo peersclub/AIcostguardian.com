@@ -8,6 +8,7 @@ import {
   AlertCircle, Loader2, Shield, Sparkles, ExternalLink 
 } from 'lucide-react'
 import { apiPost, apiGet } from '@/lib/utils/api-client'
+import { getAIProviderLogo, getProviderInfo } from '@/components/ui/ai-logos'
 
 interface ApiKey {
   id: string
@@ -19,11 +20,11 @@ interface ApiKey {
 }
 
 const PROVIDERS = [
-  { id: 'openai', name: 'OpenAI', icon: '🤖', color: 'from-green-500 to-emerald-600' },
-  { id: 'anthropic', name: 'Claude', icon: '🧠', color: 'from-orange-500 to-red-600' },
-  { id: 'google', name: 'Gemini', icon: '✨', color: 'from-blue-500 to-indigo-600' },
-  { id: 'mistral', name: 'Mistral', icon: '🌊', color: 'from-purple-500 to-pink-600' },
-  { id: 'perplexity', name: 'Perplexity', icon: '🔍', color: 'from-teal-500 to-cyan-600' },
+  { id: 'openai', name: 'OpenAI' },
+  { id: 'anthropic', name: 'Claude' },
+  { id: 'google', name: 'Gemini' },
+  { id: 'mistral', name: 'Mistral' },
+  { id: 'perplexity', name: 'Perplexity' },
 ]
 
 export default function ApiKeyManager() {
@@ -212,20 +213,25 @@ export default function ApiKeyManager() {
                 Select Provider
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {PROVIDERS.map((provider) => (
-                  <button
-                    key={provider.id}
-                    onClick={() => setSelectedProvider(provider.id)}
-                    className={`p-3 rounded-lg border transition-all ${
-                      selectedProvider === provider.id
-                        ? 'border-violet-500 bg-violet-500/10'
-                        : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                    }`}
-                  >
-                    <div className="text-2xl mb-1">{provider.icon}</div>
-                    <div className="text-sm text-gray-300">{provider.name}</div>
-                  </button>
-                ))}
+                {PROVIDERS.map((provider) => {
+                  const providerInfo = getProviderInfo(provider.id)
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => setSelectedProvider(provider.id)}
+                      className={`p-3 rounded-lg border transition-all ${
+                        selectedProvider === provider.id
+                          ? 'border-violet-500 bg-violet-500/10'
+                          : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                      }`}
+                    >
+                      <div className="flex justify-center mb-2 text-white">
+                        {getAIProviderLogo(provider.id, 'w-8 h-8')}
+                      </div>
+                      <div className="text-sm text-gray-300">{provider.name}</div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -375,6 +381,7 @@ export default function ApiKeyManager() {
         ) : (
           keys.map((key) => {
             const provider = PROVIDERS.find(p => p.id === key.provider)
+            const providerInfo = getProviderInfo(key.provider)
             return (
               <motion.div
                 key={key.id}
@@ -383,8 +390,8 @@ export default function ApiKeyManager() {
                 className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 flex items-center justify-between hover:border-gray-700 transition-all"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${provider?.color || 'from-gray-600 to-gray-700'} flex items-center justify-center text-2xl`}>
-                    {provider?.icon || '🔑'}
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${providerInfo.gradient} flex items-center justify-center text-white`}>
+                    {getAIProviderLogo(key.provider, 'w-6 h-6')}
                   </div>
                   <div>
                     <div className="font-medium text-white">{provider?.name || key.provider}</div>

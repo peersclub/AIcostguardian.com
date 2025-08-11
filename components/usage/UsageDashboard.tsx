@@ -113,31 +113,31 @@ export default function UsageDashboard() {
     .slice(-7)
 
   return (
-    <div className="space-y-6 text-foreground">
+    <div className="space-y-6">
       {/* Controls */}
       <div className="flex flex-wrap gap-4 items-center">
         <Select value={days} onValueChange={setDays}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700 text-white">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
+          <SelectContent className="bg-gray-800 border-gray-700 text-white">
+            <SelectItem value="7" className="text-gray-200 focus:text-white">Last 7 days</SelectItem>
+            <SelectItem value="30" className="text-gray-200 focus:text-white">Last 30 days</SelectItem>
+            <SelectItem value="90" className="text-gray-200 focus:text-white">Last 90 days</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={provider} onValueChange={setProvider}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700 text-white">
             <SelectValue placeholder="All providers" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All providers</SelectItem>
-            <SelectItem value="openai">OpenAI</SelectItem>
-            <SelectItem value="claude">Claude</SelectItem>
-            <SelectItem value="gemini">Gemini</SelectItem>
-            <SelectItem value="perplexity">Perplexity</SelectItem>
-            <SelectItem value="grok">Grok</SelectItem>
+          <SelectContent className="bg-gray-800 border-gray-700 text-white">
+            <SelectItem value="all" className="text-gray-200 focus:text-white">All providers</SelectItem>
+            <SelectItem value="openai" className="text-gray-200 focus:text-white">OpenAI</SelectItem>
+            <SelectItem value="claude" className="text-gray-200 focus:text-white">Claude</SelectItem>
+            <SelectItem value="gemini" className="text-gray-200 focus:text-white">Gemini</SelectItem>
+            <SelectItem value="perplexity" className="text-gray-200 focus:text-white">Perplexity</SelectItem>
+            <SelectItem value="grok" className="text-gray-200 focus:text-white">Grok</SelectItem>
           </SelectContent>
         </Select>
 
@@ -145,6 +145,7 @@ export default function UsageDashboard() {
           onClick={fetchUsageData} 
           disabled={refreshing}
           variant="outline"
+          className="bg-gray-800/50 border-gray-700 text-white hover:bg-gray-700"
         >
           {refreshing ? 'Refreshing...' : 'Refresh'}
         </Button>
@@ -229,12 +230,12 @@ export default function UsageDashboard() {
                 <div key={provider} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium capitalize">{provider}</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="font-medium capitalize text-white">{provider}</span>
+                      <span className="text-sm text-gray-400">
                         ({stats.requests} requests)
                       </span>
                     </div>
-                    <span className="font-medium">{formatCost(stats.cost)}</span>
+                    <span className="font-medium text-white">{formatCost(stats.cost)}</span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
                     <div 
@@ -250,9 +251,9 @@ export default function UsageDashboard() {
       </Card>
 
       {/* Model Usage */}
-      <Card>
+      <Card className="bg-gray-900/50 border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
             <Activity className="h-5 w-5" />
             Top Models by Requests
           </CardTitle>
@@ -262,14 +263,14 @@ export default function UsageDashboard() {
             {topModels.map(([model, stats]) => (
               <div key={model} className="flex items-center justify-between">
                 <div>
-                  <span className="font-medium">{model}</span>
-                  <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-white">{model}</span>
+                  <p className="text-sm text-gray-400">
                     {formatNumber(stats.tokens)} tokens
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">{stats.requests} requests</p>
-                  <p className="text-sm text-muted-foreground">{formatCost(stats.cost)}</p>
+                  <p className="font-medium text-white">{stats.requests} requests</p>
+                  <p className="text-sm text-gray-400">{formatCost(stats.cost)}</p>
                 </div>
               </div>
             ))}
@@ -278,9 +279,9 @@ export default function UsageDashboard() {
       </Card>
 
       {/* Daily Trend */}
-      <Card>
+      <Card className="bg-gray-900/50 border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
             <Calendar className="h-5 w-5" />
             Daily Usage Trend
           </CardTitle>
@@ -294,12 +295,12 @@ export default function UsageDashboard() {
               return (
                 <div key={date} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
-                    <span>{new Date(date).toLocaleDateString('en-US', { 
+                    <span className="text-white">{new Date(date).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric' 
                     })}</span>
                     <div className="flex items-center gap-4">
-                      <span className="text-muted-foreground">
+                      <span className="text-gray-400">
                         {stats.requests} requests
                       </span>
                       <span className="font-medium">{formatCost(stats.cost)}</span>
@@ -319,27 +320,27 @@ export default function UsageDashboard() {
       </Card>
 
       {/* Recent Usage Table */}
-      <Card>
+      <Card className="bg-gray-900/50 border-gray-700">
         <CardHeader>
-          <CardTitle>Recent API Calls</CardTitle>
+          <CardTitle className="text-gray-200">Recent API Calls</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm text-gray-300">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">Time</th>
-                  <th className="text-left py-2">Provider</th>
-                  <th className="text-left py-2">Model</th>
-                  <th className="text-right py-2">Tokens</th>
-                  <th className="text-right py-2">Cost</th>
-                  <th className="text-right py-2">Latency</th>
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-2 font-medium text-gray-200">Time</th>
+                  <th className="text-left py-2 font-medium text-gray-200">Provider</th>
+                  <th className="text-left py-2 font-medium text-gray-200">Model</th>
+                  <th className="text-right py-2 font-medium text-gray-200">Tokens</th>
+                  <th className="text-right py-2 font-medium text-gray-200">Cost</th>
+                  <th className="text-right py-2 font-medium text-gray-200">Latency</th>
                 </tr>
               </thead>
               <tbody>
                 {data.usage.slice(0, 10).map((usage) => (
-                  <tr key={usage.id} className="border-b">
-                    <td className="py-2">
+                  <tr key={usage.id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
+                    <td className="py-2 text-gray-300">
                       {new Date(usage.timestamp).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -347,11 +348,11 @@ export default function UsageDashboard() {
                         minute: '2-digit'
                       })}
                     </td>
-                    <td className="py-2 capitalize">{usage.provider}</td>
-                    <td className="py-2">{usage.model}</td>
-                    <td className="py-2 text-right">{formatNumber(usage.totalTokens)}</td>
-                    <td className="py-2 text-right">{formatCost(usage.cost)}</td>
-                    <td className="py-2 text-right">{usage.latency}ms</td>
+                    <td className="py-2 capitalize text-gray-300">{usage.provider}</td>
+                    <td className="py-2 text-gray-300">{usage.model}</td>
+                    <td className="py-2 text-right text-gray-300">{formatNumber(usage.totalTokens)}</td>
+                    <td className="py-2 text-right text-gray-300">{formatCost(usage.cost)}</td>
+                    <td className="py-2 text-right text-gray-300">{usage.latency}ms</td>
                   </tr>
                 ))}
               </tbody>

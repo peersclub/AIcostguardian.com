@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getAIProviderLogo, getProviderInfo } from '@/components/ui/ai-logos'
 
 interface AIUsage {
   id: string
@@ -41,7 +42,6 @@ interface UsageStats {
 const AI_PROVIDERS = {
   openai: { 
     name: 'OpenAI', 
-    logo: '🤖', 
     color: '#10a37f',
     models: {
       'gpt-4o': { name: 'GPT-4o', tier: 'premium' },
@@ -53,7 +53,6 @@ const AI_PROVIDERS = {
   },
   claude: { 
     name: 'Claude', 
-    logo: '🧠', 
     color: '#6366f1',
     models: {
       'claude-3-5-sonnet-20241022': { name: 'Claude 3.5 Sonnet', tier: 'premium' },
@@ -63,7 +62,6 @@ const AI_PROVIDERS = {
   },
   gemini: { 
     name: 'Gemini', 
-    logo: '💎', 
     color: '#4285f4',
     models: {
       'gemini-1.5-pro': { name: 'Gemini 1.5 Pro', tier: 'intelligent' },
@@ -73,7 +71,6 @@ const AI_PROVIDERS = {
   },
   perplexity: { 
     name: 'Perplexity', 
-    logo: '🔍', 
     color: '#9333ea',
     models: {
       'llama-3.1-sonar-small-128k-online': { name: 'Sonar Small Online', tier: 'fast' },
@@ -290,7 +287,7 @@ function UsageContent() {
                 {Object.entries(AI_PROVIDERS).map(([key, provider]) => (
                   <SelectItem key={key} value={key}>
                     <div className="flex items-center space-x-2">
-                      <span>{provider.logo}</span>
+                      <span className="text-white">{getAIProviderLogo(key, 'w-4 h-4')}</span>
                       <span>{provider.name}</span>
                     </div>
                   </SelectItem>

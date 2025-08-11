@@ -88,11 +88,63 @@ export default async function DashboardPage() {
 }
 ```
 
+## Theme & Dark Mode Best Practices - CRITICAL
+
+**NEVER use hardcoded colors like `text-gray-*` or `bg-gray-*` for text/UI elements**
+
+Always use theme-aware Tailwind classes:
+- `text-foreground` - Primary text color (adapts to theme)
+- `text-muted-foreground` - Secondary/muted text
+- `bg-background` - Page background
+- `bg-card` - Card backgrounds
+- `bg-muted` - Muted backgrounds
+- `border-border` - Border colors
+- `text-primary` - Primary brand color text
+- `bg-primary` - Primary brand color background
+
+### Common Replacements:
+```
+❌ text-gray-200 → ✅ text-foreground
+❌ text-gray-400 → ✅ text-muted-foreground  
+❌ text-gray-600 → ✅ text-muted-foreground
+❌ bg-gray-800 → ✅ bg-card or bg-muted
+❌ border-gray-700 → ✅ border-border
+```
+
+### Tables & Lists:
+```typescript
+// ✅ Correct table styling
+<table className="w-full text-sm text-foreground">
+  <thead>
+    <tr className="border-b border-border">
+      <th className="text-left py-2 text-foreground font-medium">...</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="border-b border-border hover:bg-muted/50">
+      <td className="py-2 text-foreground">...</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Form Controls:
+```typescript
+// ✅ Correct select/button styling
+<SelectTrigger className="bg-background text-foreground border-border">
+<Button className="text-foreground border-border">
+```
+
+## AI Provider Logos
+- The project uses AI provider logos (OpenAI, Anthropic, Gemini, etc.) not company branding
+- Located in: `/components/ui/ai-logos.tsx`
+- Usage: `getAIProviderLogo(provider)` returns the appropriate logo component
+
 ## Known Pending Items
 - Email Notifications - Needs SendGrid/Resend API keys
 - Stripe Billing - Needs Stripe API keys
 - Usage Tracking Webhooks - Needs provider webhook URLs
 
 ---
-Last Updated: 2024-12-10
-Generated during complete database integration and build fixes
+Last Updated: 2024-12-11
+Generated during theme fixes and dark mode improvements

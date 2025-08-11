@@ -81,7 +81,7 @@ export function successResponse<T>(
 /**
  * Validates request body and returns typed data
  */
-export async function validateRequestBody<T>(
+export async function validateRequestBody<T extends Record<string, any>>(
   request: Request,
   required: (keyof T)[]
 ): Promise<T> {
@@ -92,7 +92,7 @@ export async function validateRequestBody<T>(
     if (!text) {
       throw new Error('Request body is empty');
     }
-    body = JSON.parse(text);
+    body = JSON.parse(text) as T;
   } catch (error) {
     throw new Error(`Invalid JSON in request body: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

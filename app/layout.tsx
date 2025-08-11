@@ -6,6 +6,7 @@ import NavigationProgress from '@/components/NavigationProgress'
 import NextAuthSessionProvider from '@/components/SessionProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import DemoDataProvider from '@/components/DemoDataProvider'
+import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -96,12 +97,14 @@ export default function RootLayout({
       <body className={inter.className}>
         <ErrorBoundary>
           <NextAuthSessionProvider>
-            <DemoDataProvider>
-              <NavigationProgress />
-              <Navigation />
-              {children}
-              <Analytics />
-            </DemoDataProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <DemoDataProvider>
+                <NavigationProgress />
+                <Navigation />
+                {children}
+                <Analytics />
+              </DemoDataProvider>
+            </ThemeProvider>
           </NextAuthSessionProvider>
         </ErrorBoundary>
       </body>

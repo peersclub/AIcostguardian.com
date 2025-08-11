@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { LogoThemed } from '@/components/ui/LogoThemed'
 import { 
   TrendingUp, 
   TrendingDown,
@@ -197,7 +196,6 @@ function DashboardV2Content() {
               </div>
               
               <div className="flex items-center gap-3">
-                <LogoThemed size="md" showText={true} forceDark={true} className="mr-4" />
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-sm text-gray-300">Live Monitoring</span>

@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 
 export default function Startups() {
   const startupChallenges = [
@@ -149,10 +150,10 @@ export default function Startups() {
   ]
 
   const integrations = [
-    { name: "OpenAI GPT-4", logo: "🤖", setup: "2 min" },
-    { name: "Claude 3.5", logo: "🧠", setup: "2 min" },
-    { name: "Gemini Pro", logo: "💎", setup: "2 min" },
-    { name: "Cohere", logo: "🌊", setup: "2 min" },
+    { name: "OpenAI GPT-4", providerId: "openai", setup: "2 min" },
+    { name: "Claude 3.5", providerId: "claude", setup: "2 min" },
+    { name: "Gemini Pro", providerId: "gemini", setup: "2 min" },
+    { name: "Cohere", providerId: "cohere", setup: "2 min" },
     { name: "Slack", logo: "💬", setup: "1 min" },
     { name: "Discord", logo: "🎮", setup: "1 min" },
     { name: "GitHub", logo: "⚡", setup: "3 min" },
@@ -335,7 +336,15 @@ export default function Startups() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {integrations.map((integration, index) => (
               <Card key={index} className="text-center hover:shadow-lg transition-shadow p-6">
-                <div className="text-4xl mb-4">{integration.logo}</div>
+                <div className="text-4xl mb-4">
+                  {integration.providerId ? (
+                    <div className="flex justify-center text-gray-700">
+                      {getAIProviderLogo(integration.providerId, 'w-12 h-12')}
+                    </div>
+                  ) : (
+                    integration.logo
+                  )}
+                </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{integration.name}</h3>
                 <Badge className="bg-purple-100 text-purple-700 text-xs">
                   {integration.setup} setup

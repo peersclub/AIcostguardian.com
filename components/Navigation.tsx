@@ -99,6 +99,7 @@ export default function Navigation() {
       visibility: 'auth',
       children: [
         { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, visibility: 'auth' },
+        { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'auth' },
         { label: 'Usage Reports', href: '/analytics/usage', icon: FileText, visibility: 'auth' },
         { label: 'Cost Trends', href: '/analytics/trends', icon: TrendingUp, visibility: 'auth' },
         { label: 'Provider Insights', href: '/analytics/providers', icon: Globe, visibility: 'auth' }
@@ -109,12 +110,6 @@ export default function Navigation() {
       href: '/aioptimise',
       icon: Sparkles,
       badge: 'New',
-      visibility: 'auth'
-    },
-    {
-      label: 'Cost Calculator',
-      href: '/ai-cost-calculator',
-      icon: Calculator,
       visibility: 'auth'
     },
     {
@@ -198,7 +193,13 @@ export default function Navigation() {
                         <item.icon className="w-4 h-4" />
                         <span>{item.label}</span>
                         {item.badge && (
-                          <span className="ml-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                          <span className={`ml-1 px-1.5 py-0.5 text-xs font-semibold rounded ${
+                            item.badge === 'Live' 
+                              ? 'bg-green-100 text-green-700' 
+                              : item.badge === 'New'
+                              ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
                             {item.badge}
                           </span>
                         )}
@@ -221,7 +222,13 @@ export default function Navigation() {
                       <item.icon className="w-4 h-4" />
                       <span>{item.label}</span>
                       {item.badge && (
-                        <span className="ml-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                        <span className={`ml-1 px-1.5 py-0.5 text-xs font-semibold rounded ${
+                          item.badge === 'Live' 
+                            ? 'bg-green-100 text-green-700' 
+                            : item.badge === 'New'
+                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
                           {item.badge}
                         </span>
                       )}
@@ -249,7 +256,13 @@ export default function Navigation() {
                             <child.icon className="w-4 h-4" />
                             <span>{child.label}</span>
                             {child.badge && (
-                              <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded">
+                              <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
+                                child.badge === 'Live' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : child.badge === 'New'
+                                  ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}>
                                 {child.badge}
                               </span>
                             )}
@@ -428,7 +441,13 @@ export default function Navigation() {
                       <item.icon className="w-4 h-4" />
                       <span>{item.label}</span>
                       {item.badge && (
-                        <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                        <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
+                          item.badge === 'Live' 
+                            ? 'bg-green-100 text-green-700' 
+                            : item.badge === 'New'
+                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
                           {item.badge}
                         </span>
                       )}
@@ -449,7 +468,13 @@ export default function Navigation() {
                             <child.icon className="w-3 h-3" />
                             <span>{child.label}</span>
                             {child.badge && (
-                              <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded">
+                              <span className={`ml-auto px-1.5 py-0.5 text-xs font-semibold rounded ${
+                                child.badge === 'Live' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : child.badge === 'New'
+                                  ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}>
                                 {child.badge}
                               </span>
                             )}
