@@ -27,6 +27,7 @@ import {
   Unlock,
   Plus,
   Edit,
+  Edit2,
   Trash2,
   Copy,
   CheckCircle,
@@ -34,6 +35,7 @@ import {
   Clock,
   Zap,
   Sparkles,
+  PlayCircle,
   Loader2,
   Database,
   ShieldCheck
@@ -47,6 +49,7 @@ interface DatabaseApiKey {
   maskedKey: string
   isActive: boolean
   lastUsed: Date | null
+  lastTested: Date | null
   createdAt: Date
 }
 
@@ -263,7 +266,7 @@ export default function SettingsPage() {
         setTestResults({
           [providerId]: { 
             success: true, 
-            message: `✅ ${keyType} API key validated and saved successfully!`,
+            message: `${keyType} API key validated and saved successfully!`,
             keyType
           }
         })
@@ -332,11 +335,16 @@ export default function SettingsPage() {
         [provider.id]: {
           success: result.success,
           message: result.success 
-            ? `✓ ${keyType} key validated successfully!`
+            ? `${keyType} key validated successfully!`
             : result.error || 'API key validation failed',
           keyType: result.success ? keyType : undefined
         }
       })
+      
+      // Refresh API keys data if test was successful to show updated lastTested
+      if (result.success) {
+        await fetchStoredKeys()
+      }
       
       setTimeout(() => setTestResults({}), 5000)
     } catch (error) {
@@ -475,15 +483,50 @@ export default function SettingsPage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-xl border border-gray-700/50">
-              <div className="flex items-center gap-3">
-                <Database className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-400 font-mono">
-                  {provider.dbKey?.maskedKey}
-                </span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-xl border border-gray-700/50">
+                <div className="flex items-center gap-3">
+                  <Database className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-400 font-mono">
+                    {provider.dbKey?.maskedKey}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingKeys({ ...editingKeys, [provider.id]: true })
+                      setTempKeys({ ...tempKeys, [provider.id]: '' })
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
+                    title="Edit API Key"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleTestKey(provider)}
+                    disabled={isTesting}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all disabled:opacity-50"
+                    title="Test API Key"
+                  >
+                    {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Encrypted in database</span>
+              
+              {/* Timestamps */}
+              <div className="flex items-center gap-4 px-3 text-xs text-gray-500">
+                {provider.dbKey?.createdAt && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>Saved: {new Date(provider.dbKey.createdAt).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {provider.dbKey?.lastTested && (
+                  <div className="flex items-center gap-1">
+                    <Activity className="w-3 h-3" />
+                    <span>Last tested: {new Date(provider.dbKey.lastTested).toLocaleDateString()}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

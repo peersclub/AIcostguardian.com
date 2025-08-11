@@ -37,6 +37,13 @@ model User {
   aiThreads             AIThread[]
   promptPreferences     PromptPreference[]
   modelOverrides        ModelOverride[]
+  messageFeedbacks      MessageFeedbackRecord[]
+  threadCollaborations  ThreadCollaborator[]
+  invitedCollaborators  ThreadCollaborator[] @relation("InvitedCollaborators")
+  userSettings          UserSettings?
+  voiceSessions         VoiceSession[]
+  imageUploads          ImageUpload[]
+  usageLimit            UsageLimit?
 }
 
 model Organization {
@@ -55,6 +62,8 @@ model Organization {
   notificationRules NotificationRule[]
   notifications     Notification[]
   budgets           Budget[]
+  aiThreads         AIThread[]
+  usageLimit        UsageLimit?
 }
 
 model ApiKey {
@@ -62,6 +71,7 @@ model ApiKey {
   provider      String    // openai, claude, gemini, etc.
   encryptedKey  String
   lastUsed      DateTime?
+  lastTested    DateTime? // Track when the key was last tested
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   
@@ -523,6 +533,7 @@ model ChatMessage {
 model AIThread {
   id                String    @id @default(cuid())
   userId            String
+  organizationId    String?
   title             String
   description       String?
   isArchived        Boolean   @default(false)
@@ -537,16 +548,20 @@ model AIThread {
   shareExpiry       DateTime?
   shareId           String?   @unique
   metadata          Json?
+  mode              ChatMode  @default(STANDARD)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
   user              User      @relation(fields: [userId], references: [id])
+  organization      Organization? @relation(fields: [organizationId], references: [id])
   messages          AIMessage[]
   analytics         ThreadAnalytics?
+  collaborators     ThreadCollaborator[]
   
   @@index([userId, isArchived])
   @@index([userId, lastMessageAt])
   @@index([shareId])
+  @@index([organizationId])
 }
 
 model AIMessage {
@@ -555,6 +570,9 @@ model AIMessage {
   role              MessageRole
   content           String    @db.Text
   files             Json?     // Array of file references
+  images            Json?     // Array of image URLs/data
+  voiceTranscript   String?   @db.Text
+  voiceDuration     Int?      // milliseconds
   
   // Model selection data
   selectedModel     String?
@@ -562,6 +580,7 @@ model AIMessage {
   recommendedModel  String?
   modelReason       String?
   overrideReason    String?
+  wasOverridden     Boolean   @default(false)
   
   // Usage metrics
   promptTokens      Int       @default(0)
@@ -577,6 +596,11 @@ model AIMessage {
   rating            Int?      // 1-5 stars
   regenerateCount   Int       @default(0)
   
+  // Processing status
+  status            MessageStatus @default(SENT)
+  errorMessage      String?
+  retryCount        Int       @default(0)
+  
   // References
   parentMessageId   String?
   usageLogId        String?   @unique
@@ -586,9 +610,11 @@ model AIMessage {
   
   thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
   analysis          PromptAnalysis?
+  feedbacks         MessageFeedbackRecord[]
   
   @@index([threadId, createdAt])
   @@index([threadId, role])
+  @@index([status])
 }
 
 model PromptAnalysis {
@@ -862,4 +888,232 @@ enum OptimizationMode {
   BUDGET       // Minimize cost
   SPEED        // Fastest response
   CUSTOM       // User-defined weights
+}
+
+// New Models for AIOptimise Pro
+
+model MessageFeedbackRecord {
+  id                String    @id @default(cuid())
+  messageId         String
+  userId            String
+  type              FeedbackType
+  comment           String?   @db.Text
+  isHelpful         Boolean?
+  suggestions       String?   @db.Text
+  createdAt         DateTime  @default(now())
+  
+  message           AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model ThreadCollaborator {
+  id                String    @id @default(cuid())
+  threadId          String
+  userId            String
+  role              CollaboratorRole @default(VIEWER)
+  invitedBy         String
+  invitedAt         DateTime  @default(now())
+  acceptedAt        DateTime?
+  lastViewedAt      DateTime?
+  permissions       Json?     // Custom permissions
+  
+  thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id])
+  inviter           User      @relation("InvitedCollaborators", fields: [invitedBy], references: [id])
+  
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model UserSettings {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  
+  // Display preferences
+  theme             String    @default("system")
+  chatMode          ChatMode  @default(STANDARD)
+  showMetrics       Boolean   @default(true)
+  showAnalysis      Boolean   @default(true)
+  compactView       Boolean   @default(false)
+  
+  // Voice settings
+  voiceEnabled      Boolean   @default(false)
+  voiceLanguage     String    @default("en-US")
+  voiceSpeed        Float     @default(1.0)
+  autoPlayResponses Boolean   @default(false)
+  
+  // Auto features
+  autoSaveThreads   Boolean   @default(true)
+  autoGenerateTitle Boolean   @default(true)
+  autoRetryOnError  Boolean   @default(true)
+  maxRetries        Int       @default(3)
+  
+  // Model preferences
+  preferredProvider String?
+  preferredModel    String?
+  alwaysShowOverride Boolean  @default(false)
+  
+  // Privacy
+  shareDataForImprovement Boolean @default(false)
+  allowTelemetry    Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User      @relation(fields: [userId], references: [id])
+}
+
+model VoiceSession {
+  id                String    @id @default(cuid())
+  userId            String
+  threadId          String?
+  messageId         String?
+  
+  // Recording data
+  audioUrl          String?
+  duration          Int       // milliseconds
+  fileSize          Int?      // bytes
+  mimeType          String    @default("audio/webm")
+  
+  // Transcription
+  transcript        String?   @db.Text
+  language          String?
+  confidence        Float?
+  provider          String    @default("whisper")
+  
+  // Status
+  status            VoiceStatus @default(RECORDING)
+  errorMessage      String?
+  
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+  
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([threadId])
+  @@index([status])
+}
+
+model ImageUpload {
+  id                String    @id @default(cuid())
+  userId            String
+  messageId         String?
+  
+  // File data
+  url               String
+  thumbnailUrl      String?
+  fileName          String
+  fileSize          Int       // bytes
+  mimeType          String
+  width             Int?
+  height            Int?
+  
+  // Processing
+  status            ProcessingStatus @default(UPLOADING)
+  processingProgress Float    @default(0)
+  analysisResult    Json?     // AI vision analysis
+  extractedText     String?   @db.Text
+  
+  createdAt         DateTime  @default(now())
+  processedAt       DateTime?
+  
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([messageId])
+  @@index([status])
+}
+
+model UsageLimit {
+  id                String    @id @default(cuid())
+  userId            String?
+  organizationId    String?
+  
+  // Limits
+  dailyTokenLimit   Int?
+  monthlyTokenLimit Int?
+  dailyCostLimit    Float?
+  monthlyCostLimit  Float?
+  concurrentThreads Int       @default(10)
+  maxThreadMessages Int       @default(100)
+  
+  // Current usage
+  dailyTokensUsed   Int       @default(0)
+  monthlyTokensUsed Int       @default(0)
+  dailyCostUsed     Float     @default(0)
+  monthlyCostUsed   Float     @default(0)
+  
+  // Requests
+  limitIncreaseRequested Boolean @default(false)
+  requestedAt       DateTime?
+  requestReason     String?   @db.Text
+  approvedAt        DateTime?
+  approvedBy        String?
+  
+  resetAt           DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User?     @relation(fields: [userId], references: [id])
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  
+  @@unique([userId])
+  @@unique([organizationId])
+}
+
+// New Enums
+
+enum MessageStatus {
+  SENDING
+  SENT
+  PROCESSING
+  STREAMING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FeedbackType {
+  THUMBS_UP
+  THUMBS_DOWN
+  REPORT
+  SUGGESTION
+}
+
+enum CollaboratorRole {
+  VIEWER
+  COMMENTER
+  EDITOR
+  ADMIN
+}
+
+enum ChatMode {
+  STANDARD
+  FOCUS       // Distraction-free
+  CODING      // Code-optimized
+  RESEARCH    // Research mode
+  CREATIVE    // Creative writing
+  CUSTOM      // User-defined
+}
+
+enum VoiceStatus {
+  RECORDING
+  PROCESSING
+  TRANSCRIBING
+  COMPLETED
+  FAILED
+}
+
+enum ProcessingStatus {
+  UPLOADING
+  PROCESSING
+  ANALYZING
+  COMPLETED
+  FAILED
 }

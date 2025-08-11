@@ -43,6 +43,7 @@ import { ModelSelector } from './components/model-selector';
 import { ThreadSidebar } from './components/thread-sidebar';
 import { MetricsPanel } from './components/metrics-panel';
 import { MessageComponent } from './components/message';
+import { PromptAnalysis } from './components/prompt-analysis';
 
 interface Thread {
   id: string;
@@ -106,6 +107,8 @@ export default function AIOptimiseClient() {
   const [selectedModel, setSelectedModel] = useState<{ provider: string; model: string } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [metricsCollapsed, setMetricsCollapsed] = useState(false);
+  const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [overrideCount, setOverrideCount] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -167,10 +170,11 @@ export default function AIOptimiseClient() {
   const sendMessage = async () => {
     if (!input.trim() || !currentThread) return;
     
+    const messageText = input; // Store input before clearing
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       role: 'user',
-      content: input,
+      content: messageText,
       createdAt: new Date().toISOString(),
       promptTokens: 0,
       completionTokens: 0,
@@ -182,6 +186,7 @@ export default function AIOptimiseClient() {
     setInput('');
     setIsLoading(true);
     setIsStreaming(true);
+    setCurrentAnalysis(null); // Reset analysis
     
     try {
       const response = await fetch('/api/aioptimise/chat', {
@@ -189,7 +194,7 @@ export default function AIOptimiseClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           threadId: currentThread.id,
-          message: input,
+          message: messageText, // Use stored message text
           mode: optimizationMode,
           modelOverride: selectedModel,
         }),
@@ -225,7 +230,12 @@ export default function AIOptimiseClient() {
             try {
               const data = JSON.parse(line.slice(6));
               
-              if (data.type === 'content') {
+              if (data.type === 'analysis') {
+                setCurrentAnalysis(data.analysis);
+                if (selectedModel) {
+                  setOverrideCount(prev => prev + 1);
+                }
+              } else if (data.type === 'content') {
                 assistantMessage.content += data.content;
                 setMessages(prev => {
                   const updated = [...prev];
@@ -298,24 +308,24 @@ export default function AIOptimiseClient() {
       />
       
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="border-b px-4 py-3 flex items-center justify-between">
+      <div className="flex-1 flex flex-col bg-background">
+        {/* Header - Minimal, no border */}
+        <div className="px-6 py-4 flex items-center justify-between bg-background/50 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h1 className="font-semibold text-lg">AIOptimise</h1>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20">
+              <Sparkles className="h-4 w-4 text-violet-400" />
+            </div>
+            <h1 className="font-medium text-sm text-foreground">AIOptimise</h1>
             {currentThread && (
               <>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{currentThread.title}</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{currentThread.title}</span>
               </>
             )}
           </div>
           
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => setOptimizationMode(
                 optimizationMode === 'BALANCED' 
                   ? 'QUALITY' 
@@ -325,44 +335,53 @@ export default function AIOptimiseClient() {
                   ? 'SPEED'
                   : 'BALANCED'
               )}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-xs text-muted-foreground"
             >
-              {optimizationMode === 'BALANCED' && <Brain className="h-4 w-4 mr-1" />}
-              {optimizationMode === 'QUALITY' && <Sparkles className="h-4 w-4 mr-1" />}
-              {optimizationMode === 'BUDGET' && <DollarSign className="h-4 w-4 mr-1" />}
-              {optimizationMode === 'SPEED' && <Zap className="h-4 w-4 mr-1" />}
+              {optimizationMode === 'BALANCED' && <Brain className="h-3 w-3" />}
+              {optimizationMode === 'QUALITY' && <Sparkles className="h-3 w-3" />}
+              {optimizationMode === 'BUDGET' && <DollarSign className="h-3 w-3" />}
+              {optimizationMode === 'SPEED' && <Zap className="h-3 w-3" />}
               {optimizationMode}
-            </Button>
+            </button>
             
-            <Button variant="outline" size="icon">
-              <Settings className="h-4 w-4" />
-            </Button>
+            <button className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
         </div>
         
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4">
-          {!currentThread ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Welcome to AIOptimise</h2>
-              <p className="text-muted-foreground mb-4">
-                Intelligent AI interface with automatic model selection and real-time cost tracking
-              </p>
-              <Button onClick={createNewThread}>
-                <Plus className="h-4 w-4 mr-2" />
-                Start New Chat
-              </Button>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Bot className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Ready to assist</h3>
-              <p className="text-muted-foreground">
-                I'll automatically select the best AI model for your needs
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
+        {/* Messages Area - Clean, no borders */}
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            {!currentThread ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 mb-4">
+                  <Sparkles className="h-8 w-8 text-violet-400" />
+                </div>
+                <h2 className="text-xl font-medium text-foreground mb-2">Welcome to AIOptimise</h2>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Intelligent AI interface with automatic model selection and real-time cost tracking
+                </p>
+                <button
+                  onClick={createNewThread}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Start New Chat
+                </button>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <div className="p-3 rounded-2xl bg-muted/50 mb-4">
+                  <Bot className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">Ready to assist</h3>
+                <p className="text-muted-foreground max-w-md">
+                  I'll automatically select the best AI model for your needs
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
               {messages.map((message, index) => (
                 <MessageComponent
                   key={message.id}
@@ -371,19 +390,39 @@ export default function AIOptimiseClient() {
                   onFeedback={(feedback) => handleFeedback(message.id, feedback)}
                 />
               ))}
-              {isStreaming && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="animate-pulse">AI is thinking...</div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+                {isStreaming && (
+                  <div className="flex items-start gap-3 py-4">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-4 w-4 text-violet-400" />
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse delay-75" />
+                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse delay-150" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
         </ScrollArea>
         
-        {/* Input Area */}
+        {/* Prompt Analysis Panel - Floating style */}
+        {currentThread && currentAnalysis && (
+          <div className="max-w-4xl mx-auto px-4 pb-2">
+            <PromptAnalysis
+              analysis={currentAnalysis}
+              onOverrideModel={() => setShowModelSelector(true)}
+              overrideCount={overrideCount}
+            />
+          </div>
+        )}
+        
+        {/* Input Area - Clean, no border */}
         {currentThread && (
-          <div className="border-t p-4">
+          <div className="bg-background px-4 pb-6">
+            <div className="max-w-4xl mx-auto">
             {showModelSelector && (
               <ModelSelector
                 onSelect={(provider, model) => {
@@ -453,6 +492,7 @@ export default function AIOptimiseClient() {
                 <span>Tokens: {sessionMetrics.totalTokens.toLocaleString()}</span>
                 <span>Cost: ${sessionMetrics.totalCost.toFixed(4)}</span>
               </div>
+            </div>
             </div>
           </div>
         )}

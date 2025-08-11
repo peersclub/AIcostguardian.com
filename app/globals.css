@@ -17,7 +17,7 @@
   }
   
   body {
-    @apply text-gray-900 bg-white;
+    @apply text-gray-900 bg-white dark:text-gray-100 dark:bg-gray-900;
     font-family: var(--font-inter);
   }
   
@@ -25,10 +25,27 @@
     font-family: var(--font-inter);
     font-weight: 600;
     letter-spacing: -0.02em;
+    @apply text-gray-900 dark:text-gray-100;
   }
 }
 
 @layer components {
+  /* Global text colors for better visibility */
+  .text-primary {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  .text-secondary {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+  
+  .text-muted {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+  
+  .text-disabled {
+    @apply text-gray-500 dark:text-gray-500;
+  }
   /* Premium Glass Morphism Effects */
   .glass {
     @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl;
@@ -146,7 +163,7 @@
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    @apply bg-gray-100 dark:bg-gray-800;
   }
   
   ::-webkit-scrollbar-thumb {
@@ -159,15 +176,15 @@
   
   /* Fix dropdown transparency and visibility issues */
   [data-radix-select-content] {
-    @apply bg-white/95 backdrop-blur-xl border border-gray-200/50 shadow-2xl z-50 rounded-xl;
+    @apply bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-50 rounded-xl;
   }
   
   [data-radix-select-item] {
-    @apply bg-transparent hover:bg-purple-50/50 cursor-pointer transition-colors duration-200;
+    @apply bg-transparent hover:bg-purple-50/50 dark:hover:bg-purple-900/30 cursor-pointer transition-colors duration-200;
   }
   
   /* Ensure select triggers have proper background */
   [data-radix-select-trigger] {
-    @apply bg-white/80 backdrop-blur border-gray-200/50 hover:border-purple-400/50 transition-all duration-200;
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur border-gray-200/50 dark:border-gray-700/50 hover:border-purple-400/50 dark:hover:border-purple-500/50 transition-all duration-200;
   }
 }

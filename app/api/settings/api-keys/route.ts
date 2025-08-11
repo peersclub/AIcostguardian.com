@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       id: key.id,
       name: `${key.provider} API Key`,
       provider: key.provider.toLowerCase(), // Send lowercase to match frontend expectations
-      key: '••••••••••••••••', // Fully masked for security
+      key: '****************', // Fully masked for security
       masked: `${key.provider.slice(0, 4)}...****`,
       status: key.isActive ? 'active' : 'inactive',
       createdAt: key.createdAt.toISOString(),

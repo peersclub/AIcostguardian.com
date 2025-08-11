@@ -35,9 +35,10 @@ interface Model {
 interface ModelSelectorProps {
   onSelect: (provider: string, model: string) => void;
   onClose: () => void;
+  open?: boolean;
 }
 
-export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
+export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorProps) {
   const [selectedTab, setSelectedTab] = useState('recommended');
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   
@@ -127,11 +128,15 @@ export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
   }, {} as Record<string, Model[]>);
   
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Choose Your AI Model</DialogTitle>
         </DialogHeader>
+        
+        <div className="py-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Select an AI model for your conversation</p>
+        </div>
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-4">
           <TabsList className="grid grid-cols-3 w-full">
@@ -150,27 +155,27 @@ export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
           </TabsList>
           
           <TabsContent value="recommended" className="mt-4">
-            <Card className="p-6 border-primary">
+            <Card className="p-6 border-2 border-violet-500 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {recommendedModel.provider} - {recommendedModel.model}
                     </h3>
-                    <Badge variant="default">
+                    <Badge className="bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0">
                       <Star className="h-3 w-3 mr-1" />
                       Best Match
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Perfect for your query • ${(recommendedModel.inputCost * 1000 + recommendedModel.outputCost * 1000).toFixed(4)} per 1k tokens
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">
                     {(recommendedModel.matchScore! * 100).toFixed(0)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Match Score</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Match Score</div>
                 </div>
               </div>
               
@@ -201,34 +206,37 @@ export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex flex-wrap gap-1">
                   {recommendedModel.capabilities.map(cap => (
-                    <Badge key={cap} variant="secondary" className="text-xs">
+                    <Badge key={cap} className="text-xs bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20">
                       {cap.replace('_', ' ')}
                     </Badge>
                   ))}
                 </div>
-                <Button onClick={() => onSelect(recommendedModel.provider, recommendedModel.model)}>
+                <Button 
+                  onClick={() => onSelect(recommendedModel.provider, recommendedModel.model)}
+                  className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                >
                   Use Recommended
                 </Button>
               </div>
             </Card>
             
-            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <div className="mt-4 p-4 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium mb-1">Why this model?</p>
-                  <p>Based on your prompt analysis, this model offers the best balance of quality, cost, and speed. It has all required capabilities and will save you approximately 73% compared to premium models.</p>
+                <AlertCircle className="h-4 w-4 text-violet-600 dark:text-violet-400 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium mb-1 text-violet-700 dark:text-violet-300">Why this model?</p>
+                  <p className="text-gray-600 dark:text-gray-400">Based on your prompt analysis, this model offers the best balance of quality, cost, and speed. It has all required capabilities and will save you approximately 73% compared to premium models.</p>
                 </div>
               </div>
             </div>
           </TabsContent>
           
           <TabsContent value="all" className="mt-4">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[300px]">
               <div className="space-y-6">
                 {Object.entries(groupedModels).map(([provider, providerModels]) => (
                   <div key={provider}>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase">
+                    <h3 className="text-sm font-medium text-violet-600 dark:text-violet-400 mb-3 uppercase tracking-wider">
                       {provider}
                     </h3>
                     <div className="space-y-2">
@@ -248,7 +256,10 @@ export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
             
             {selectedModel && (
               <div className="mt-4 flex justify-end">
-                <Button onClick={() => onSelect(selectedModel.provider, selectedModel.model)}>
+                <Button 
+                  onClick={() => onSelect(selectedModel.provider, selectedModel.model)}
+                  className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                >
                   Use {selectedModel.model}
                 </Button>
               </div>
@@ -256,9 +267,12 @@ export function ModelSelector({ onSelect, onClose }: ModelSelectorProps) {
           </TabsContent>
           
           <TabsContent value="compare" className="mt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Model comparison coming soon</p>
+            <div className="text-center py-8">
+              <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <TrendingUp className="h-12 w-12 text-violet-500" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">Model comparison coming soon</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">Compare models side-by-side to find the perfect fit</p>
             </div>
           </TabsContent>
         </Tabs>
@@ -279,18 +293,21 @@ function ModelCard({
   return (
     <Card
       className={cn(
-        "p-4 cursor-pointer transition-colors",
-        selected && "border-primary bg-primary/5"
+        "p-4 cursor-pointer transition-all duration-200 border-2",
+        "hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/10",
+        selected 
+          ? "border-violet-500 bg-gradient-to-br from-violet-500/10 to-purple-500/10" 
+          : "border-gray-200 dark:border-gray-800"
       )}
       onClick={onSelect}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium">{model.model}</h4>
-            {selected && <Check className="h-4 w-4 text-primary" />}
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">{model.model}</h4>
+            {selected && <Check className="h-4 w-4 text-violet-500" />}
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <span>${(model.inputCost * 1000).toFixed(4)}/1k in</span>
             <span>${(model.outputCost * 1000).toFixed(4)}/1k out</span>
             <span>{model.avgLatency}ms</span>
@@ -305,13 +322,13 @@ function ModelCard({
                 className={cn(
                   "h-3 w-3",
                   i < Math.round(model.qualityScore * 5)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
+                    ? "fill-violet-500 text-violet-500"
+                    : "text-gray-300 dark:text-gray-700"
                 )}
               />
             ))}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
             Quality: {(model.qualityScore * 100).toFixed(0)}%
           </div>
         </div>
@@ -335,14 +352,14 @@ function MetricCard({
     <div className="text-center">
       <div className={cn(
         "inline-flex p-2 rounded-lg mb-2",
-        variant === 'success' && "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
-        variant === 'warning' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400",
-        variant === 'default' && "bg-muted"
+        variant === 'success' && "bg-gradient-to-br from-green-500/20 to-emerald-500/20 text-green-600 dark:text-green-400",
+        variant === 'warning' && "bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400",
+        variant === 'default' && "bg-gradient-to-br from-violet-500/10 to-purple-500/10"
       )}>
         {icon}
       </div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium">{value}</div>
+      <div className="text-xs text-gray-600 dark:text-gray-400">{label}</div>
+      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{value}</div>
     </div>
   );
 }

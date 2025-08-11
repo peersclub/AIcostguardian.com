@@ -216,6 +216,12 @@ export class ModelSelector {
     // Filter models based on requirements
     let availableModels = this.filterModelsByRequirements(analysis, preferences);
     
+    // If no models pass the filter, use all models as fallback
+    if (availableModels.length === 0) {
+      console.warn('No models matched the requirements, using all models as fallback');
+      availableModels = this.MODELS;
+    }
+    
     // Score each model
     const scoredModels = availableModels.map(model => ({
       model,
@@ -224,6 +230,19 @@ export class ModelSelector {
     
     // Sort by total score
     scoredModels.sort((a, b) => b.scores.total - a.scores.total);
+    
+    // Ensure we have at least one model
+    if (scoredModels.length === 0) {
+      // This should never happen, but add safety check
+      const defaultModel = this.MODELS.find(m => m.provider === 'openai' && m.model === 'gpt-4o-mini') || this.MODELS[0];
+      return {
+        recommended: defaultModel,
+        alternatives: [],
+        reasoning: 'Using default model as no models are available',
+        estimatedCost: 0,
+        scores: { quality: 0, cost: 0, speed: 0, capability: 0, total: 0 },
+      };
+    }
     
     // Get top model and alternatives
     const recommended = scoredModels[0].model;

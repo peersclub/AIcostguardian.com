@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { prompt, model = 'gpt-4o-mini', testApiKey } = body
+    const { prompt, model = 'gpt-4o-mini', testApiKey, useStoredKey } = body
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
@@ -119,8 +119,12 @@ export async function POST(request: NextRequest) {
 
     let apiKey = testApiKey
 
-    // If no test key provided, get from database
-    if (!apiKey) {
+    // Track if we're using a stored key
+    let usingStoredKey = false
+    let apiKeyRecordId: string | null = null
+
+    // If no test key provided or explicitly using stored key, get from database
+    if (!apiKey || useStoredKey) {
       const user = await prisma.user.findUnique({
         where: { email: session.user.email },
         include: { apiKeys: true }
@@ -139,6 +143,8 @@ export async function POST(request: NextRequest) {
 
       try {
         apiKey = safeDecrypt(apiKeyRecord.encryptedKey)
+        usingStoredKey = true
+        apiKeyRecordId = apiKeyRecord.id
       } catch (error) {
         console.error('Decryption error for OpenAI key:', error)
         return NextResponse.json({ 
@@ -156,6 +162,19 @@ export async function POST(request: NextRequest) {
         success: false,
         error: validation.error || 'Invalid API key'
       }, { status: 400 })
+    }
+
+    // Update lastTested timestamp if using stored key
+    if (usingStoredKey && apiKeyRecordId) {
+      try {
+        await prisma.apiKey.update({
+          where: { id: apiKeyRecordId },
+          data: { lastTested: new Date() }
+        })
+      } catch (error) {
+        console.error('Failed to update lastTested timestamp:', error)
+        // Continue execution even if timestamp update fails
+      }
     }
 
     // Check if it's an admin/organization key

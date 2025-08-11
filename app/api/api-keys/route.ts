@@ -38,13 +38,23 @@ export async function GET() {
       })
       
       if (!organization) {
-        organization = await prisma.organization.create({
-          data: {
-            name: organizationName,
-            domain: session.user.email.split('@')[1],
-            subscription: 'FREE'
-          }
+        const domain = session.user.email.split('@')[1]
+        // Check if organization with this domain already exists
+        const existingOrg = await prisma.organization.findUnique({
+          where: { domain }
         })
+        
+        if (existingOrg) {
+          organization = existingOrg
+        } else {
+          organization = await prisma.organization.create({
+            data: {
+              name: organizationName,
+              domain: domain,
+              subscription: 'FREE'
+            }
+          })
+        }
       }
       
       // Create the user
@@ -68,14 +78,20 @@ export async function GET() {
       provider: key.provider,
       isActive: key.isActive,
       lastUsed: key.lastUsed,
+      lastTested: key.lastTested,
       createdAt: key.createdAt,
       // Show masked version of the key
-      maskedKey: '••••••••' + (key.encryptedKey ? '••••' : '')
+      maskedKey: '********' + (key.encryptedKey ? '****' : '')
     }))
 
     return NextResponse.json({ keys })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching API keys:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -95,8 +111,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Provider and API key are required' }, { status: 400 })
     }
     
-    // Convert provider to uppercase to match Prisma enum
-    const normalizedProvider = provider.toUpperCase()
+    // Normalize provider name to match database convention
+    // Map UI provider names to database provider names
+    const providerMapping: { [key: string]: string } = {
+      'openai': 'openai',
+      'claude': 'anthropic',
+      'anthropic': 'anthropic',
+      'gemini': 'google',
+      'google': 'google',
+      'grok': 'xai',
+      'xai': 'xai',
+      'mistral': 'mistral',
+      'perplexity': 'perplexity'
+    }
+    
+    const normalizedProvider = providerMapping[provider.toLowerCase()] || provider.toLowerCase()
 
     let user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -118,13 +147,23 @@ export async function POST(request: Request) {
       })
       
       if (!organization) {
-        organization = await prisma.organization.create({
-          data: {
-            name: organizationName,
-            domain: session.user.email.split('@')[1],
-            subscription: 'FREE'
-          }
+        const domain = session.user.email.split('@')[1]
+        // Check if organization with this domain already exists
+        const existingOrg = await prisma.organization.findUnique({
+          where: { domain }
         })
+        
+        if (existingOrg) {
+          organization = existingOrg
+        } else {
+          organization = await prisma.organization.create({
+            data: {
+              name: organizationName,
+              domain: domain,
+              subscription: 'FREE'
+            }
+          })
+        }
       }
       
       // Create the user
@@ -146,7 +185,7 @@ export async function POST(request: Request) {
       where: {
         userId_provider: {
           userId: user.id,
-          provider: normalizedProvider as any
+          provider: normalizedProvider
         }
       }
     })
@@ -173,15 +212,32 @@ export async function POST(request: Request) {
         const email = user.email
         const domain = email.split('@')[1]
         
-        const org = await prisma.organization.create({
-          data: {
-            name: domain.split('.')[0],
-            domain: domain,
-            users: {
-              connect: { id: user.id }
-            }
-          }
+        // Check if organization with this domain already exists
+        let org = await prisma.organization.findUnique({
+          where: { domain }
         })
+        
+        if (!org) {
+          org = await prisma.organization.create({
+            data: {
+              name: domain.split('.')[0],
+              domain: domain,
+              users: {
+                connect: { id: user.id }
+              }
+            }
+          })
+        } else {
+          // Connect existing org to user
+          await prisma.organization.update({
+            where: { id: org.id },
+            data: {
+              users: {
+                connect: { id: user.id }
+              }
+            }
+          })
+        }
         
         organizationId = org.id
         
@@ -195,7 +251,7 @@ export async function POST(request: Request) {
       // Create new key
       const created = await prisma.apiKey.create({
         data: {
-          provider: normalizedProvider as any,
+          provider: normalizedProvider,
           encryptedKey,
           userId: user.id,
           organizationId: organizationId
@@ -203,9 +259,14 @@ export async function POST(request: Request) {
       })
       return NextResponse.json({ message: 'API key created', key: { ...created, encryptedKey: undefined } })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving API key:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -243,13 +304,23 @@ export async function DELETE(request: Request) {
       })
       
       if (!organization) {
-        organization = await prisma.organization.create({
-          data: {
-            name: organizationName,
-            domain: session.user.email.split('@')[1],
-            subscription: 'FREE'
-          }
+        const domain = session.user.email.split('@')[1]
+        // Check if organization with this domain already exists
+        const existingOrg = await prisma.organization.findUnique({
+          where: { domain }
         })
+        
+        if (existingOrg) {
+          organization = existingOrg
+        } else {
+          organization = await prisma.organization.create({
+            data: {
+              name: organizationName,
+              domain: domain,
+              subscription: 'FREE'
+            }
+          })
+        }
       }
       
       // Create the user

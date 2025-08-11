@@ -76,6 +76,10 @@ export async function POST(request: NextRequest) {
 
     let apiKey = testApiKey
     
+    // Track if we're using a stored key
+    let usingStoredKey = false
+    let apiKeyRecordId: string | null = null
+    
     // If using stored key, fetch from database
     if (!apiKey || useStoredKey) {
       const user = await prisma.user.findUnique({
@@ -93,6 +97,8 @@ export async function POST(request: NextRequest) {
       const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'xai')
       if (apiKeyRecord) {
         apiKey = safeDecrypt(apiKeyRecord.encryptedKey)
+        usingStoredKey = true
+        apiKeyRecordId = apiKeyRecord.id
       }
     }
     
@@ -101,6 +107,19 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Grok API key not configured'
       }, { status: 400 })
+    }
+
+    // Update lastTested timestamp if using stored key
+    if (usingStoredKey && apiKeyRecordId) {
+      try {
+        await prisma.apiKey.update({
+          where: { id: apiKeyRecordId },
+          data: { lastTested: new Date() }
+        })
+      } catch (error) {
+        console.error('Failed to update lastTested timestamp:', error)
+        // Continue execution even if timestamp update fails
+      }
     }
 
     // Check if this is an admin/org key pattern (xAI/Grok might use xai-admin- or similar)

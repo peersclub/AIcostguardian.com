@@ -7,6 +7,7 @@ import { ModelSelector } from '@/lib/prompt-analyzer/model-selector';
 import { OptimizationMode, MessageRole } from '@prisma/client';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import { safeDecrypt } from '@/lib/crypto-helper';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -49,17 +50,37 @@ export async function POST(request: NextRequest) {
 
     let selectedModel;
     let modelReason;
+    let promptAnalysis = analysis;
 
     if (modelOverride) {
       selectedModel = modelOverride;
       modelReason = 'Manual override by user';
     } else {
-      const selection = ModelSelector.selectModel(message, files, selectionPreferences);
-      selectedModel = {
-        provider: selection.recommended.provider,
-        model: selection.recommended.model,
-      };
-      modelReason = selection.reasoning;
+      try {
+        const selection = ModelSelector.selectModel(message, files, selectionPreferences);
+        if (selection && selection.recommended) {
+          selectedModel = {
+            provider: selection.recommended.provider,
+            model: selection.recommended.model,
+          };
+          modelReason = selection.reasoning;
+        } else {
+          // Fallback to a default model if selection fails
+          selectedModel = {
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+          };
+          modelReason = 'Using default model (GPT-4o Mini) as no optimal model was found';
+        }
+      } catch (error) {
+        console.error('Model selection error:', error);
+        // Fallback to a default model
+        selectedModel = {
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+        };
+        modelReason = 'Using default model due to selection error';
+      }
     }
 
     // Create user message in database
@@ -68,6 +89,9 @@ export async function POST(request: NextRequest) {
         threadId,
         role: MessageRole.USER,
         content: message,
+        selectedModel: selectedModel.model,
+        selectedProvider: selectedModel.provider,
+        modelReason: modelReason,
         promptTokens: 0,
         completionTokens: 0,
         totalTokens: 0,
@@ -104,6 +128,20 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
+
+    // Send initial analysis data to client
+    writer.write(encoder.encode(`data: ${JSON.stringify({ 
+      type: 'analysis',
+      analysis: {
+        complexity: analysis.complexity,
+        contentType: analysis.contentType,
+        domain: analysis.domain,
+        hasCode: analysis.hasCode,
+        estimatedTokens: analysis.estimatedTokens,
+        selectedModel: selectedModel,
+        modelReason: modelReason,
+      }
+    })}\n\n`));
 
     // Process with selected model
     processAIResponse(
@@ -147,29 +185,48 @@ async function processAIResponse(
   let completionTokens = 0;
 
   try {
+    // Map provider names to match database convention
+    const providerMapping: { [key: string]: string } = {
+      'openai': 'openai',
+      'claude': 'anthropic',
+      'anthropic': 'anthropic',
+      'gemini': 'google',
+      'google': 'google',
+      'grok': 'xai',
+      'xai': 'xai',
+      'mistral': 'mistral',
+      'perplexity': 'perplexity'
+    };
+    
+    const dbProvider = providerMapping[model.provider.toLowerCase()] || model.provider.toLowerCase();
+    
     // Get API keys
+    console.log('Looking for API key:', { userId, provider: dbProvider, modelProvider: model.provider });
     const apiKeys = await prisma.apiKey.findMany({
       where: {
         userId,
-        provider: model.provider,
+        provider: dbProvider,
         isActive: true,
       },
     });
 
     if (!apiKeys.length) {
+      console.error('No API key found for provider:', dbProvider);
       await writer.write(encoder.encode(`data: ${JSON.stringify({ 
         type: 'error', 
-        error: `No API key found for ${model.provider}` 
+        error: `No API key found for ${model.provider}. Please add your ${model.provider} API key in settings.` 
       })}\n\n`));
       await writer.close();
       return;
     }
 
-    // Decrypt API key (simplified - use your actual decryption)
-    const apiKey = apiKeys[0].encryptedKey; // In production, decrypt this
+    // Decrypt API key
+    const apiKey = safeDecrypt(apiKeys[0].encryptedKey);
+    console.log('Using API key for provider:', dbProvider, 'key starts with:', apiKey?.substring(0, 10));
 
     // Stream response based on provider
-    if (model.provider === 'openai') {
+    // Use the normalized dbProvider for comparison
+    if (dbProvider === 'openai') {
       const openai = new OpenAI({ apiKey });
       
       const stream = await openai.chat.completions.create({
@@ -194,7 +251,7 @@ async function processAIResponse(
           completionTokens = chunk.usage.completion_tokens || 0;
         }
       }
-    } else if (model.provider === 'anthropic') {
+    } else if (dbProvider === 'anthropic') {
       const anthropic = new Anthropic({ apiKey });
       
       const stream = await anthropic.messages.create({

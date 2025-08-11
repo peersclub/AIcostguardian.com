@@ -33,7 +33,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ threads });
+    // Add default values for properties expected by the frontend
+    const threadsWithDefaults = threads.map(thread => ({
+      ...thread,
+      tags: [],
+      isShared: false,
+      collaborators: [],
+      mode: 'standard',
+      isLive: false,
+      hasError: false,
+    }));
+
+    return NextResponse.json({ threads: threadsWithDefaults });
   } catch (error) {
     console.error('Failed to fetch threads:', error);
     return NextResponse.json(
@@ -69,7 +80,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(thread);
+    // Add default values for properties expected by the frontend
+    const threadWithDefaults = {
+      ...thread,
+      tags: [],
+      isShared: false,
+      collaborators: [],
+      mode: body.mode || 'standard',
+      isLive: false,
+      hasError: false,
+    };
+
+    return NextResponse.json(threadWithDefaults);
   } catch (error) {
     console.error('Failed to create thread:', error);
     return NextResponse.json(
