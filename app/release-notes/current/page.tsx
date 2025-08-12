@@ -2,40 +2,17 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import Link from 'next/link'
 import { 
-  CheckCircle2, 
-  Circle, 
-  AlertCircle, 
-  Rocket, 
-  Bug, 
-  Sparkles, 
-  Code2, 
-  Database, 
-  Server, 
-  Package,
-  GitBranch,
-  Shield,
-  Zap,
-  Globe,
-  Bell,
-  MessageSquare,
-  Users,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-  Calendar,
-  Clock,
-  CheckSquare,
-  Square,
-  ArrowRight,
-  Activity,
-  Award,
-  Target,
-  TrendingUp
+  CheckCircle, Circle, Clock, Rocket, Bug, Sparkles, 
+  Code, Shield, Zap, Globe, Bell, MessageSquare, Users,
+  ChevronRight, Calendar, Target, Award, Activity,
+  GitBranch, Package, Download, Filter, TrendingUp,
+  Database, Brain, DollarSign, ArrowRight, ChevronDown,
+  ExternalLink, Star, AlertTriangle, Settings
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 
 interface ReleaseItem {
   id: string
@@ -45,6 +22,7 @@ interface ReleaseItem {
   status: 'completed' | 'in-progress' | 'pending'
   date?: string
   details?: string[]
+  impact?: 'high' | 'medium' | 'low'
 }
 
 interface ReleaseSection {
@@ -60,128 +38,80 @@ const releases: ReleaseSection[] = [
     version: 'v2.0.0',
     date: '2025-08-12',
     status: 'current',
-    summary: 'Production-Ready Build with Enhanced Features',
+    summary: 'Production-Ready Platform with Enterprise Features',
     items: [
       {
-        id: 'prod-build',
-        type: 'improvement',
-        title: 'Production Build Optimization',
-        description: 'Complete TypeScript compilation fixes and production-ready build pipeline',
-        status: 'completed',
-        details: [
-          'Fixed all TypeScript compilation errors',
-          'Resolved Prisma model mismatches',
-          'Optimized build configuration',
-          'Removed server-side compilation issues',
-          'Enhanced type safety across the application'
-        ]
-      },
-      {
-        id: 'notification-system',
+        id: 'real-time-notifications',
         type: 'feature',
         title: 'Real-time Notification System',
-        description: 'Socket.io-based notification service with site-wide alerts and navbar integration',
+        description: 'Socket.io-based notifications with multi-channel support',
         status: 'completed',
+        impact: 'high',
         details: [
-          'WebSocket-based real-time notifications',
-          'Site-wide notification banners',
-          'Navbar notification dropdown with unread counter',
-          'Multiple notification channels (in-app, email, Slack)',
-          'Notification preferences and rules management',
-          'Toast notifications with Sonner integration'
+          'WebSocket real-time updates',
+          'Email, Slack, and in-app channels',
+          'Customizable notification rules',
+          'Site-wide announcement system',
+          'Notification center with history'
         ]
       },
       {
-        id: 'ai-chat',
+        id: 'ai-chat-interface',
         type: 'feature',
-        title: 'AI Chat Interface (AIOptimise)',
-        description: 'Claude-style unified chat interface with advanced features',
+        title: 'Claude-style AI Chat Interface',
+        description: 'Unified AI chat with advanced capabilities',
         status: 'completed',
+        impact: 'high',
         details: [
-          'Unified input field combining query and chat',
-          'Multiple chat modes (Standard, Focus, Coding, Research, Creative)',
-          'Thread management with collaboration',
+          'Thread management system',
           'Voice input with transcription',
-          'Model selector for different AI providers',
-          'Real-time metrics and usage tracking',
-          'Thread sharing and collaboration features'
+          'Multi-model support (GPT-4, Claude, Gemini)',
+          'Collaboration features',
+          'Context persistence'
         ]
       },
       {
-        id: 'queue-system',
+        id: 'production-optimization',
         type: 'improvement',
-        title: 'Bull Queue Integration',
-        description: 'Redis-backed queue system for background job processing',
+        title: 'Production Build Optimization',
+        description: 'Complete TypeScript fixes and build pipeline improvements',
         status: 'completed',
+        impact: 'high',
         details: [
-          'Installed Bull and Redis dependencies',
-          'Configured queue processors for data fetching',
-          'Implemented retry policies and rate limiting',
-          'Added job scheduling and monitoring'
+          'Zero TypeScript errors',
+          'Optimized bundle size',
+          'Improved build performance',
+          'Enhanced type safety',
+          'Vercel deployment ready'
         ]
       },
       {
-        id: 'database-sync',
-        type: 'fix',
-        title: 'Database Schema Alignment',
-        description: 'Fixed all Prisma schema mismatches and model references',
-        status: 'completed',
-        details: [
-          'Aligned CollaboratorRole with Prisma enums',
-          'Fixed notification field mappings',
-          'Updated thread model references (aIThread)',
-          'Corrected ChatMode enum values',
-          'Resolved field name inconsistencies'
-        ]
-      },
-      {
-        id: 'vercel-ready',
+        id: 'dashboard-redesign',
         type: 'improvement',
-        title: 'Vercel Deployment Ready',
-        description: 'Application configured and tested for Vercel deployment',
+        title: 'Executive Dashboard Redesign',
+        description: 'Enterprise-grade dashboard with advanced metrics',
         status: 'completed',
+        impact: 'medium',
         details: [
-          'Configured vercel.json with proper settings',
-          'Fixed all build-time errors',
-          'Optimized API routes for serverless',
-          'Set up environment variable structure',
-          'Tested local development server'
-        ]
-      }
-    ]
-  },
-  {
-    version: 'v1.9.0',
-    date: '2025-08-10',
-    status: 'released',
-    summary: 'Dark Mode & UI Enhancements',
-    items: [
-      {
-        id: 'dark-mode',
-        type: 'feature',
-        title: 'Dark Mode Support',
-        description: 'Full dark mode implementation with glassmorphic design',
-        status: 'completed',
-        details: [
-          'Theme-aware color system',
-          'Glassmorphic card designs',
-          'Smooth theme transitions',
-          'Persistent theme preferences'
+          'Real-time KPI tracking',
+          'Advanced visualizations',
+          'Predictive analytics',
+          'Custom reporting'
         ]
       },
       {
-        id: 'ui-components',
-        type: 'improvement',
-        title: 'Enhanced UI Components',
-        description: 'Upgraded Radix UI components with dark mode support',
-        status: 'completed'
-      },
-      {
-        id: 'ai-logos',
-        type: 'feature',
-        title: 'AI Provider Logos',
-        description: 'Custom logos for all AI providers',
-        status: 'completed'
+        id: 'security-enhancements',
+        type: 'security',
+        title: 'Security & Compliance Updates',
+        description: 'Enhanced security features for enterprise deployment',
+        status: 'completed',
+        impact: 'high',
+        details: [
+          'API key encryption',
+          'Row-level security',
+          'Audit logging',
+          'GDPR compliance'
+        ]
       }
     ]
   },
@@ -189,67 +119,40 @@ const releases: ReleaseSection[] = [
     version: 'v2.1.0',
     date: 'Q3 2025',
     status: 'upcoming',
-    summary: 'Advanced Analytics & Monitoring',
+    summary: 'Advanced Analytics & ML Features',
     items: [
       {
-        id: 'analytics-dashboard',
+        id: 'ml-predictions',
         type: 'feature',
-        title: 'Advanced Analytics Dashboard',
-        description: 'Comprehensive analytics with predictive insights',
-        status: 'pending'
+        title: 'ML-based Cost Predictions',
+        description: 'AI-powered cost forecasting and optimization',
+        status: 'in-progress',
+        impact: 'high'
       },
       {
-        id: 'cost-predictions',
+        id: 'custom-dashboards',
         type: 'feature',
-        title: 'AI Cost Predictions',
-        description: 'ML-based cost forecasting and optimization recommendations',
-        status: 'pending'
+        title: 'Custom Dashboard Builder',
+        description: 'Drag-and-drop dashboard customization',
+        status: 'pending',
+        impact: 'medium'
       },
       {
-        id: 'webhooks',
+        id: 'advanced-reporting',
         type: 'feature',
-        title: 'Webhook Integrations',
-        description: 'Provider webhooks for real-time usage updates',
-        status: 'pending'
+        title: 'Advanced Reporting Suite',
+        description: 'Scheduled reports with custom templates',
+        status: 'pending',
+        impact: 'medium'
       }
     ]
   }
 ]
 
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case 'feature': return <Sparkles className="h-4 w-4" />
-    case 'fix': return <Bug className="h-4 w-4" />
-    case 'improvement': return <Zap className="h-4 w-4" />
-    case 'breaking': return <AlertCircle className="h-4 w-4" />
-    case 'security': return <Shield className="h-4 w-4" />
-    default: return <Code2 className="h-4 w-4" />
-  }
-}
-
-const getTypeColor = (type: string) => {
-  switch (type) {
-    case 'feature': return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0'
-    case 'fix': return 'bg-gradient-to-r from-red-500 to-pink-500 text-white border-0'
-    case 'improvement': return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0'
-    case 'breaking': return 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0'
-    case 'security': return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0'
-    default: return 'bg-gray-700 text-gray-300 border-gray-600'
-  }
-}
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'completed': return <CheckCircle2 className="h-4 w-4 text-green-500" />
-    case 'in-progress': return <Clock className="h-4 w-4 text-yellow-500" />
-    case 'pending': return <Circle className="h-4 w-4 text-muted-foreground" />
-    default: return null
-  }
-}
-
 export default function CurrentReleaseNotesPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [selectedVersion, setSelectedVersion] = useState('v2.0.0')
+  const [filterType, setFilterType] = useState<string>('all')
 
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedItems)
@@ -262,373 +165,346 @@ export default function CurrentReleaseNotesPage() {
   }
 
   const currentRelease = releases.find(r => r.version === selectedVersion) || releases[0]
+  
+  const filteredItems = filterType === 'all' 
+    ? currentRelease.items 
+    : currentRelease.items.filter(item => item.type === filterType)
 
-  // Calculate progress
-  const totalItems = currentRelease.items.length
-  const completedItems = currentRelease.items.filter(i => i.status === 'completed').length
-  const inProgressItems = currentRelease.items.filter(i => i.status === 'in-progress').length
-  const progressPercentage = (completedItems / totalItems) * 100
+  const stats = {
+    total: currentRelease.items.length,
+    completed: currentRelease.items.filter(i => i.status === 'completed').length,
+    inProgress: currentRelease.items.filter(i => i.status === 'in-progress').length,
+    features: currentRelease.items.filter(i => i.type === 'feature').length,
+    improvements: currentRelease.items.filter(i => i.type === 'improvement').length,
+    fixes: currentRelease.items.filter(i => i.type === 'fix').length
+  }
+
+  const completionPercentage = (stats.completed / stats.total) * 100
+
+  const getTypeStyles = (type: string) => {
+    switch (type) {
+      case 'feature':
+        return {
+          icon: Sparkles,
+          bgColor: 'bg-blue-500/20',
+          iconColor: 'text-blue-400',
+          borderColor: 'border-blue-500/30',
+          badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+        }
+      case 'improvement':
+        return {
+          icon: TrendingUp,
+          bgColor: 'bg-purple-500/20',
+          iconColor: 'text-purple-400',
+          borderColor: 'border-purple-500/30',
+          badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+        }
+      case 'fix':
+        return {
+          icon: Bug,
+          bgColor: 'bg-red-500/20',
+          iconColor: 'text-red-400',
+          borderColor: 'border-red-500/30',
+          badge: 'bg-red-500/20 text-red-300 border-red-500/30'
+        }
+      case 'security':
+        return {
+          icon: Shield,
+          bgColor: 'bg-yellow-500/20',
+          iconColor: 'text-yellow-400',
+          borderColor: 'border-yellow-500/30',
+          badge: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+        }
+      default:
+        return {
+          icon: Code,
+          bgColor: 'bg-gray-700/50',
+          iconColor: 'text-gray-400',
+          borderColor: 'border-gray-600',
+          badge: 'bg-gray-700/50 text-gray-400 border-gray-600'
+        }
+    }
+  }
+
+  const getImpactBadge = (impact?: string) => {
+    switch (impact) {
+      case 'high':
+        return <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">High Impact</Badge>
+      case 'medium':
+        return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs">Medium Impact</Badge>
+      case 'low':
+        return <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">Low Impact</Badge>
+      default:
+        return null
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+    <div className="min-h-screen bg-gray-950">
+      {/* Header with Version Info */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-pink-900/20" />
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Link href="/release-notes" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6">
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span>Back to Release Notes</span>
+            </Link>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <h1 className="text-5xl font-bold text-white">{currentRelease.version}</h1>
+                  <Badge className={
+                    currentRelease.status === 'current'
+                      ? "bg-green-500/20 text-green-300 border-green-500/30 px-3 py-1"
+                      : "bg-blue-500/20 text-blue-300 border-blue-500/30 px-3 py-1"
+                  }>
+                    {currentRelease.status === 'current' ? 'CURRENT RELEASE' : 'UPCOMING'}
+                  </Badge>
+                </div>
+                <p className="text-xl text-gray-400 mb-2">{currentRelease.summary}</p>
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{currentRelease.date}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-700/50 transition-all flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all flex items-center gap-2">
+                  <GitBranch className="w-4 h-4" />
+                  View on GitHub
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      <div className="relative container mx-auto py-8 max-w-7xl px-4">
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
+      <div className="max-w-7xl mx-auto px-6 pb-20">
+        {/* Progress Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-6 mb-8"
         >
-          <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
-              <Rocket className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">Release Progress</h2>
+            <span className="text-2xl font-bold text-white">{Math.round(completionPercentage)}%</span>
+          </div>
+          <Progress value={completionPercentage} className="h-3 bg-gray-800 mb-4" />
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">{stats.total}</div>
+              <div className="text-xs text-gray-400">Total Items</div>
             </div>
-            <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Release Notes
-              </h1>
-              <p className="text-gray-400 mt-1">Track our progress and latest updates</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
+              <div className="text-xs text-gray-400">Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-400">{stats.inProgress}</div>
+              <div className="text-xs text-gray-400">In Progress</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">{stats.features}</div>
+              <div className="text-xs text-gray-400">Features</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-400">{stats.improvements}</div>
+              <div className="text-xs text-gray-400">Improvements</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-400">{stats.fixes}</div>
+              <div className="text-xs text-gray-400">Fixes</div>
             </div>
           </div>
         </motion.div>
 
-        {/* Current Release Banner */}
-        {currentRelease.status === 'current' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6"
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 rounded-2xl blur-xl" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-4 py-1">
-                      CURRENT RELEASE
-                    </Badge>
-                    <h2 className="text-3xl font-bold text-white">{currentRelease.version}</h2>
-                    <span className="text-gray-400">{currentRelease.date}</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg px-4 py-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-400" />
-                    <span className="text-sm font-medium text-gray-200">
-                      {completedItems}/{totalItems} Complete
-                    </span>
-                  </div>
-                </div>
-                <p className="text-lg text-gray-300 mb-4">
-                  {currentRelease.summary}
-                </p>
-                <div className="relative">
-                  <div className="h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-xl">
-                    <motion.div 
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progressPercentage}%` }}
-                      transition={{ duration: 1, delay: 0.5 }}
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-md opacity-30" />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
         {/* Version Selector */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center justify-between mb-8"
         >
-          <Tabs value={selectedVersion} onValueChange={setSelectedVersion} className="mb-8">
-            <TabsList className="grid w-full grid-cols-3 bg-white/5 backdrop-blur-xl border border-white/10">
-              {releases.map(release => (
-                <TabsTrigger 
-                  key={release.version} 
-                  value={release.version}
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
-                >
-                  <div className="flex items-center gap-2">
-                    {release.status === 'current' && <Zap className="h-4 w-4" />}
-                    {release.status === 'upcoming' && <Clock className="h-4 w-4" />}
-                    {release.version}
-                  </div>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value={selectedVersion} className="mt-6">
-              {/* Statistics */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          <div className="flex gap-2">
+            {releases.map(release => (
+              <button
+                key={release.version}
+                onClick={() => setSelectedVersion(release.version)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  selectedVersion === release.version
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50 border border-gray-700'
+                }`}
               >
-                <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
-                  <div className="text-sm font-medium text-gray-400 mb-2">
-                    Total Changes
-                  </div>
-                  <div className="text-3xl font-bold text-white">{currentRelease.items.length}</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
-                  <div className="text-sm font-medium text-gray-400 mb-2">
-                    Features
-                  </div>
-                  <div className="text-3xl font-bold text-blue-400">
-                    {currentRelease.items.filter(i => i.type === 'feature').length}
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
-                  <div className="text-sm font-medium text-gray-400 mb-2">
-                    Fixes
-                  </div>
-                  <div className="text-3xl font-bold text-red-400">
-                    {currentRelease.items.filter(i => i.type === 'fix').length}
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
-                  <div className="text-sm font-medium text-gray-400 mb-2">
-                    Improvements
-                  </div>
-                  <div className="text-3xl font-bold text-purple-400">
-                    {currentRelease.items.filter(i => i.type === 'improvement').length}
-                  </div>
-                </div>
-              </motion.div>
+                {release.version}
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex gap-2">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl rounded-lg border border-gray-700 text-gray-300 focus:outline-none focus:border-indigo-500"
+            >
+              <option value="all">All Types</option>
+              <option value="feature">Features</option>
+              <option value="improvement">Improvements</option>
+              <option value="fix">Fixes</option>
+              <option value="security">Security</option>
+            </select>
+          </div>
+        </motion.div>
 
-              {/* Release Items */}
-              <div className="space-y-4">
-                {currentRelease.items.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
-                    className="bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 backdrop-blur-xl rounded-xl border border-white/10 hover:border-white/20 transition-all cursor-pointer"
-                    onClick={() => toggleExpanded(item.id)}
-                  >
-                    <div className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <motion.div 
-                            className="mt-1"
-                            animate={{ rotate: expandedItems.has(item.id) ? 90 : 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                          </motion.div>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <Badge className={getTypeColor(item.type)}>
-                                {getTypeIcon(item.type)}
-                                <span className="ml-1.5 capitalize">{item.type}</span>
-                              </Badge>
-                              {getStatusIcon(item.status)}
-                            </div>
-                            <h3 className="text-xl font-semibold text-white">{item.title}</h3>
-                            <p className="text-gray-300">{item.description}</p>
+        {/* Release Items */}
+        <div className="space-y-4">
+          {filteredItems.map((item, index) => {
+            const typeStyles = getTypeStyles(item.type)
+            const TypeIcon = typeStyles.icon
+            const isExpanded = expandedItems.has(item.id)
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + index * 0.05 }}
+                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 overflow-hidden"
+              >
+                <div
+                  className="p-6 cursor-pointer hover:bg-gray-800/30 transition-colors"
+                  onClick={() => toggleExpanded(item.id)}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-xl ${typeStyles.bgColor}`}>
+                      <TypeIcon className={`w-6 h-6 ${typeStyles.iconColor}`} />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                            {getImpactBadge(item.impact)}
                           </div>
+                          <p className="text-gray-400">{item.description}</p>
                         </div>
+                        <motion.div
+                          animate={{ rotate: isExpanded ? 90 : 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        </motion.div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mt-3">
+                        <Badge className={typeStyles.badge}>
+                          {item.type}
+                        </Badge>
+                        {item.status === 'completed' ? (
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Completed</span>
+                          </div>
+                        ) : item.status === 'in-progress' ? (
+                          <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                            <Clock className="w-4 h-4" />
+                            <span>In Progress</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-gray-400 text-sm">
+                            <Circle className="w-4 h-4" />
+                            <span>Pending</span>
+                          </div>
+                        )}
                         {item.date && (
-                          <div className="flex items-center gap-2 text-gray-400 text-sm bg-white/5 px-3 py-1 rounded-lg">
-                            <Calendar className="h-3 w-3" />
-                            {item.date}
+                          <div className="flex items-center gap-2 text-gray-500 text-sm">
+                            <Calendar className="w-3 h-3" />
+                            <span>{item.date}</span>
                           </div>
                         )}
                       </div>
                     </div>
-                    
-                    <AnimatePresence>
-                      {expandedItems.has(item.id) && item.details && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-6 pb-6">
-                            <div className="pl-8 pt-4 border-t border-white/10">
-                              <div className="text-sm font-medium text-indigo-400 mb-3">
-                                Implementation Details:
-                              </div>
-                              <ul className="space-y-2">
-                                {item.details.map((detail, idx) => (
-                                  <motion.li 
-                                    key={idx} 
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="flex items-start gap-3 text-sm text-gray-300"
-                                  >
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5" />
-                                    <span>{detail}</span>
-                                  </motion.li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+                  </div>
+                </div>
+                
+                <AnimatePresence>
+                  {isExpanded && item.details && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-t border-gray-800"
+                    >
+                      <div className="p-6 pl-20">
+                        <h4 className="text-sm font-semibold text-gray-300 mb-3">Implementation Details:</h4>
+                        <ul className="space-y-2">
+                          {item.details.map((detail, idx) => (
+                            <motion.li
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className="flex items-start gap-3 text-gray-400"
+                            >
+                              <ArrowRight className="w-4 h-4 text-gray-600 mt-0.5" />
+                              <span>{detail}</span>
+                            </motion.li>
+                          ))}
+                        </ul>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
 
         {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="mt-8 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          transition={{ delay: 0.5 }}
+          className="mt-12 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
-              <Target className="h-5 w-5 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-white">
-              Quick Actions
-            </h3>
+          <h3 className="text-2xl font-bold text-white mb-6 text-center">Get Involved</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <button className="p-4 bg-gray-800/50 backdrop-blur-xl rounded-xl border border-gray-700 hover:bg-gray-700/50 transition-all text-center">
+              <GitBranch className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
+              <div className="text-white font-medium">Contribute</div>
+              <div className="text-xs text-gray-400">Join development</div>
+            </button>
+            <button className="p-4 bg-gray-800/50 backdrop-blur-xl rounded-xl border border-gray-700 hover:bg-gray-700/50 transition-all text-center">
+              <MessageSquare className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+              <div className="text-white font-medium">Feedback</div>
+              <div className="text-xs text-gray-400">Share your thoughts</div>
+            </button>
+            <button className="p-4 bg-gray-800/50 backdrop-blur-xl rounded-xl border border-gray-700 hover:bg-gray-700/50 transition-all text-center">
+              <Star className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+              <div className="text-white font-medium">Star</div>
+              <div className="text-xs text-gray-400">Support the project</div>
+            </button>
+            <button className="p-4 bg-gray-800/50 backdrop-blur-xl rounded-xl border border-gray-700 hover:bg-gray-700/50 transition-all text-center">
+              <Bell className="w-6 h-6 text-green-400 mx-auto mb-2" />
+              <div className="text-white font-medium">Subscribe</div>
+              <div className="text-xs text-gray-400">Get updates</div>
+            </button>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <motion.a
-              href="https://github.com/peersclub/AIcostguardian.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
-            >
-              <GitBranch className="h-5 w-5 text-indigo-400" />
-              <span>GitHub</span>
-            </motion.a>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
-            >
-              <Package className="h-5 w-5 text-purple-400" />
-              <span>Download</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
-            >
-              <Bell className="h-5 w-5 text-yellow-400" />
-              <span>Subscribe</span>
-            </motion.button>
-            
-            <motion.a
-              href="mailto:feedback@aicostguardian.com"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
-            >
-              <MessageSquare className="h-5 w-5 text-pink-400" />
-              <span>Feedback</span>
-            </motion.a>
-          </div>
-        </motion.div>
-
-        {/* Deployment Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl border border-green-500/20 p-8 shadow-2xl"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white">
-                  Production Deployment Ready
-                </h3>
-              </div>
-              <p className="text-gray-300 ml-11">
-                Application has been successfully prepared for Vercel deployment
-              </p>
-            </div>
-            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-4 py-2">
-              READY TO DEPLOY
-            </Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.0 }}
-              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
-            >
-              <CheckSquare className="h-5 w-5 text-green-400" />
-              <span className="text-sm text-gray-200">Build Successful</span>
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.1 }}
-              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
-            >
-              <CheckSquare className="h-5 w-5 text-green-400" />
-              <span className="text-sm text-gray-200">TypeScript Fixed</span>
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.2 }}
-              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
-            >
-              <CheckSquare className="h-5 w-5 text-green-400" />
-              <span className="text-sm text-gray-200">Dependencies Ready</span>
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.3 }}
-              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
-            >
-              <CheckSquare className="h-5 w-5 text-green-400" />
-              <span className="text-sm text-gray-200">Production Ready</span>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Footer Status */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
-          className="mt-12 text-center text-gray-400 pb-8"
-        >
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-green-400">All Systems Operational</span>
-          </div>
-          <p className="text-sm">Version {selectedVersion} • Last updated: {currentRelease.date}</p>
-          <p className="text-xs mt-2">Continuous deployment via GitHub Actions</p>
         </motion.div>
       </div>
     </div>
