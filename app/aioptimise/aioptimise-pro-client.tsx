@@ -28,6 +28,10 @@ import { PromptAnalysis } from './components/prompt-analysis';
 import { VoiceInput } from './components/voice-input';
 import { ModeSettings } from './components/mode-settings';
 import { ModelSelector } from './components/model-selector';
+import { useThreadManager } from './hooks/useThreadManager';
+import { ShareThreadDialog } from './components/share-thread-dialog';
+import { CollaborationPresence, TypingIndicator } from './components/collaboration-presence';
+import { useSocket, useThreadSocket } from '@/hooks/useSocket';
 
 // Types
 interface Thread {
@@ -43,7 +47,8 @@ interface Thread {
   isLive?: boolean;
   hasError?: boolean;
   isShared?: boolean;
-  collaborators?: string[];
+  shareId?: string;
+  collaborators?: any[];
 }
 
 interface Message {
@@ -143,8 +148,84 @@ export default function AIOptimiseProClient() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryCountRef = useRef<number>(0);
   
+  // Thread management hook
+  const threadActions = useThreadManager(
+    threads,
+    setThreads,
+    currentThread,
+    setCurrentThread
+  );
+  
+  // Collaboration state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedThreadForShare, setSelectedThreadForShare] = useState<Thread | null>(null);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  
+  // WebSocket integration
+  const { isConnected, connect, disconnect } = useSocket({
+    onConnect: () => {
+      toast.success('Connected to real-time server');
+    },
+    onDisconnect: () => {
+      toast.warning('Disconnected from real-time server');
+    },
+    onError: (error) => {
+      console.error('WebSocket error:', error);
+    },
+  });
+  
+  const {
+    presence,
+    typingUsers,
+    startTyping,
+    stopTyping,
+    sendMessage: sendSocketMessage,
+    editMessage: editSocketMessage,
+    deleteMessage: deleteSocketMessage,
+  } = useThreadSocket({
+    threadId: currentThread?.id || null,
+    onMessageReceived: (message) => {
+      // Add received message to the messages list
+      if (message.user?.id !== session?.user?.id) {
+        const formattedMessage: Message = {
+          id: message.id,
+          role: message.role as 'user' | 'assistant',
+          content: message.content,
+          createdAt: message.createdAt.toString(),
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          cost: 0,
+          status: 'completed',
+        };
+        setMessages(prev => [...prev, formattedMessage]);
+      }
+    },
+    onMessageEdited: (data) => {
+      // Update edited message
+      setMessages(prev => prev.map(m => 
+        m.id === data.messageId 
+          ? { ...m, content: data.content, editedAt: data.editedAt }
+          : m
+      ));
+    },
+    onMessageDeleted: (data) => {
+      // Remove deleted message
+      setMessages(prev => prev.filter(m => m.id !== data.messageId));
+    },
+  });
+  
   // Organization info
   const organizationName = session?.user?.company || "Your Organization";
+  
+  // Handle typing indicator based on input changes
+  useEffect(() => {
+    if (input.length > 0 && currentThread && isConnected) {
+      startTyping();
+    } else {
+      stopTyping();
+    }
+  }, [input, currentThread, isConnected, startTyping, stopTyping]);
   const isRestricted = false; // Check user restrictions
   const hasReachedLimit = (sessionMetrics.dailyUsed || 0) >= (sessionMetrics.dailyLimit || 0);
 
@@ -297,6 +378,22 @@ export default function AIOptimiseProClient() {
     setUploadedImages([]);
     setIsLoading(true);
     setIsStreaming(true);
+    
+    // Stop typing indicator
+    stopTyping();
+    
+    // Send via WebSocket for real-time sync
+    if (isConnected && threadToUse) {
+      try {
+        await sendSocketMessage({
+          content: messageText,
+          images,
+          metadata: { timestamp: new Date().toISOString() }
+        });
+      } catch (error) {
+        console.error('Failed to send via WebSocket:', error);
+      }
+    }
     setCurrentAnalysis(null);
     retryCountRef.current = 0;
     
@@ -560,6 +657,45 @@ export default function AIOptimiseProClient() {
       toast.error('Failed to request limit increase');
     }
   };
+  
+  const loadCollaborators = async (threadId: string) => {
+    try {
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/collaborators`);
+      if (response.ok) {
+        const data = await response.json();
+        setCollaborators(data);
+      }
+    } catch (error) {
+      console.error('Failed to load collaborators:', error);
+    }
+  };
+  
+  const handleAddCollaborator = async (email: string, role: string) => {
+    if (!selectedThreadForShare) return;
+    await threadActions.addCollaborator(selectedThreadForShare.id, email, role);
+    await loadCollaborators(selectedThreadForShare.id);
+  };
+  
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
+    if (!selectedThreadForShare) return;
+    try {
+      const response = await fetch(
+        `/api/aioptimise/threads/${selectedThreadForShare.id}/collaborators/${collaboratorId}`,
+        { method: 'DELETE' }
+      );
+      if (response.ok) {
+        await loadCollaborators(selectedThreadForShare.id);
+        toast.success('Collaborator removed');
+      }
+    } catch (error) {
+      toast.error('Failed to remove collaborator');
+    }
+  };
+  
+  const handleUpdateCollaboratorRole = async (collaboratorId: string, role: string) => {
+    // TODO: Implement role update endpoint
+    toast.info('Role update coming soon');
+  };
 
   // Render different modes
   const renderContent = () => {
@@ -794,6 +930,23 @@ export default function AIOptimiseProClient() {
             // Load thread messages
           }
         }}
+        onPinThread={async (threadId) => {
+          const thread = threads.find(t => t.id === threadId);
+          if (thread?.isPinned) {
+            await threadActions.unpinThread(threadId);
+          } else {
+            await threadActions.pinThread(threadId);
+          }
+        }}
+        onDeleteThread={threadActions.deleteThread}
+        onShareThread={(threadId) => {
+          const thread = threads.find(t => t.id === threadId);
+          if (thread) {
+            setSelectedThreadForShare(thread);
+            setShareDialogOpen(true);
+            loadCollaborators(threadId);
+          }
+        }}
         organizationName={organizationName}
       />
       
@@ -807,6 +960,49 @@ export default function AIOptimiseProClient() {
           onToggle={() => setIsVoiceActive(!isVoiceActive)}
           onTranscript={handleVoiceTranscript}
           provider={selectedModel?.provider || settings.preferredProvider}
+        />
+      )}
+      
+      {/* Share thread dialog */}
+      {selectedThreadForShare && (
+        <ShareThreadDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          thread={{
+            id: selectedThreadForShare.id,
+            title: selectedThreadForShare.title,
+            isShared: selectedThreadForShare.isShared || false,
+            shareId: selectedThreadForShare.shareId
+          }}
+          onShare={async (options) => {
+            const result = await threadActions.shareThread(selectedThreadForShare.id, options);
+            // Update the thread in state
+            setThreads(threads.map(t => 
+              t.id === selectedThreadForShare.id 
+                ? { ...t, isShared: true } 
+                : t
+            ));
+            if (currentThread?.id === selectedThreadForShare.id) {
+              setCurrentThread({ ...currentThread, isShared: true });
+            }
+            return result;
+          }}
+          onUnshare={async () => {
+            await threadActions.unshareThread(selectedThreadForShare.id);
+            // Update the thread in state
+            setThreads(threads.map(t => 
+              t.id === selectedThreadForShare.id 
+                ? { ...t, isShared: false } 
+                : t
+            ));
+            if (currentThread?.id === selectedThreadForShare.id) {
+              setCurrentThread({ ...currentThread, isShared: false });
+            }
+          }}
+          onAddCollaborator={handleAddCollaborator}
+          onRemoveCollaborator={handleRemoveCollaborator}
+          onUpdateCollaboratorRole={handleUpdateCollaboratorRole}
+          collaborators={collaborators}
         />
       )}
     </div>

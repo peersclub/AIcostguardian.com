@@ -38,14 +38,14 @@ interface NotificationItemProps {
 }
 
 const priorityColors = {
-  LOW: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  LOW: 'bg-muted text-foreground',
   MEDIUM: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
   CRITICAL: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
 }
 
 const priorityBorders = {
-  LOW: 'border-l-gray-400',
+  LOW: 'border-l-border',
   MEDIUM: 'border-l-blue-500',
   HIGH: 'border-l-orange-500',
   CRITICAL: 'border-l-red-500'
@@ -102,31 +102,31 @@ export function NotificationItem({
       <div className="mt-3 space-y-2 text-xs">
         {cost && (
           <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Cost:</span>
+            <span className="text-muted-foreground">Cost:</span>
             <span className="font-medium">${cost.toFixed(2)}</span>
           </div>
         )}
         {usage && (
           <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Usage:</span>
+            <span className="text-muted-foreground">Usage:</span>
             <span className="font-medium">{usage.toLocaleString()} tokens</span>
           </div>
         )}
         {provider && (
           <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Provider:</span>
+            <span className="text-muted-foreground">Provider:</span>
             <span className="font-medium">{provider}</span>
           </div>
         )}
         {model && (
           <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Model:</span>
+            <span className="text-muted-foreground">Model:</span>
             <span className="font-medium">{model}</span>
           </div>
         )}
         {threshold && (
           <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Threshold:</span>
+            <span className="text-muted-foreground">Threshold:</span>
             <span className="font-medium">${threshold.toFixed(2)}</span>
           </div>
         )}
@@ -148,7 +148,7 @@ export function NotificationItem({
         "relative px-4 py-3 transition-all duration-200 border-l-4",
         priorityBorders[notification.priority as keyof typeof priorityBorders],
         !isRead && "bg-blue-50/50 dark:bg-blue-900/10",
-        "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        "hover:bg-muted"
       )}
       onClick={handleToggleRead}
     >
@@ -158,13 +158,13 @@ export function NotificationItem({
           "p-2 rounded-lg mt-0.5",
           notification.priority === 'CRITICAL' ? 'bg-red-100 dark:bg-red-900/30' :
           notification.priority === 'HIGH' ? 'bg-orange-100 dark:bg-orange-900/30' :
-          'bg-gray-100 dark:bg-gray-800'
+          'bg-muted'
         )}>
           <Icon className={cn(
             "h-4 w-4",
             notification.priority === 'CRITICAL' ? 'text-red-600 dark:text-red-400' :
             notification.priority === 'HIGH' ? 'text-orange-600 dark:text-orange-400' :
-            'text-gray-600 dark:text-gray-400'
+            'text-muted-foreground'
           )} />
         </div>
 
@@ -234,7 +234,7 @@ export function NotificationItem({
           </div>
 
           <p className={cn(
-            "text-xs text-gray-600 dark:text-gray-400",
+            "text-xs text-muted-foreground",
             isExpanded ? "" : "line-clamp-2"
           )}>
             {notification.message}
@@ -269,7 +269,7 @@ export function NotificationItem({
           )}
 
           <div className="flex items-center gap-3 mt-2">
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            <span className="text-[10px] text-muted-foreground">
               {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
             </span>
             {notification.groupId && (

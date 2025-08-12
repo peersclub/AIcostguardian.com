@@ -1,110 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
-import * as Sentry from "@sentry/nextjs"
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { HealthCheckService } from '@/src/monitoring/health-checks';
 
-export const dynamic = 'force-dynamic'
-
+// Public health check endpoint
 export async function GET(request: NextRequest) {
-  return await Sentry.withServerActionInstrumentation(
-    "health-check",
-    {
-      recordResponse: true,
-    },
-    async () => {
-      try {
-        // Check database connection
-        const dbHealthy = await checkDatabase()
-        
-        // Check environment variables
-        const envHealthy = checkEnvironment()
-        
-        // Overall health status
-        const isHealthy = dbHealthy && envHealthy
-        
-        const response = {
-          status: isHealthy ? 'healthy' : 'unhealthy',
-          timestamp: new Date().toISOString(),
-          checks: {
-            database: dbHealthy ? 'connected' : 'disconnected',
-            environment: envHealthy ? 'configured' : 'missing variables',
-            sentry: process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled (dev mode)',
-          },
-          version: process.env.VERCEL_GIT_COMMIT_SHA || 'development',
-          environment: process.env.NODE_ENV || 'development',
-        }
-        
-        // Log to Sentry if unhealthy
-        if (!isHealthy) {
-          Sentry.captureMessage('Health check failed', {
-            level: 'warning',
-            extra: response,
-          })
-        }
-        
-        return NextResponse.json(response, { 
-          status: isHealthy ? 200 : 503 
-        })
-      } catch (error) {
-        // Capture error to Sentry
-        Sentry.captureException(error, {
-          tags: {
-            endpoint: 'health-check',
-          },
-        })
-        
-        return NextResponse.json(
-          { 
-            status: 'error',
-            message: 'Health check failed',
-            error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal error'
-          },
-          { status: 500 }
-        )
-      }
-    }
-  )
-}
-
-async function checkDatabase(): Promise<boolean> {
   try {
-    // Skip during build
-    if (!process.env.DATABASE_URL || process.env.NEXT_PHASE === 'phase-production-build') {
-      return false
-    }
+    const healthService = new HealthCheckService();
+    const health = await healthService.getSystemHealth();
     
-    // Try to execute a simple query
-    await prisma.$queryRaw`SELECT 1`
-    return true
+    // Return appropriate status code based on health
+    const statusCode = health.overall === 'healthy' ? 200 :
+                      health.overall === 'degraded' ? 206 : 503;
+    
+    return NextResponse.json(health, { status: statusCode });
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: {
-        check: 'database',
+    console.error('Health check error:', error);
+    return NextResponse.json(
+      { 
+        overall: 'unhealthy',
+        error: 'Health check failed',
+        timestamp: new Date()
       },
-    })
-    return false
+      { status: 503 }
+    );
   }
-}
-
-function checkEnvironment(): boolean {
-  const requiredVars = [
-    'DATABASE_URL',
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL',
-    'GOOGLE_CLIENT_ID',
-    'GOOGLE_CLIENT_SECRET',
-  ]
-  
-  const missingVars = requiredVars.filter(v => !process.env[v])
-  
-  if (missingVars.length > 0) {
-    Sentry.captureMessage('Missing environment variables', {
-      level: 'warning',
-      extra: {
-        missing: missingVars,
-      },
-    })
-    return false
-  }
-  
-  return true
 }

@@ -44,6 +44,8 @@ model User {
   voiceSessions         VoiceSession[]
   imageUploads          ImageUpload[]
   usageLimit            UsageLimit?
+  threadPresences       ThreadPresence[]
+  auditLogs             AuditLog[]
 }
 
 model Organization {
@@ -82,6 +84,8 @@ model ApiKey {
   organizationId String
   
   @@unique([userId, provider])
+  @@index([organizationId, provider, isActive]) // For org-wide key lookups
+  @@index([lastUsed]) // For cleanup queries
 }
 
 model UsageLog {
@@ -105,6 +109,7 @@ model UsageLog {
   
   @@index([userId, timestamp])
   @@index([organizationId, timestamp])
+  @@index([provider, model, timestamp]) // For analytics queries
 }
 
 model Usage {
@@ -300,6 +305,7 @@ model Notification {
   @@index([userId, status, createdAt])
   @@index([organizationId, type, createdAt])
   @@index([groupId])
+  @@index([userId, readAt]) // For unread notifications queries
 }
 
 model NotificationPreferences {
@@ -557,11 +563,14 @@ model AIThread {
   messages          AIMessage[]
   analytics         ThreadAnalytics?
   collaborators     ThreadCollaborator[]
+  presences         ThreadPresence[]
   
   @@index([userId, isArchived])
   @@index([userId, lastMessageAt])
   @@index([shareId])
   @@index([organizationId])
+  @@index([userId, isPinned, lastMessageAt]) // For dashboard queries
+  @@index([userId, createdAt]) // For pagination
 }
 
 model AIMessage {
@@ -1030,6 +1039,26 @@ model ImageUpload {
   @@index([status])
 }
 
+model ThreadPresence {
+  id                String    @id @default(cuid())
+  threadId          String
+  userId            String
+  socketId          String?
+  status            String    @default("active") // active, idle, typing
+  cursorPosition    Json?
+  lastSeen          DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([socketId])
+  @@index([threadId, status])
+}
+
 model UsageLimit {
   id                String    @id @default(cuid())
   userId            String?
@@ -1065,6 +1094,29 @@ model UsageLimit {
   
   @@unique([userId])
   @@unique([organizationId])
+}
+
+model AuditLog {
+  id                String    @id @default(cuid())
+  action            String    // Login, API access, data export, etc.
+  severity          String    // LOW, MEDIUM, HIGH, CRITICAL
+  userId            String?
+  targetId          String?
+  targetType        String?   // User, Thread, ApiKey, etc.
+  metadata          Json?     // Additional context
+  ipAddress         String?
+  userAgent         String?
+  success           Boolean   @default(true)
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([targetId, targetType])
 }
 
 // New Enums

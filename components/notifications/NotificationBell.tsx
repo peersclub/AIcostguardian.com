@@ -108,7 +108,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "relative p-2 rounded-lg transition-all duration-200",
-          "hover:bg-gray-100 dark:hover:bg-gray-800",
+          "hover:bg-muted",
           hasCritical && "animate-pulse",
           className
         )}
@@ -123,8 +123,8 @@ export function NotificationBell({ className }: NotificationBellProps) {
           <Bell 
             className={cn(
               "w-5 h-5 transition-colors",
-              unreadCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400",
-              hasCritical && "text-red-600 dark:text-red-400"
+              unreadCount > 0 ? "text-primary" : "text-muted-foreground",
+              hasCritical && "text-destructive"
             )}
           />
         </motion.div>
@@ -139,7 +139,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 "absolute -top-1 -right-1 min-w-[20px] h-5 px-1",
                 "flex items-center justify-center",
                 "text-xs font-bold text-white rounded-full",
-                hasCritical ? "bg-red-500" : "bg-blue-500"
+                hasCritical ? "bg-destructive" : "bg-primary"
               )}
             >
               {unreadCount > 99 ? '99+' : unreadCount}

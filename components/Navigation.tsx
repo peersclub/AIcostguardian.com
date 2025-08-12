@@ -16,7 +16,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  Bell,
   HelpCircle,
   FileText,
   BarChart3,
@@ -36,6 +35,7 @@ import {
   Sparkles,
   Key
 } from 'lucide-react'
+import { EnhancedNotificationBell } from '@/components/notifications/EnhancedNotificationBell'
 
 interface NavItem {
   label: string
@@ -288,16 +288,7 @@ export default function Navigation() {
           <div className="flex items-center gap-3">
             {/* Notifications - only for authenticated users */}
             {status === 'authenticated' && (
-              <Link 
-                href="/notifications" 
-                className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                title="View Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {notifications > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                )}
-              </Link>
+              <EnhancedNotificationBell className="text-gray-400 hover:text-white" />
             )}
 
             {/* Demo Data Button - available for all */}

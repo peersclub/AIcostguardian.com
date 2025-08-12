@@ -2,14 +2,28 @@ import crypto from 'crypto'
 
 const algorithm = 'aes-256-gcm'
 
-// Get the encryption key with fallback
+// Get the encryption key - required in production
 function getSecretKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY
+  
   if (!key) {
-    console.warn('ENCRYPTION_KEY not found in environment, using fallback')
-    // Use a consistent fallback for development
-    return Buffer.from('b298211c4f63a69376c513c26de660b3d2f23a160b3c6d1fb4d9317bdac1a50f', 'hex')
+    // Only allow missing key in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️  ENCRYPTION_KEY not set - using development key. NEVER use in production!')
+      // Generate a consistent dev key based on a seed
+      const devKey = crypto.createHash('sha256').update('dev-only-key-never-use-in-prod').digest()
+      return devKey
+    }
+    
+    // In production, throw an error if key is missing
+    throw new Error('ENCRYPTION_KEY environment variable is required in production')
   }
+  
+  // Validate key format and length
+  if (!/^[0-9a-f]{64}$/i.test(key)) {
+    throw new Error('ENCRYPTION_KEY must be a 64-character hexadecimal string (32 bytes)')
+  }
+  
   return Buffer.from(key, 'hex')
 }
 

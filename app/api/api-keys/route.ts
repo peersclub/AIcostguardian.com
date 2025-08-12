@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import { encrypt, decrypt } from '@/lib/encryption'
+import { 
+  notifyApiKeyCreatedServer, 
+  notifyApiKeyUpdatedServer,
+  notifyApiKeyDeletedServer 
+} from '@/lib/services/notification-trigger'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -202,6 +207,10 @@ export async function POST(request: Request) {
           lastUsed: new Date()
         }
       })
+      
+      // Send notification
+      await notifyApiKeyUpdatedServer(user.id, normalizedProvider)
+      
       return NextResponse.json({ message: 'API key updated', key: { ...updated, encryptedKey: undefined } })
     } else {
       // Create organization if user doesn't have one
@@ -257,6 +266,10 @@ export async function POST(request: Request) {
           organizationId: organizationId
         }
       })
+      
+      // Send notification
+      await notifyApiKeyCreatedServer(user.id, normalizedProvider)
+      
       return NextResponse.json({ message: 'API key created', key: { ...created, encryptedKey: undefined } })
     }
   } catch (error: any) {
@@ -349,6 +362,9 @@ export async function DELETE(request: Request) {
     await prisma.apiKey.delete({
       where: { id: keyId }
     })
+
+    // Send notification
+    await notifyApiKeyDeletedServer(user.id, key.provider)
 
     return NextResponse.json({ message: 'API key deleted' })
   } catch (error) {

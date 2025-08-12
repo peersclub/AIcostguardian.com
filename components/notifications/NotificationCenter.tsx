@@ -188,10 +188,10 @@ export function NotificationCenter({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className="absolute right-0 mt-2 w-96 max-h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+      className="absolute right-0 mt-2 w-96 max-h-[600px] bg-background rounded-lg shadow-xl border border-border z-50 overflow-hidden"
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">Notifications</h3>
           <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export function NotificationCenter({
         
         {unreadCount > 0 && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-muted-foreground">
               {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
             </span>
             <Button
@@ -238,24 +238,24 @@ export function NotificationCenter({
           <TabsContent value={activeTab} className="m-0">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
-                <BellOff className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 text-center">
+                <BellOff className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground text-center">
                   No notifications yet
                 </p>
-                <p className="text-gray-400 dark:text-gray-500 text-xs text-center mt-1">
+                <p className="text-muted-foreground text-xs text-center mt-1">
                   We'll notify you when something important happens
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-border">
                 {groupNotificationsByDate(notifications).map(([dateGroup, items]) => (
                   <div key={dateGroup}>
-                    <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50">
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <div className="px-4 py-2 bg-muted">
+                      <p className="text-xs font-medium text-muted-foreground">
                         {dateGroup}
                       </p>
                     </div>
@@ -273,7 +273,7 @@ export function NotificationCenter({
                 
                 {hasMore && (
                   <div ref={loadMoreRef} className="py-4 text-center">
-                    <Loader2 className="h-4 w-4 animate-spin mx-auto text-gray-400" />
+                    <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -283,7 +283,7 @@ export function NotificationCenter({
       </Tabs>
 
       {/* Footer */}
-      <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-3 border-t border-border">
         <Link href="/notifications">
           <Button variant="ghost" className="w-full text-sm">
             View all notifications

@@ -141,12 +141,12 @@ export function ThreadSidebarEnhanced({
   return (
     <div 
       className={cn(
-        "flex flex-col bg-gray-900/50 backdrop-blur-xl border-r border-gray-800 transition-all duration-300",
+        "flex flex-col bg-background/50 backdrop-blur-xl border-r border-border transition-all duration-300",
         collapsed ? "w-16" : "w-80"
       )}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <div className={cn(
             "flex items-center gap-2",
@@ -180,12 +180,12 @@ export function ThreadSidebarEnhanced({
         {!collapsed && (
           <>
             <div className="relative mb-2">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search chats..."
-                className="pl-8 h-8 text-sm bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500"
+                className="pl-8 h-8 text-sm bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             

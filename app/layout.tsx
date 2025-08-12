@@ -8,6 +8,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import DemoDataProvider from '@/components/DemoDataProvider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
+import { SiteWideNotificationBanner } from '@/components/notifications/SiteWideNotificationBanner'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -100,8 +102,10 @@ export default function RootLayout({
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <DemoDataProvider>
                 <NavigationProgress />
+                <SiteWideNotificationBanner />
                 <Navigation />
                 {children}
+                <Toaster position="top-right" richColors />
                 <Analytics />
               </DemoDataProvider>
             </ThemeProvider>

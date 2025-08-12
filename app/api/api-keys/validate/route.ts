@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
 import { ApiValidationService, type AIProvider } from '@/lib/services/api-validation.service'
 import { withErrorHandler, errorResponse, successResponse } from '@/lib/api/error-handler'
+import { notifyApiTestResultServer } from '@/lib/services/notification-trigger'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -89,6 +90,21 @@ async function handler(request: NextRequest) {
           isActive: true
         }
       })
+    }
+
+    // Send notification about test result
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    })
+    
+    if (user) {
+      await notifyApiTestResultServer(
+        user.id,
+        provider,
+        validationResult.valid,
+        (validationResult.details as any)?.latency,
+        validationResult.error
+      )
     }
 
     // If test flag is set, also perform a test API call

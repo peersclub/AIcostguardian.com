@@ -143,16 +143,53 @@ export function VoiceInput({
 
   const processAudio = async (audioBlob: Blob) => {
     try {
-      // Here you would send the audio to your transcription API
-      // For demo, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsProcessing(true);
+      setError(null);
       
-      // Simulated transcript
-      const transcript = "This is a simulated transcript of the recorded audio.";
-      onTranscript(transcript);
+      // Create form data for API
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('duration', (duration * 1000).toString()); // Convert to milliseconds
+      formData.append('mimeType', audioBlob.type || 'audio/webm');
+      
+      // Add language preference if available
+      const language = navigator.language.split('-')[0]; // e.g., 'en' from 'en-US'
+      formData.append('language', language);
+      
+      // Send to transcription API
+      const response = await fetch('/api/aioptimise/voice/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Transcription failed');
+      }
+      
+      const result = await response.json();
+      
+      // Pass the transcript to parent component
+      if (result.transcription?.text) {
+        onTranscript(result.transcription.text);
+        
+        // Show cost if available
+        if (result.usage?.cost) {
+          console.log(`Transcription cost: $${result.usage.cost.toFixed(4)}`);
+        }
+      } else {
+        throw new Error('No transcript received');
+      }
     } catch (err) {
-      setError('Failed to process audio. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
       console.error('Processing error:', err);
+      
+      // Check if it's an API key issue
+      if (err instanceof Error && err.message.includes('API key')) {
+        setError('OpenAI API key not configured. Please add it in settings.');
+      }
+    } finally {
+      setIsProcessing(false);
     }
   };
 

@@ -17,7 +17,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   DropdownMenu,
@@ -40,8 +39,6 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Calendar,
-  Clock,
   Globe,
   Zap
 } from 'lucide-react'
@@ -99,7 +96,7 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">API Key</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 font-mono text-sm">
+                <code className="flex-1 font-mono text-sm text-foreground">
                   {showKey ? apiKey.encryptedKey : '••••••••••••••••••••'}
                 </code>
                 <Button
@@ -119,7 +116,7 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Provider</p>
-              <p className="font-medium">{apiKey.provider}</p>
+              <p className="font-medium text-foreground">{apiKey.provider}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Type</p>
@@ -133,25 +130,25 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
                 {apiKey.isActive ? (
                   <>
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-green-600">Active</span>
+                    <span className="text-green-600 dark:text-green-400">Active</span>
                   </>
                 ) : (
                   <>
                     <XCircle className="h-4 w-4 text-red-500" />
-                    <span className="text-red-600">Inactive</span>
+                    <span className="text-red-600 dark:text-red-400">Inactive</span>
                   </>
                 )}
               </div>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Last Used</p>
-              <p className="font-medium">
+              <p className="font-medium text-foreground">
                 {apiKey.lastUsed ? format(apiKey.lastUsed, 'PPp') : 'Never'}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Last Tested</p>
-              <p className="font-medium">
+              <p className="font-medium text-foreground">
                 {apiKey.lastTested ? format(apiKey.lastTested, 'PPp') : 'Never'}
               </p>
             </div>
@@ -160,7 +157,7 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
           {apiKey.metadata && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Metadata</p>
-              <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto">
+              <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto text-foreground">
                 {JSON.stringify(apiKey.metadata, null, 2)}
               </pre>
             </div>
@@ -227,22 +224,22 @@ const ApiKeyList = ({
   return (
     <div className="space-y-4">
       {description && (
-        <p className="text-sm text-gray-400">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       )}
       
       {warningMessage && (
-        <Alert className="bg-orange-500/10 border-orange-500/30">
-          <AlertTriangle className="h-4 w-4 text-orange-400" />
-          <AlertDescription className="text-orange-300">{warningMessage}</AlertDescription>
+        <Alert className="bg-amber-500/10 border-amber-500/30">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-600 dark:text-amber-400">{warningMessage}</AlertDescription>
         </Alert>
       )}
 
       {keys.length === 0 ? (
-        <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800">
+        <Card className="bg-card">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Key className="h-12 w-12 text-gray-600 mb-4" />
-            <p className="text-gray-400">No {badge?.toLowerCase()} keys added yet</p>
-            <p className="text-gray-500 text-sm mt-2">Click "Add New Key" to get started</p>
+            <Key className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No {badge?.toLowerCase()} keys added yet</p>
+            <p className="text-muted-foreground text-sm mt-2">Click "Add New Key" to get started</p>
           </CardContent>
         </Card>
       ) : (
@@ -254,36 +251,35 @@ const ApiKeyList = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800 hover:border-indigo-500/50 transition-all duration-200">
+              <Card className="bg-card hover:shadow-lg transition-all duration-200">
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-indigo-500/30">
-                      <Key className="h-5 w-5 text-indigo-400" />
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Key className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-white">{key.provider}</p>
+                        <p className="font-medium text-foreground">{key.provider}</p>
                         {badge && (
                           <Badge 
                             variant={key.type === KeyType.ADMIN ? 'destructive' : 'secondary'}
-                            className={key.type === KeyType.ADMIN ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}
                           >
                             {badge}
                           </Badge>
                         )}
                         {key.isActive ? (
-                          <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
+                          <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/30 bg-green-500/10">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Active
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-red-400 border-red-500/30 bg-red-500/10">
+                          <Badge variant="outline" className="text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10">
                             <XCircle className="h-3 w-3 mr-1" />
                             Inactive
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                         {key.createdAt && (
                           <span>Added {format(new Date(key.createdAt), 'PP')}</span>
                         )}
@@ -296,22 +292,22 @@ const ApiKeyList = ({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="hover:bg-gray-800">
-                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
-                      <DropdownMenuItem onClick={() => onViewDetails(key)} className="hover:bg-gray-800">
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onViewDetails(key)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)} className="hover:bg-gray-800">
+                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)}>
                         <TestTube className="h-4 w-4 mr-2" />
                         Test Key
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => onDelete(key)}
-                        className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        className="text-destructive"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
@@ -335,7 +331,6 @@ export default function ApiKeysSettings() {
   const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
 
   useEffect(() => {
     loadKeys()
@@ -391,25 +386,18 @@ export default function ApiKeysSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading API keys...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading API keys...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated background gradient - matching dashboard */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      <div className="relative z-10 container max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-7xl mx-auto p-6">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -419,10 +407,10 @@ export default function ApiKeysSettings() {
         >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-foreground mb-2">
                 API Key Management
               </h1>
-              <p className="text-gray-400 text-lg">
+              <p className="text-muted-foreground text-lg">
                 Configure and manage your AI provider API keys
               </p>
             </div>
@@ -431,14 +419,13 @@ export default function ApiKeysSettings() {
                 variant="outline"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="border-gray-700 hover:bg-gray-800 text-gray-300"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh Status
               </Button>
               <Button 
                 onClick={() => setShowAddDialog(true)}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Key
@@ -452,64 +439,76 @@ export default function ApiKeysSettings() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Total Keys</p>
-                  <p className="text-2xl font-bold text-white">{keys.length}</p>
-                </div>
-                <Key className="h-8 w-8 text-indigo-400" />
-              </div>
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm">Total Keys</p>
+                      <p className="text-2xl font-bold text-foreground">{keys.length}</p>
+                    </div>
+                    <Key className="h-8 w-8 text-primary" />
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.2 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Active Keys</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {keys.filter(k => k.isActive).length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-400" />
-              </div>
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm">Active Keys</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {keys.filter(k => k.isActive).length}
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.3 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Providers</p>
-                  <p className="text-2xl font-bold text-purple-400">
-                    {new Set(keys.map(k => k.provider)).size}
-                  </p>
-                </div>
-                <Globe className="h-8 w-8 text-purple-400" />
-              </div>
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm">Providers</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {new Set(keys.map(k => k.provider)).size}
+                      </p>
+                    </div>
+                    <Globe className="h-8 w-8 text-primary" />
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.4 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Admin Keys</p>
-                  <p className="text-2xl font-bold text-orange-400">{adminKeys.length}</p>
-                </div>
-                <Shield className="h-8 w-8 text-orange-400" />
-              </div>
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm">Admin Keys</p>
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{adminKeys.length}</p>
+                    </div>
+                    <Shield className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           </div>
         </motion.div>
@@ -521,33 +520,24 @@ export default function ApiKeysSettings() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <Tabs defaultValue="all" className="space-y-6">
-            <TabsList className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-1 rounded-lg grid w-full grid-cols-4">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-              >
+            <TabsList className="bg-muted p-1 rounded-lg grid w-full grid-cols-4">
+              <TabsTrigger value="all" className="data-[state=active]:bg-background">
                 <Key className="h-4 w-4 mr-2" />
                 All Keys
-                <Badge variant="secondary" className="ml-2 bg-gray-700">
+                <Badge variant="secondary" className="ml-2">
                   {keys.length}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger 
-                value="usage"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-              >
+              <TabsTrigger value="usage" className="data-[state=active]:bg-background">
                 <Activity className="h-4 w-4 mr-2" />
                 Usage Tracking
                 {usageKeys.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 bg-gray-700">
+                  <Badge variant="secondary" className="ml-2">
                     {usageKeys.length}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="admin"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-              >
+              <TabsTrigger value="admin" className="data-[state=active]:bg-background">
                 <Shield className="h-4 w-4 mr-2" />
                 Admin Keys
                 {adminKeys.length > 0 && (
@@ -556,14 +546,11 @@ export default function ApiKeysSettings() {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="standard"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-              >
+              <TabsTrigger value="standard" className="data-[state=active]:bg-background">
                 <Zap className="h-4 w-4 mr-2" />
                 Standard
                 {standardKeys.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 bg-gray-700">
+                  <Badge variant="secondary" className="ml-2">
                     {standardKeys.length}
                   </Badge>
                 )}

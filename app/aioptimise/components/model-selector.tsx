@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -165,16 +165,16 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
   
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border-border">
         <DialogHeader>
-          <DialogTitle>Choose Your AI Model</DialogTitle>
+          <DialogTitle className="text-foreground">Choose Your AI Model</DialogTitle>
         </DialogHeader>
         
         {checking ? (
           <div className="py-8">
             <div className="text-center space-y-4">
-              <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
-                <Key className="h-12 w-12 text-violet-500 animate-pulse" />
+              <div className="inline-flex p-4 rounded-full bg-primary/10 mb-4">
+                <Key className="h-12 w-12 text-primary animate-pulse" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">Checking API Keys...</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -185,8 +185,8 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
         ) : !hasValidKeys ? (
           <div className="py-8">
             <div className="text-center space-y-4">
-              <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-red-500/10 to-orange-500/10 mb-4">
-                <Lock className="h-12 w-12 text-red-500" />
+              <div className="inline-flex p-4 rounded-full bg-destructive/10 mb-4">
+                <Lock className="h-12 w-12 text-destructive" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">No API Keys Configured</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -204,7 +204,7 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
                   Manage Keys
                 </Button>
                 <Button
-                  className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={() => {
                     onClose();
                     router.push('/onboarding/api-setup');
@@ -218,11 +218,11 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
           </div>
         ) : models.length === 0 ? (
           <div className="py-8">
-            <Alert className="border-amber-500/50 bg-amber-500/10">
+            <Alert className="border-amber-600/20 bg-amber-600/10">
               <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription>
+              <AlertDescription className="text-foreground">
                 <strong>Limited Models Available</strong>
-                <p className="mt-1">Your current API keys don't match any available models. Please check your API key configuration.</p>
+                <p className="mt-1 text-muted-foreground">Your current API keys don't match any available models. Please check your API key configuration.</p>
               </AlertDescription>
             </Alert>
             <div className="flex justify-center mt-4">
@@ -247,7 +247,7 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
             </div>
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-4">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-3 w-full bg-muted">
             <TabsTrigger value="recommended">
               <Sparkles className="h-4 w-4 mr-2" />
               Recommended
@@ -264,14 +264,14 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
           
           <TabsContent value="recommended" className="mt-4">
             {recommendedModel ? (
-              <Card className="p-6 border-2 border-violet-500 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+              <Card className="p-6 border-2 border-primary bg-primary/5">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-semibold text-foreground">
                         {recommendedModel.provider} - {recommendedModel.model}
                       </h3>
-                      <Badge className="bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0">
+                      <Badge className="bg-primary text-primary-foreground border-0">
                         <Star className="h-3 w-3 mr-1" />
                         Best Match
                       </Badge>
@@ -281,7 +281,7 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                    <div className="text-2xl font-bold text-primary">
                       {(recommendedModel.matchScore! * 100).toFixed(0)}%
                     </div>
                     <div className="text-xs text-muted-foreground">Match Score</div>
@@ -312,37 +312,37 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
                   />
                 </div>
                 
-                <div className="flex items-center justify-between pt-4 border-t">
+                <div className="flex items-center justify-between pt-4 border-t border-border">
                   <div className="flex flex-wrap gap-1">
                     {recommendedModel.capabilities.map(cap => (
-                      <Badge key={cap} className="text-xs bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20">
+                      <Badge key={cap} className="text-xs bg-primary/10 text-primary border border-primary/20">
                         {cap.replace('_', ' ')}
                       </Badge>
                     ))}
                   </div>
                   <Button 
                     onClick={() => onSelect(recommendedModel.provider, recommendedModel.model)}
-                    className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     Use Recommended
                   </Button>
                 </div>
               </Card>
             ) : (
-              <Alert className="border-amber-500/50 bg-amber-500/10">
+              <Alert className="border-amber-600/20 bg-amber-600/10">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription>
+                <AlertDescription className="text-foreground">
                   No models available for recommendation. Please check the "All Models" tab.
                 </AlertDescription>
               </Alert>
             )}
             
             {recommendedModel && (
-              <div className="mt-4 p-4 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20 rounded-lg">
+              <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-violet-600 dark:text-violet-400 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-medium mb-1 text-violet-700 dark:text-violet-300">Why this model?</p>
+                    <p className="font-medium mb-1 text-foreground">Why this model?</p>
                     <p className="text-muted-foreground">Based on your prompt analysis, this model offers the best balance of quality, cost, and speed. It has all required capabilities and will save you approximately 73% compared to premium models.</p>
                   </div>
                 </div>
@@ -352,11 +352,11 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
           
           <TabsContent value="all" className="mt-4">
             {models.length === 0 ? (
-              <Alert className="border-amber-500/50 bg-amber-500/10">
+              <Alert className="border-amber-600/20 bg-amber-600/10">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription>
+                <AlertDescription className="text-foreground">
                   <strong>No models available</strong>
-                  <p className="mt-1">Add API keys to see available models here.</p>
+                  <p className="mt-1 text-muted-foreground">Add API keys to see available models here.</p>
                 </AlertDescription>
               </Alert>
             ) : (
@@ -379,7 +379,7 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
                     {Object.entries(groupedModels).map(([provider, providerModels]) => (
                       <div key={provider}>
                         <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-sm font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider">
+                          <h3 className="text-sm font-medium text-primary uppercase tracking-wider">
                             {provider}
                           </h3>
                           <Badge variant="outline" className="text-xs">
@@ -405,7 +405,7 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
                   <div className="mt-4 flex justify-end">
                     <Button 
                       onClick={() => onSelect(selectedModel.provider, selectedModel.model)}
-                      className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       Use {selectedModel.model}
                     </Button>
@@ -417,8 +417,8 @@ export function ModelSelector({ onSelect, onClose, open = true }: ModelSelectorP
           
           <TabsContent value="compare" className="mt-4">
             <div className="text-center py-8">
-              <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
-                <TrendingUp className="h-12 w-12 text-violet-500" />
+              <div className="inline-flex p-4 rounded-full bg-primary/10 mb-4">
+                <TrendingUp className="h-12 w-12 text-primary" />
               </div>
               <p className="text-muted-foreground">Model comparison coming soon</p>
               <p className="text-sm text-muted-foreground/70 mt-2">Compare models side-by-side to find the perfect fit</p>
@@ -445,10 +445,10 @@ function ModelCard({
     <Card
       className={cn(
         "p-4 cursor-pointer transition-all duration-200 border-2",
-        "hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/10",
+        "hover:border-primary/50 hover:shadow-lg",
         selected 
-          ? "border-violet-500 bg-gradient-to-br from-violet-500/10 to-purple-500/10" 
-          : "border-gray-200 dark:border-gray-800"
+          ? "border-primary bg-primary/10" 
+          : "border-border bg-card"
       )}
       onClick={onSelect}
     >
@@ -456,7 +456,7 @@ function ModelCard({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-foreground">{model.model}</h4>
-            {selected && <Check className="h-4 w-4 text-violet-500" />}
+            {selected && <Check className="h-4 w-4 text-primary" />}
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>${(model.inputCost * 1000).toFixed(4)}/1k in</span>
@@ -473,7 +473,7 @@ function ModelCard({
                 className={cn(
                   "h-3 w-3",
                   i < Math.round(model.qualityScore * 5)
-                    ? "fill-violet-500 text-violet-500"
+                    ? "fill-primary text-primary"
                     : "text-muted-foreground/30"
                 )}
               />
@@ -503,9 +503,9 @@ function MetricCard({
     <div className="text-center">
       <div className={cn(
         "inline-flex p-2 rounded-lg mb-2",
-        variant === 'success' && "bg-gradient-to-br from-green-500/20 to-emerald-500/20 text-green-600 dark:text-green-400",
-        variant === 'warning' && "bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400",
-        variant === 'default' && "bg-gradient-to-br from-violet-500/10 to-purple-500/10"
+        variant === 'success' && "bg-green-500/20 text-green-600 dark:text-green-400",
+        variant === 'warning' && "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+        variant === 'default' && "bg-primary/10 text-primary"
       )}>
         {icon}
       </div>

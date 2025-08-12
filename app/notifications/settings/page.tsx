@@ -5,11 +5,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
-  Bell, Mail, MessageSquare, Webhook, Smartphone,
-  Moon, Sun, Clock, Save, TestTube, ArrowLeft
+  Bell, Mail, MessageSquare, Smartphone,
+  Moon, Clock, Save, TestTube, ArrowLeft
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -63,7 +61,6 @@ export default function NotificationSettingsPage() {
       
       if (!response.ok) {
         console.error('Failed to fetch preferences:', response.status)
-        // Use default preferences if fetch fails
         setLoading(false)
         return
       }
@@ -71,13 +68,11 @@ export default function NotificationSettingsPage() {
       const data = await response.json()
       
       if (data.success && data.data) {
-        // Remove any fields that don't exist in our state
         const { stats, ...prefs } = data.data
         setPreferences(prev => ({ ...prev, ...prefs }))
       }
     } catch (error) {
       console.error('Failed to fetch preferences:', error)
-      // Continue with default preferences
     } finally {
       setLoading(false)
     }
@@ -143,78 +138,95 @@ export default function NotificationSettingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
-          <p className="mt-4 text-gray-500">
-            {status === 'loading' ? 'Checking authentication...' : 'Loading settings...'}
-          </p>
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        <div className="fixed inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+            <p className="mt-4 text-indigo-300">
+              {status === 'loading' ? 'Checking authentication...' : 'Loading settings...'}
+            </p>
+          </div>
         </div>
       </div>
     )
   }
 
   if (status === 'unauthenticated') {
-    return null // Will redirect to signin
+    return null
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/notifications">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold">Notification Settings</h1>
-              <p className="text-gray-500 dark:text-gray-400">
-                Configure how and when you receive notifications
-              </p>
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      <div className="fixed inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="bg-gradient-to-br from-indigo-900/30 to-purple-800/30 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link href="/notifications">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 hover:border-indigo-400/50 transition-all"
+                  >
+                    <ArrowLeft className="h-5 w-5 text-indigo-400" />
+                  </motion.button>
+                </Link>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    Notification Settings
+                  </h1>
+                  <p className="text-indigo-300/80 mt-1">
+                    Configure how and when you receive notifications
+                  </p>
+                </div>
+              </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={savePreferences}
+                disabled={saving}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all disabled:opacity-50"
+              >
+                <Save className="inline h-4 w-4 mr-2" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </motion.button>
             </div>
           </div>
-          
-          <Button onClick={savePreferences} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
 
-        <Tabs defaultValue="channels" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="channels">Channels</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="channels" className="space-y-6">
+            <TabsList className="bg-gradient-to-br from-indigo-900/30 to-purple-800/30 backdrop-blur-xl border border-indigo-500/30 p-1 h-auto grid w-full grid-cols-2">
+              <TabsTrigger value="channels" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-gray-400 hover:text-white transition-all">
+                Channels
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-gray-400 hover:text-white transition-all">
+                Categories
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Channels Tab */}
-          <TabsContent value="channels" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Channels</CardTitle>
-                <CardDescription>
-                  Choose how you want to receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Email */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Mail className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <p className="text-sm text-gray-500">Receive notifications via email</p>
+            <TabsContent value="channels" className="space-y-4">
+              <div className="bg-gradient-to-br from-indigo-900/30 to-purple-800/30 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8">
+                <h2 className="text-2xl font-bold text-white mb-6">Notification Channels</h2>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div className="flex items-center space-x-4">
+                      <Mail className="h-5 w-5 text-blue-400" />
+                      <div>
+                        <Label htmlFor="email" className="text-white">Email</Label>
+                        <p className="text-sm text-indigo-300/60">Receive notifications via email</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <Switch
                       id="email"
                       checked={preferences.emailEnabled}
@@ -222,27 +234,16 @@ export default function NotificationSettingsPage() {
                         setPreferences({ ...preferences, emailEnabled: checked })
                       }
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => testChannel('EMAIL')}
-                    >
-                      <TestTube className="h-3 w-3 mr-1" />
-                      Test
-                    </Button>
                   </div>
-                </div>
 
-                {/* In-App */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Bell className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <Label htmlFor="inapp">In-App</Label>
-                      <p className="text-sm text-gray-500">Show notifications in the app</p>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div className="flex items-center space-x-4">
+                      <Bell className="h-5 w-5 text-purple-400" />
+                      <div>
+                        <Label htmlFor="inapp" className="text-white">In-App</Label>
+                        <p className="text-sm text-indigo-300/60">Show notifications in the app</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <Switch
                       id="inapp"
                       checked={preferences.inAppEnabled}
@@ -250,27 +251,16 @@ export default function NotificationSettingsPage() {
                         setPreferences({ ...preferences, inAppEnabled: checked })
                       }
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => testChannel('IN_APP')}
-                    >
-                      <TestTube className="h-3 w-3 mr-1" />
-                      Test
-                    </Button>
                   </div>
-                </div>
 
-                {/* Slack */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <MessageSquare className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <Label htmlFor="slack">Slack</Label>
-                      <p className="text-sm text-gray-500">Send notifications to Slack</p>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div className="flex items-center space-x-4">
+                      <MessageSquare className="h-5 w-5 text-green-400" />
+                      <div>
+                        <Label htmlFor="slack" className="text-white">Slack</Label>
+                        <p className="text-sm text-indigo-300/60">Send notifications to Slack</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <Switch
                       id="slack"
                       checked={preferences.slackEnabled}
@@ -278,27 +268,16 @@ export default function NotificationSettingsPage() {
                         setPreferences({ ...preferences, slackEnabled: checked })
                       }
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => testChannel('SLACK')}
-                    >
-                      <TestTube className="h-3 w-3 mr-1" />
-                      Test
-                    </Button>
                   </div>
-                </div>
 
-                {/* Push */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Smartphone className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <Label htmlFor="push">Push Notifications</Label>
-                      <p className="text-sm text-gray-500">Browser push notifications</p>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div className="flex items-center space-x-4">
+                      <Smartphone className="h-5 w-5 text-orange-400" />
+                      <div>
+                        <Label htmlFor="push" className="text-white">Push Notifications</Label>
+                        <p className="text-sm text-indigo-300/60">Browser push notifications</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <Switch
                       id="push"
                       checked={preferences.pushEnabled}
@@ -306,289 +285,62 @@ export default function NotificationSettingsPage() {
                         setPreferences({ ...preferences, pushEnabled: checked })
                       }
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => testChannel('PUSH')}
-                    >
-                      <TestTube className="h-3 w-3 mr-1" />
-                      Test
-                    </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </TabsContent>
 
-          {/* Categories Tab */}
-          <TabsContent value="categories" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Categories</CardTitle>
-                <CardDescription>
-                  Choose which types of notifications you want to receive
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="cost">Cost Alerts</Label>
-                    <p className="text-sm text-gray-500">Notifications about spending and budgets</p>
-                  </div>
-                  <Switch
-                    id="cost"
-                    checked={preferences.costAlerts}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, costAlerts: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="usage">Usage Alerts</Label>
-                    <p className="text-sm text-gray-500">API rate limits and quota warnings</p>
-                  </div>
-                  <Switch
-                    id="usage"
-                    checked={preferences.usageAlerts}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, usageAlerts: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="system">System Alerts</Label>
-                    <p className="text-sm text-gray-500">API key expiry and system events</p>
-                  </div>
-                  <Switch
-                    id="system"
-                    checked={preferences.systemAlerts}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, systemAlerts: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="reports">Reports</Label>
-                    <p className="text-sm text-gray-500">Weekly and monthly usage reports</p>
-                  </div>
-                  <Switch
-                    id="reports"
-                    checked={preferences.reports}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, reports: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="recommendations">Recommendations</Label>
-                    <p className="text-sm text-gray-500">AI optimization suggestions</p>
-                  </div>
-                  <Switch
-                    id="recommendations"
-                    checked={preferences.recommendations}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, recommendations: checked })
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Schedule Tab */}
-          <TabsContent value="schedule" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiet Hours</CardTitle>
-                <CardDescription>
-                  Set times when you don't want to receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Moon className="h-5 w-5 text-gray-500" />
+            <TabsContent value="categories" className="space-y-4">
+              <div className="bg-gradient-to-br from-indigo-900/30 to-purple-800/30 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8">
+                <h2 className="text-2xl font-bold text-white mb-6">Notification Categories</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
                     <div>
-                      <Label htmlFor="quiet">Enable Quiet Hours</Label>
-                      <p className="text-sm text-gray-500">Pause non-critical notifications</p>
+                      <Label htmlFor="cost" className="text-white">Cost Alerts</Label>
+                      <p className="text-sm text-indigo-300/60">Notifications about spending and budgets</p>
                     </div>
-                  </div>
-                  <Switch
-                    id="quiet"
-                    checked={preferences.quietHoursEnabled}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, quietHoursEnabled: checked })
-                    }
-                  />
-                </div>
-
-                {preferences.quietHoursEnabled && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="start">Start Time</Label>
-                        <Input
-                          id="start"
-                          type="time"
-                          value={preferences.quietHoursStart}
-                          onChange={(e) => 
-                            setPreferences({ ...preferences, quietHoursStart: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="end">End Time</Label>
-                        <Input
-                          id="end"
-                          type="time"
-                          value={preferences.quietHoursEnd}
-                          onChange={(e) => 
-                            setPreferences({ ...preferences, quietHoursEnd: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="weekend">Weekend Quiet Mode</Label>
-                        <p className="text-sm text-gray-500">Extend quiet hours on weekends</p>
-                      </div>
-                      <Switch
-                        id="weekend"
-                        checked={preferences.weekendQuiet}
-                        onCheckedChange={(checked) => 
-                          setPreferences({ ...preferences, weekendQuiet: checked })
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div>
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select
-                    value={preferences.timezone}
-                    onValueChange={(value) => 
-                      setPreferences({ ...preferences, timezone: value })
-                    }
-                  >
-                    <SelectTrigger id="timezone">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                      <SelectItem value="Europe/London">London</SelectItem>
-                      <SelectItem value="Europe/Paris">Paris</SelectItem>
-                      <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Advanced Tab */}
-          <TabsContent value="advanced" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Advanced Settings</CardTitle>
-                <CardDescription>
-                  Fine-tune your notification preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="batch">Email Batching</Label>
-                  <p className="text-sm text-gray-500 mb-2">Group multiple notifications into digests</p>
-                  <Select
-                    value={preferences.batchFrequency}
-                    onValueChange={(value) => 
-                      setPreferences({ ...preferences, batchFrequency: value })
-                    }
-                  >
-                    <SelectTrigger id="batch">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="immediate">Send Immediately</SelectItem>
-                      <SelectItem value="hourly">Hourly Digest</SelectItem>
-                      <SelectItem value="daily">Daily Digest</SelectItem>
-                      <SelectItem value="weekly">Weekly Digest</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="preferred">Preferred Channel</Label>
-                  <p className="text-sm text-gray-500 mb-2">Default channel for notifications</p>
-                  <Select
-                    value={preferences.preferredChannel}
-                    onValueChange={(value) => 
-                      setPreferences({ ...preferences, preferredChannel: value })
-                    }
-                  >
-                    <SelectTrigger id="preferred">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EMAIL">Email</SelectItem>
-                      <SelectItem value="IN_APP">In-App</SelectItem>
-                      <SelectItem value="SLACK">Slack</SelectItem>
-                      <SelectItem value="PUSH">Push</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="escalate">Auto-Escalate Critical Alerts</Label>
-                    <p className="text-sm text-gray-500">
-                      Automatically escalate unacknowledged critical alerts
-                    </p>
-                  </div>
-                  <Switch
-                    id="escalate"
-                    checked={preferences.autoEscalate}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, autoEscalate: checked })
-                    }
-                  />
-                </div>
-
-                {preferences.autoEscalate && (
-                  <div>
-                    <Label htmlFor="escalateTime">Escalate After (minutes)</Label>
-                    <Input
-                      id="escalateTime"
-                      type="number"
-                      value={preferences.escalateAfterMinutes}
-                      onChange={(e) => 
-                        setPreferences({ 
-                          ...preferences, 
-                          escalateAfterMinutes: parseInt(e.target.value) || 30 
-                        })
+                    <Switch
+                      id="cost"
+                      checked={preferences.costAlerts}
+                      onCheckedChange={(checked) => 
+                        setPreferences({ ...preferences, costAlerts: checked })
                       }
                     />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div>
+                      <Label htmlFor="usage" className="text-white">Usage Alerts</Label>
+                      <p className="text-sm text-indigo-300/60">API rate limits and quota warnings</p>
+                    </div>
+                    <Switch
+                      id="usage"
+                      checked={preferences.usageAlerts}
+                      onCheckedChange={(checked) => 
+                        setPreferences({ ...preferences, usageAlerts: checked })
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-indigo-500/20">
+                    <div>
+                      <Label htmlFor="system" className="text-white">System Alerts</Label>
+                      <p className="text-sm text-indigo-300/60">API key expiry and system events</p>
+                    </div>
+                    <Switch
+                      id="system"
+                      checked={preferences.systemAlerts}
+                      onCheckedChange={(checked) => 
+                        setPreferences({ ...preferences, systemAlerts: checked })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+      </div>
     </div>
   )
 }

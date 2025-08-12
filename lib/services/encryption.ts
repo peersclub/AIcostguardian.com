@@ -2,7 +2,19 @@ import crypto from 'crypto'
 
 // Ensure we have a valid 32-byte key for AES-256
 function getEncryptionKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production!!'
+  const key = process.env.ENCRYPTION_KEY
+  
+  if (!key) {
+    // Only allow missing key in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️  ENCRYPTION_KEY not set - using development key. NEVER use in production!')
+      return crypto.createHash('sha256').update('dev-only-key-never-use-in-prod').digest()
+    }
+    
+    // In production, throw an error if key is missing
+    throw new Error('ENCRYPTION_KEY environment variable is required in production')
+  }
+  
   // Create a 32-byte key using SHA-256
   return crypto.createHash('sha256').update(key).digest()
 }
