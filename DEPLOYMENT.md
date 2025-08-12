@@ -1,13 +1,21 @@
-# 🚀 AI Cost Guardian - Deployment Guide
+# 🚀 AIOptimise Pro - Production Deployment Guide
+
+## 🎯 Production-Ready Status
+
+✅ **All tests passed**
+✅ **Build optimized**
+✅ **Database seeded with test data**
+✅ **Security headers configured**
+✅ **Environment variables documented**
 
 ## Quick Deploy Options
 
 ### Option 1: Vercel (Recommended)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/peersclub/ai-cost-guardian)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/peersclub/AIcostguardian.com&env=DATABASE_URL,NEXTAUTH_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY)
 
 1. Click the "Deploy with Vercel" button above
 2. Connect your GitHub account
-3. The repository will be automatically imported
+3. Use branch: `production-ready-deploy`
 4. Configure environment variables (see below)
 5. Deploy!
 
@@ -39,21 +47,46 @@
 Configure these environment variables in your deployment platform:
 
 ```bash
-# Google OAuth Configuration
+# Core Configuration (REQUIRED)
+NEXT_PUBLIC_APP_URL="https://your-domain.vercel.app"
+NODE_ENV="production"
+
+# Database (REQUIRED)
+DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+
+# Authentication (REQUIRED)
+NEXTAUTH_URL="https://your-domain.vercel.app"
+NEXTAUTH_SECRET="your-32-character-random-string" # Generate: openssl rand -base64 32
+
+# Google OAuth (REQUIRED)
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-# NextAuth.js Configuration
-NEXTAUTH_URL="https://your-domain.com"
-NEXTAUTH_SECRET="your-32-character-random-string"
+# Encryption (REQUIRED)
+ENCRYPTION_KEY="your-32-character-encryption-key" # For API key encryption
 
-# AI Provider API Keys (Optional - users can add via UI)
+# AI Provider Keys (OPTIONAL - users can add via UI)
 OPENAI_API_KEY="your-openai-key"
-CLAUDE_API_KEY="your-claude-key"
-GEMINI_API_KEY="your-gemini-key"
+ANTHROPIC_API_KEY="your-anthropic-key"
+GOOGLE_AI_API_KEY="your-google-ai-key"
 PERPLEXITY_API_KEY="your-perplexity-key"
-GROK_API_KEY="your-grok-key"
 ```
+
+## 📊 Test Accounts Available
+
+### Admin Account
+- Email: `sureshthejosephite@gmail.com`
+- Role: Organization Admin
+- Organization: Josephite Testing Organization
+
+### Test Users
+- `sureshvictor43@gmail.com`
+- `sureshvictor44@gmail.com`
+- `sureshvictor45@gmail.com`
+
+### Existing Production Users
+- `tech.admin@assetworks.ai` (AssetWorks AI)
+- `victor@aicostoptimiser.com` (AI Cost Optimiser)
 
 ## Google OAuth Setup
 

@@ -1,0 +1,1119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  company       String?
+  role          UserRole  @default(USER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  accounts                Account[]
+  apiKeys                 ApiKey[]
+  usageLogs               UsageLog[]
+  usage                   Usage[]
+  alerts                  Alert[]
+  sessions                Session[]
+  notificationRules       NotificationRule[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreferences?
+  conversations           Conversation[]
+  aiThreads               AIThread[]
+  promptPreferences       PromptPreference[]
+  modelOverrides          ModelOverride[]
+  messageFeedbacks        MessageFeedbackRecord[]
+  threadCollaborations    ThreadCollaborator[]
+  invitedCollaborators    ThreadCollaborator[]     @relation("InvitedCollaborators")
+  userSettings            UserSettings?
+  voiceSessions           VoiceSession[]
+  imageUploads            ImageUpload[]
+  usageLimit              UsageLimit?
+}
+
+model Organization {
+  id           String           @id @default(cuid())
+  name         String
+  domain       String           @unique
+  subscription SubscriptionTier @default(FREE)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  users             User[]
+  apiKeys           ApiKey[]
+  usageLogs         UsageLog[]
+  monthlySpend      Float              @default(0)
+  spendLimit        Float?
+  notificationRules NotificationRule[]
+  notifications     Notification[]
+  budgets           Budget[]
+  aiThreads         AIThread[]
+  usageLimit        UsageLimit?
+}
+
+model ApiKey {
+  id           String    @id @default(cuid())
+  provider     String // openai, claude, gemini, etc.
+  encryptedKey String
+  lastUsed     DateTime?
+  lastTested   DateTime? // Track when the key was last tested
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+
+  @@unique([userId, provider])
+}
+
+model UsageLog {
+  id               String   @id @default(cuid())
+  provider         String
+  model            String
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  cost             Float
+  timestamp        DateTime @default(now())
+  metadata         Json?
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+
+  chatMessage ChatMessage?
+
+  @@index([userId, timestamp])
+  @@index([organizationId, timestamp])
+}
+
+model Usage {
+  id           String   @id @default(cuid())
+  provider     String
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalTokens  Int      @default(0)
+  cost         Float    @default(0)
+  requestId    String?
+  timestamp    DateTime @default(now())
+  metadata     Json     @default("{}")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@index([userId, timestamp])
+  @@index([provider, timestamp])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  type        String
+  provider    String
+  threshold   Float    @default(0)
+  message     String
+  metadata    Json     @default("{}")
+  isActive    Boolean  @default(true)
+  triggeredAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  GROWTH
+  SCALE
+  ENTERPRISE
+}
+
+enum AlertType {
+  SPEND_THRESHOLD
+  USAGE_SPIKE
+  RATE_LIMIT
+  ERROR_RATE
+}
+
+// Notification System Models
+model NotificationRule {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  name           String
+  description    String?
+  type           NotificationType
+  enabled        Boolean          @default(true)
+
+  // Conditions
+  conditions   Json // Complex condition logic
+  threshold    Float? // For numeric thresholds
+  comparisonOp String? // gt, gte, lt, lte, eq
+  timeWindow   Int? // Minutes for time-based rules
+
+  // Scheduling
+  schedule String? // Cron expression for scheduled notifications
+  timezone String  @default("UTC")
+
+  // Throttling
+  cooldownMinutes Int       @default(60)
+  maxPerDay       Int       @default(10)
+  lastTriggeredAt DateTime?
+  triggerCount    Int       @default(0)
+
+  // Metadata
+  priority NotificationPriority @default(MEDIUM)
+  tags     String[]
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User                  @relation(fields: [userId], references: [id])
+  organization  Organization          @relation(fields: [organizationId], references: [id])
+  channels      NotificationChannel[]
+  notifications Notification[]
+
+  @@index([userId, enabled])
+  @@index([organizationId, type])
+}
+
+model NotificationChannel {
+  id     String      @id @default(cuid())
+  ruleId String
+  type   ChannelType
+
+  // Channel-specific config
+  destination String // email address, phone, webhook URL, etc.
+  config      Json? // Channel-specific settings
+
+  // Delivery preferences
+  enabled        Boolean @default(true)
+  includeDetails Boolean @default(true)
+  format         String  @default("html") // html, text, markdown
+
+  rule NotificationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, type, destination])
+}
+
+model Notification {
+  id             String  @id @default(cuid())
+  ruleId         String?
+  userId         String
+  organizationId String
+
+  type     NotificationType
+  priority NotificationPriority
+  title    String
+  message  String               @db.Text
+  data     Json? // Additional context data
+
+  // Delivery status
+  status         NotificationStatus @default(PENDING)
+  channels       Json // Track delivery per channel
+  attempts       Int                @default(0)
+  lastAttemptAt  DateTime?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  acknowledgedAt DateTime?
+
+  // Error tracking
+  error        String?
+  errorDetails Json?
+
+  // Grouping
+  groupId  String? // For grouping related notifications
+  parentId String? // For threaded notifications
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  user         User              @relation(fields: [userId], references: [id])
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  rule         NotificationRule? @relation(fields: [ruleId], references: [id])
+
+  @@index([userId, status, createdAt])
+  @@index([organizationId, type, createdAt])
+  @@index([groupId])
+}
+
+model NotificationPreferences {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Global settings
+  emailEnabled Boolean @default(true)
+  smsEnabled   Boolean @default(false)
+  pushEnabled  Boolean @default(true)
+  inAppEnabled Boolean @default(true)
+  slackEnabled Boolean @default(false)
+  teamsEnabled Boolean @default(false)
+
+  // Quiet hours
+  quietHoursEnabled Boolean @default(false)
+  quietHoursStart   String? // "22:00"
+  quietHoursEnd     String? // "08:00"
+  timezone          String  @default("UTC")
+  weekendQuiet      Boolean @default(false)
+
+  // Batching preferences
+  batchEmails    Boolean   @default(false)
+  batchFrequency String    @default("daily") // immediate, hourly, daily
+  nextBatchAt    DateTime?
+
+  // Channel-specific settings
+  emailDigest      Boolean     @default(true)
+  slackDM          Boolean     @default(false)
+  preferredChannel ChannelType @default(EMAIL)
+
+  // Notification categories opt-in/out
+  costAlerts      Boolean @default(true)
+  usageAlerts     Boolean @default(true)
+  systemAlerts    Boolean @default(true)
+  teamAlerts      Boolean @default(true)
+  reports         Boolean @default(true)
+  recommendations Boolean @default(true)
+
+  // Thresholds for auto-escalation
+  autoEscalate         Boolean @default(false)
+  escalateAfterMinutes Int     @default(30)
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationTemplate {
+  id      String           @id @default(cuid())
+  name    String           @unique
+  type    NotificationType
+  channel ChannelType
+
+  // Template content
+  subject      String? // For email
+  bodyTemplate String  @db.Text
+  bodyHtml     String? @db.Text
+  variables    Json // Available variables for substitution
+
+  // Customization
+  locale String @default("en")
+  brand  Json? // Brand customization (colors, logo, etc.)
+
+  isDefault Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, channel, locale, isDefault])
+  @@index([type, channel])
+}
+
+model NotificationLog {
+  id             String      @id @default(cuid())
+  notificationId String
+  channel        ChannelType
+  status         String
+  destination    String
+  attemptNumber  Int
+  requestData    Json?
+  responseData   Json?
+  error          String?
+  latencyMs      Int?
+  timestamp      DateTime    @default(now())
+
+  @@index([notificationId])
+  @@index([timestamp])
+}
+
+// Enums for Notification System
+enum NotificationType {
+  // Cost Alerts
+  COST_THRESHOLD_WARNING
+  COST_THRESHOLD_CRITICAL
+  COST_THRESHOLD_EXCEEDED
+  DAILY_COST_SPIKE
+  UNUSUAL_SPENDING_PATTERN
+
+  // Usage Alerts
+  API_RATE_LIMIT_WARNING
+  API_RATE_LIMIT_EXCEEDED
+  USAGE_QUOTA_WARNING
+  USAGE_QUOTA_EXCEEDED
+  MODEL_DEPRECATION
+
+  // System Events
+  API_KEY_EXPIRING
+  API_KEY_EXPIRED
+  PROVIDER_OUTAGE
+  INTEGRATION_FAILURE
+  PAYMENT_FAILED
+  SUBSCRIPTION_EXPIRING
+
+  // Team Events  
+  NEW_TEAM_MEMBER
+  MEMBER_EXCEEDED_LIMIT
+  SUSPICIOUS_ACTIVITY
+
+  // Reports
+  WEEKLY_COST_REPORT
+  MONTHLY_COST_REPORT
+  OPTIMIZATION_RECOMMENDATIONS
+}
+
+enum ChannelType {
+  EMAIL
+  SMS
+  SLACK
+  TEAMS
+  WEBHOOK
+  IN_APP
+  PUSH
+  PAGERDUTY
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Budget {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  amount         Float
+  spent          Float        @default(0)
+  period         BudgetPeriod
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean      @default(true)
+  alertThreshold Float        @default(0.8)
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, isActive])
+}
+
+enum BudgetPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  model         String?
+  provider      String?
+  totalCost     Float    @default(0)
+  totalTokens   Int      @default(0)
+  messageCount  Int      @default(0)
+  isActive      Boolean  @default(true)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  metadata      Json?
+
+  user     User          @relation(fields: [userId], references: [id])
+  messages ChatMessage[]
+
+  @@index([userId, isActive])
+  @@index([userId, lastMessageAt])
+}
+
+model ChatMessage {
+  id               String   @id @default(cuid())
+  conversationId   String
+  role             String // 'user' or 'assistant'
+  content          String   @db.Text
+  model            String?
+  provider         String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  cost             Float    @default(0)
+  latency          Int? // milliseconds
+  usageLogId       String?  @unique
+  createdAt        DateTime @default(now())
+  metadata         Json?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  usageLog     UsageLog?    @relation(fields: [usageLogId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+// AIOptimise Models
+model AIThread {
+  id               String    @id @default(cuid())
+  userId           String
+  organizationId   String?
+  title            String
+  description      String?
+  isArchived       Boolean   @default(false)
+  isPinned         Boolean   @default(false)
+  tags             String[]
+  totalCost        Float     @default(0)
+  totalTokens      Int       @default(0)
+  messageCount     Int       @default(0)
+  averageQuality   Float     @default(0)
+  lastMessageAt    DateTime?
+  sharedWithEmails String[]
+  shareExpiry      DateTime?
+  shareId          String?   @unique
+  metadata         Json?
+  mode             ChatMode  @default(STANDARD)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user          User                 @relation(fields: [userId], references: [id])
+  organization  Organization?        @relation(fields: [organizationId], references: [id])
+  messages      AIMessage[]
+  analytics     ThreadAnalytics?
+  collaborators ThreadCollaborator[]
+
+  @@index([userId, isArchived])
+  @@index([userId, lastMessageAt])
+  @@index([shareId])
+  @@index([organizationId])
+}
+
+model AIMessage {
+  id              String      @id @default(cuid())
+  threadId        String
+  role            MessageRole
+  content         String      @db.Text
+  files           Json? // Array of file references
+  images          Json? // Array of image URLs/data
+  voiceTranscript String?     @db.Text
+  voiceDuration   Int? // milliseconds
+
+  // Model selection data
+  selectedModel    String?
+  selectedProvider String?
+  recommendedModel String?
+  modelReason      String?
+  overrideReason   String?
+  wasOverridden    Boolean @default(false)
+
+  // Usage metrics
+  promptTokens     Int   @default(0)
+  completionTokens Int   @default(0)
+  totalTokens      Int   @default(0)
+  cost             Float @default(0)
+  latency          Int? // milliseconds
+  streamingTime    Int? // milliseconds
+
+  // Quality metrics
+  qualityScore    Float?
+  feedback        MessageFeedback?
+  rating          Int? // 1-5 stars
+  regenerateCount Int              @default(0)
+
+  // Processing status
+  status       MessageStatus @default(SENT)
+  errorMessage String?
+  retryCount   Int           @default(0)
+
+  // References
+  parentMessageId String?
+  usageLogId      String?   @unique
+  editedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  metadata        Json?
+
+  thread    AIThread                @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  analysis  PromptAnalysis?
+  feedbacks MessageFeedbackRecord[]
+
+  @@index([threadId, createdAt])
+  @@index([threadId, role])
+  @@index([status])
+}
+
+model PromptAnalysis {
+  id        String @id @default(cuid())
+  messageId String @unique
+
+  // Complexity metrics
+  complexity ComplexityLevel
+  length     Int
+  hasCode    Boolean         @default(false)
+  hasImages  Boolean         @default(false)
+  hasFiles   Boolean         @default(false)
+  language   String          @default("en")
+
+  // Content classification
+  contentType      ContentType
+  domain           String? // coding, writing, analysis, etc
+  techStack        String[] // detected technologies
+  requiredFeatures String[] // vision, tools, reasoning, etc
+
+  // Model requirements
+  minContextWindow     Int      @default(4096)
+  requiredCapabilities String[]
+  estimatedTokens      Int
+
+  // Quality requirements
+  accuracyNeeded   Float // 0-1 score
+  creativityNeeded Float // 0-1 score
+  speedPriority    Float // 0-1 score
+
+  // Cost optimization
+  budgetSensitivity Float // 0-1 score
+  qualityThreshold  Float // minimum acceptable quality
+
+  createdAt DateTime @default(now())
+
+  message AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model ModelSelection {
+  id       String @id @default(cuid())
+  provider String
+  model    String
+
+  // Scoring metrics
+  qualityScore    Float
+  costScore       Float
+  speedScore      Float
+  capabilityScore Float
+  totalScore      Float
+
+  // Model capabilities
+  contextWindow     Int
+  supportedFeatures String[]
+  inputCost         Float // per 1k tokens
+  outputCost        Float // per 1k tokens
+  avgLatency        Int // milliseconds
+
+  // Selection metadata
+  selectionReason String
+  isRecommended   Boolean
+  isOverride      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, model])
+  @@index([totalScore])
+}
+
+model ModelOverride {
+  id     String @id @default(cuid())
+  userId String
+
+  // Override context
+  originalModel    String
+  originalProvider String
+  overrideModel    String
+  overrideProvider String
+
+  // Reasoning
+  reason           String
+  promptComplexity ComplexityLevel
+  contentType      ContentType
+
+  // Performance tracking
+  qualityImprovement Float? // percentage
+  costImpact         Float? // percentage change
+  speedImpact        Float? // percentage change
+
+  // Learning data
+  wasSuccessful Boolean?
+  userFeedback  String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([originalModel, overrideModel])
+}
+
+model PromptTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  category    String
+
+  // Template content
+  template  String @db.Text
+  variables Json // variable definitions
+  examples  Json? // example usages
+
+  // Usage tracking
+  usageCount     Int   @default(0)
+  averageQuality Float @default(0)
+  averageCost    Float @default(0)
+
+  // Metadata
+  tags      String[]
+  isPublic  Boolean  @default(false)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublic, usageCount])
+}
+
+model PromptPreference {
+  id     String @id @default(cuid())
+  userId String
+
+  // Optimization mode
+  mode OptimizationMode @default(BALANCED)
+
+  // Custom weights (0-1)
+  qualityWeight    Float @default(0.4)
+  costWeight       Float @default(0.3)
+  speedWeight      Float @default(0.2)
+  capabilityWeight Float @default(0.1)
+
+  // Model preferences
+  preferredProviders String[]
+  blacklistedModels  String[]
+
+  // Budget settings
+  maxCostPerMessage Float?
+  maxCostPerDay     Float?
+  maxCostPerMonth   Float?
+
+  // Quality settings
+  minQualityScore Float   @default(0.7)
+  autoImprove     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+}
+
+model ThreadAnalytics {
+  id       String @id @default(cuid())
+  threadId String @unique
+
+  // Cost metrics
+  totalCost        Float @default(0)
+  costByProvider   Json // { provider: cost }
+  costByModel      Json // { model: cost }
+  savingsVsPremium Float @default(0)
+
+  // Usage metrics
+  totalTokens       Int @default(0)
+  promptTokens      Int @default(0)
+  completionTokens  Int @default(0)
+  messageCount      Int @default(0)
+  regenerationCount Int @default(0)
+
+  // Quality metrics
+  averageQuality   Float @default(0)
+  satisfactionRate Float @default(0)
+  overrideRate     Float @default(0)
+
+  // Performance metrics
+  averageLatency Int   @default(0) // milliseconds
+  p95Latency     Int   @default(0)
+  errorRate      Float @default(0)
+
+  // Model distribution
+  modelUsage    Json // { model: count }
+  providerUsage Json // { provider: count }
+
+  // Time metrics
+  totalDuration  Int       @default(0) // seconds
+  firstMessageAt DateTime?
+  lastMessageAt  DateTime?
+  peakHour       Int? // 0-23
+
+  updatedAt DateTime @updatedAt
+
+  thread AIThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+}
+
+model SessionMetrics {
+  id        String @id @default(cuid())
+  sessionId String @unique
+  userId    String
+
+  // Session info
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  duration  Int? // seconds
+
+  // Usage metrics
+  messageCount Int   @default(0)
+  threadCount  Int   @default(0)
+  totalCost    Float @default(0)
+  totalTokens  Int   @default(0)
+
+  // Model metrics
+  modelsUsed    String[]
+  providersUsed String[]
+  overrideCount Int      @default(0)
+
+  // Quality metrics
+  averageQuality  Float @default(0)
+  regenerateCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, startedAt])
+}
+
+// Enums for AIOptimise
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  FUNCTION
+}
+
+enum MessageFeedback {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum ComplexityLevel {
+  SIMPLE
+  MODERATE
+  COMPLEX
+  EXPERT
+}
+
+enum ContentType {
+  GENERAL
+  CODE
+  CREATIVE
+  ANALYSIS
+  RESEARCH
+  TRANSLATION
+  SUMMARIZATION
+  CONVERSATION
+}
+
+enum OptimizationMode {
+  QUALITY // Always pick best quality
+  BALANCED // Balance quality and cost
+  BUDGET // Minimize cost
+  SPEED // Fastest response
+  CUSTOM // User-defined weights
+}
+
+// New Models for AIOptimise Pro
+
+model MessageFeedbackRecord {
+  id          String       @id @default(cuid())
+  messageId   String
+  userId      String
+  type        FeedbackType
+  comment     String?      @db.Text
+  isHelpful   Boolean?
+  suggestions String?      @db.Text
+  createdAt   DateTime     @default(now())
+
+  message AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model ThreadCollaborator {
+  id           String           @id @default(cuid())
+  threadId     String
+  userId       String
+  role         CollaboratorRole @default(VIEWER)
+  invitedBy    String
+  invitedAt    DateTime         @default(now())
+  acceptedAt   DateTime?
+  lastViewedAt DateTime?
+  permissions  Json? // Custom permissions
+
+  thread  AIThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id])
+  inviter User     @relation("InvitedCollaborators", fields: [invitedBy], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Display preferences
+  theme        String   @default("system")
+  chatMode     ChatMode @default(STANDARD)
+  showMetrics  Boolean  @default(true)
+  showAnalysis Boolean  @default(true)
+  compactView  Boolean  @default(false)
+
+  // Voice settings
+  voiceEnabled      Boolean @default(false)
+  voiceLanguage     String  @default("en-US")
+  voiceSpeed        Float   @default(1.0)
+  autoPlayResponses Boolean @default(false)
+
+  // Auto features
+  autoSaveThreads   Boolean @default(true)
+  autoGenerateTitle Boolean @default(true)
+  autoRetryOnError  Boolean @default(true)
+  maxRetries        Int     @default(3)
+
+  // Model preferences
+  preferredProvider  String?
+  preferredModel     String?
+  alwaysShowOverride Boolean @default(false)
+
+  // Privacy
+  shareDataForImprovement Boolean @default(false)
+  allowTelemetry          Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VoiceSession {
+  id        String  @id @default(cuid())
+  userId    String
+  threadId  String?
+  messageId String?
+
+  // Recording data
+  audioUrl String?
+  duration Int // milliseconds
+  fileSize Int? // bytes
+  mimeType String  @default("audio/webm")
+
+  // Transcription
+  transcript String? @db.Text
+  language   String?
+  confidence Float?
+  provider   String  @default("whisper")
+
+  // Status
+  status       VoiceStatus @default(RECORDING)
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([threadId])
+  @@index([status])
+}
+
+model ImageUpload {
+  id        String  @id @default(cuid())
+  userId    String
+  messageId String?
+
+  // File data
+  url          String
+  thumbnailUrl String?
+  fileName     String
+  fileSize     Int // bytes
+  mimeType     String
+  width        Int?
+  height       Int?
+
+  // Processing
+  status             ProcessingStatus @default(UPLOADING)
+  processingProgress Float            @default(0)
+  analysisResult     Json? // AI vision analysis
+  extractedText      String?          @db.Text
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([messageId])
+  @@index([status])
+}
+
+model UsageLimit {
+  id             String  @id @default(cuid())
+  userId         String?
+  organizationId String?
+
+  // Limits
+  dailyTokenLimit   Int?
+  monthlyTokenLimit Int?
+  dailyCostLimit    Float?
+  monthlyCostLimit  Float?
+  concurrentThreads Int    @default(10)
+  maxThreadMessages Int    @default(100)
+
+  // Current usage
+  dailyTokensUsed   Int   @default(0)
+  monthlyTokensUsed Int   @default(0)
+  dailyCostUsed     Float @default(0)
+  monthlyCostUsed   Float @default(0)
+
+  // Requests
+  limitIncreaseRequested Boolean   @default(false)
+  requestedAt            DateTime?
+  requestReason          String?   @db.Text
+  approvedAt             DateTime?
+  approvedBy             String?
+
+  resetAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId])
+  @@unique([organizationId])
+}
+
+// New Enums
+
+enum MessageStatus {
+  SENDING
+  SENT
+  PROCESSING
+  STREAMING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FeedbackType {
+  THUMBS_UP
+  THUMBS_DOWN
+  REPORT
+  SUGGESTION
+}
+
+enum CollaboratorRole {
+  VIEWER
+  COMMENTER
+  EDITOR
+  ADMIN
+}
+
+enum ChatMode {
+  STANDARD
+  FOCUS // Distraction-free
+  CODING // Code-optimized
+  RESEARCH // Research mode
+  CREATIVE // Creative writing
+  CUSTOM // User-defined
+}
+
+enum VoiceStatus {
+  RECORDING
+  PROCESSING
+  TRANSCRIBING
+  COMPLETED
+  FAILED
+}
+
+enum ProcessingStatus {
+  UPLOADING
+  PROCESSING
+  ANALYZING
+  COMPLETED
+  FAILED
+}
