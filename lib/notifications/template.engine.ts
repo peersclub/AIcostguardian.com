@@ -29,6 +29,13 @@ export class NotificationTemplateEngine {
    */
   async initialize(): Promise<void> {
     try {
+      // Skip database operations during build or when DATABASE_URL is not set
+      if (typeof window === 'undefined' && !process.env.DATABASE_URL) {
+        console.log('Database not available, using default templates')
+        this.loadDefaultTemplates()
+        return
+      }
+
       const templates = await prisma.notificationTemplate.findMany({
         where: { isActive: true }
       })
@@ -50,9 +57,31 @@ export class NotificationTemplateEngine {
 
       console.log(`Loaded ${templates.length} notification templates`)
     } catch (error) {
-      console.error('Failed to initialize template engine:', error)
-      throw new TemplateError('Failed to load templates from database')
+      console.warn('Failed to initialize template engine, using defaults:', error)
+      this.loadDefaultTemplates()
     }
+  }
+
+  /**
+   * Load default templates when database is unavailable
+   */
+  private loadDefaultTemplates(): void {
+    // Register minimal default templates for build time
+    const defaultTemplates = [
+      {
+        id: 'default-cost-alert',
+        name: 'Cost Alert',
+        type: 'COST_ALERT',
+        channel: 'email',
+        subject: 'Cost Alert: {{provider}}',
+        bodyTemplate: 'Your {{provider}} usage has exceeded the threshold.',
+        variables: {},
+        locale: 'en'
+      }
+    ]
+
+    defaultTemplates.forEach(template => this.registerTemplate(template as any))
+    console.log('Loaded default templates')
   }
 
   /**

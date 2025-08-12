@@ -144,12 +144,12 @@ export default function ReleaseNotesPage() {
                   </CardDescription>
                 </div>
               </div>
-              <Button asChild>
-                <a href="/release-notes/current">
+              <a href="/release-notes/current">
+                <Button>
                   View Current Release
                   <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
+                </Button>
+              </a>
             </div>
           </CardHeader>
         </Card>
