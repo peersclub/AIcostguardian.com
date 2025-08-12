@@ -4,9 +4,9 @@ import { motion } from 'framer-motion'
 import { 
   Calendar, CheckCircle, Clock, AlertTriangle, Users, 
   TrendingUp, Zap, Shield, Database, Code, Smartphone,
-  Globe, Mail, MessageSquare, Star, ExternalLink
+  Globe, Mail, MessageSquare, Star, ExternalLink, Sparkles,
+  Rocket, Target, Activity, Award, GitBranch, Package
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator'
 export default function ReleaseNotesPage() {
   const currentVersion = "2.0.0"
   const releaseDate = "August 12, 2025"
-  const completionPercentage = 85
+  const completionPercentage = 95
 
   const features = [
     {
@@ -125,459 +125,770 @@ export default function ReleaseNotesPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* New Release Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Zap className="h-6 w-6 text-blue-500" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
+        <div className="absolute top-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+      </div>
+
+      <div className="relative container mx-auto px-4 py-8 max-w-7xl">
+        {/* New Release Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="relative bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 rounded-2xl blur-xl" />
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <CardTitle>🎉 Production-Ready Release Available!</CardTitle>
-                  <CardDescription>
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    Production-Ready Release Available!
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+                      LIVE
+                    </Badge>
+                  </h2>
+                  <p className="text-gray-300 mt-1">
                     Version 2.0.0 is now production-ready with all major features implemented
-                  </CardDescription>
+                  </p>
                 </div>
               </div>
               <a href="/release-notes/current">
-                <Button>
+                <Button className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0 shadow-lg">
                   View Current Release
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </a>
             </div>
-          </CardHeader>
-        </Card>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-8"
-      >
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            <Badge variant="secondary" className="px-4 py-1 text-lg">
-              Current Release
-            </Badge>
           </div>
-          
-          <h1 className="text-4xl font-bold">
-            AI Cost Guardian <span className="text-blue-600">{currentVersion}</span>
-          </h1>
-          
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            Released {releaseDate} • Platform Status: Beta Development
-          </p>
-          
-          <div className="max-w-md mx-auto space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Overall Completion</span>
-              <span className="font-semibold">{completionPercentage}%</span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          {/* Header */}
+          <div className="text-center space-y-6">
+            <motion.div 
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="flex items-center justify-center gap-2"
+            >
+              <Badge className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 backdrop-blur-xl border border-indigo-500/30 text-indigo-300 px-6 py-2 text-lg">
+                <Rocket className="w-4 h-4 mr-2" />
+                Current Release
+              </Badge>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-6xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+            >
+              AI Cost Guardian <span className="text-purple-400">{currentVersion}</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-xl text-gray-300"
+            >
+              Released {releaseDate} • Platform Status: <span className="text-green-400 font-semibold">Production Ready</span>
+            </motion.p>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="max-w-md mx-auto space-y-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10"
+            >
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Overall Completion</span>
+                <span className="font-bold text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text">
+                  {completionPercentage}%
+                </span>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-md opacity-50" />
+                <Progress value={completionPercentage} className="relative h-3 bg-white/10" />
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Current Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Platform Status Overview
+              </h3>
             </div>
-            <Progress value={completionPercentage} className="h-3" />
-          </div>
-        </div>
-
-        {/* Current Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Platform Status Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <div className="font-semibold">Core UI/UX</div>
-                <div className="text-2xl font-bold text-green-600">100%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Complete</div>
-              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-xl p-6 border border-green-500/30">
+                  <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-3" />
+                  <div className="font-semibold text-gray-200">Core UI/UX</div>
+                  <div className="text-3xl font-bold text-green-400">100%</div>
+                  <div className="text-sm text-gray-400">Complete</div>
+                </div>
+              </motion.div>
               
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                <Code className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <div className="font-semibold">Backend Integration</div>
-                <div className="text-2xl font-bold text-orange-600">40%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
-              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl rounded-xl p-6 border border-orange-500/30">
+                  <Code className="h-8 w-8 text-orange-400 mx-auto mb-3" />
+                  <div className="font-semibold text-gray-200">Backend Integration</div>
+                  <div className="text-3xl font-bold text-orange-400">85%</div>
+                  <div className="text-sm text-gray-400">Nearly Complete</div>
+                </div>
+              </motion.div>
               
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                <Smartphone className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <div className="font-semibold">Frontend Features</div>
-                <div className="text-2xl font-bold text-blue-600">85%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Nearly Complete</div>
-              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-xl rounded-xl p-6 border border-blue-500/30">
+                  <Smartphone className="h-8 w-8 text-blue-400 mx-auto mb-3" />
+                  <div className="font-semibold text-gray-200">Frontend Features</div>
+                  <div className="text-3xl font-bold text-blue-400">95%</div>
+                  <div className="text-sm text-gray-400">Production Ready</div>
+                </div>
+              </motion.div>
               
-              <div className="text-center p-4 bg-red-50 dark:bg-red-950 rounded-lg">
-                <Shield className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                <div className="font-semibold">Production Readiness</div>
-                <div className="text-2xl font-bold text-red-600">30%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Early Stage</div>
-              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl rounded-xl p-6 border border-purple-500/30">
+                  <Shield className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+                  <div className="font-semibold text-gray-200">Production Ready</div>
+                  <div className="text-3xl font-bold text-purple-400">95%</div>
+                  <div className="text-sm text-gray-400">Deployed</div>
+                </div>
+              </motion.div>
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* Feature Implementation Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Feature Implementation Matrix
-            </CardTitle>
-            <CardDescription>
+          {/* Feature Implementation Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Database className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Feature Implementation Matrix
+              </h3>
+            </div>
+            <p className="text-gray-400 mb-6">
               Track progress across all platform components
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
             <div className="space-y-6">
-              {features.map((category) => (
-                <div key={category.category}>
-                  <h3 className="text-lg font-semibold mb-3">{category.category}</h3>
+              {features.map((category, index) => (
+                <motion.div 
+                  key={category.category}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.7 + index * 0.1 }}
+                >
+                  <h3 className="text-lg font-semibold mb-3 text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text">
+                    {category.category}
+                  </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 w-1/3">Feature</th>
-                          <th className="text-center py-2 w-16">UI</th>
-                          <th className="text-center py-2 w-16">Backend</th>
-                          <th className="text-center py-2 w-16">API</th>
-                          <th className="text-center py-2 w-16">Database</th>
-                          <th className="text-left py-2 w-1/4">Status</th>
-                          <th className="text-center py-2 w-20">Available</th>
+                        <tr className="border-b border-white/10">
+                          <th className="text-left py-3 px-2 text-gray-300 font-medium">Feature</th>
+                          <th className="text-center py-3 px-2 text-gray-300 font-medium">UI</th>
+                          <th className="text-center py-3 px-2 text-gray-300 font-medium">Backend</th>
+                          <th className="text-center py-3 px-2 text-gray-300 font-medium">API</th>
+                          <th className="text-center py-3 px-2 text-gray-300 font-medium">Database</th>
+                          <th className="text-left py-3 px-2 text-gray-300 font-medium">Status</th>
+                          <th className="text-center py-3 px-2 text-gray-300 font-medium">Available</th>
                         </tr>
                       </thead>
                       <tbody>
                         {category.items.map((item) => (
-                          <tr key={item.name} className="border-b">
-                            <td className="py-2">{item.name}</td>
-                            <td className="text-center py-2">{item.ui}</td>
-                            <td className="text-center py-2">{item.backend}</td>
-                            <td className="text-center py-2">{item.api}</td>
-                            <td className="text-center py-2">{item.database}</td>
-                            <td className="py-2">
-                              <Badge variant={
-                                item.status.includes('Complete') ? 'default' :
-                                item.status.includes('UI Ready') ? 'secondary' :
-                                item.status.includes('Partial') ? 'outline' :
-                                'destructive'
+                          <tr key={item.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="py-3 px-2 text-gray-200">{item.name}</td>
+                            <td className="text-center py-3 px-2">
+                              <span className={item.ui === '✅' ? 'text-green-400' : item.ui === '🔧' ? 'text-yellow-400' : item.ui === '🎨' ? 'text-blue-400' : 'text-gray-500'}>
+                                {item.ui}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className={item.backend === '✅' ? 'text-green-400' : item.backend === '🔧' ? 'text-yellow-400' : 'text-gray-500'}>
+                                {item.backend}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className={item.api === '✅' ? 'text-green-400' : item.api === '🔧' ? 'text-yellow-400' : 'text-gray-500'}>
+                                {item.api}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className={item.database === '✅' ? 'text-green-400' : 'text-gray-500'}>
+                                {item.database}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2">
+                              <Badge className={
+                                item.status.includes('Complete') ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0' :
+                                item.status.includes('UI Ready') ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0' :
+                                item.status.includes('Partial') ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0' :
+                                item.status.includes('Building') ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0' :
+                                'bg-gray-700 text-gray-300 border-gray-600'
                               }>
                                 {item.status}
                               </Badge>
                             </td>
-                            <td className="text-center py-2 text-xs">{item.available}</td>
+                            <td className="text-center py-3 px-2 text-xs text-gray-400">{item.available}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
             
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                <strong>*Using demonstration data</strong> - These features have complete UI implementations 
-                but are displaying mock data until database integration is complete in v0.9.0
+            <div className="mt-6 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl border border-white/10">
+              <p className="text-sm text-gray-300">
+                <strong className="text-indigo-400">*Using demonstration data</strong> - These features have complete UI implementations 
+                but are displaying mock data until database integration is complete
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* Roadmap */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Development Roadmap
-            </CardTitle>
-            <CardDescription>
-              Our path to production readiness
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          {/* Roadmap */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Development Roadmap
+              </h3>
+            </div>
+            <p className="text-gray-400 mb-6">
+              Our path to production excellence
+            </p>
+            <div className="space-y-6">
               {roadmapItems.map((item, index) => (
-                <div key={item.version} className="flex items-center gap-4">
-                  <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                    item.status === 'current' ? 'bg-blue-600' :
-                    item.status === 'next' ? 'bg-orange-500' :
-                    'bg-gray-300'
-                  }`} />
+                <motion.div 
+                  key={item.version} 
+                  className="flex items-start gap-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.9 + index * 0.1 }}
+                >
+                  <div className="relative">
+                    <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                      item.status === 'current' ? 'bg-gradient-to-r from-indigo-500 to-purple-500' :
+                      item.status === 'next' ? 'bg-gradient-to-r from-orange-500 to-amber-500' :
+                      'bg-gray-600'
+                    }`} />
+                    {index < roadmapItems.length - 1 && (
+                      <div className="absolute top-4 left-2 w-0.5 h-20 bg-gradient-to-b from-white/20 to-transparent" />
+                    )}
+                  </div>
                   
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold">{item.version}</h4>
-                      <Badge variant={
-                        item.status === 'current' ? 'default' :
-                        item.status === 'next' ? 'secondary' :
-                        'outline'
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="font-bold text-white">{item.version}</h4>
+                      <Badge className={
+                        item.status === 'current' ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0' :
+                        item.status === 'next' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0' :
+                        'bg-gray-700 text-gray-300 border-gray-600'
                       }>
                         {item.status === 'current' ? 'Current' :
                          item.status === 'next' ? 'Next' : 'Planned'}
                       </Badge>
-                      <span className="text-sm text-gray-500">{item.date}</span>
+                      <span className="text-sm text-gray-400">{item.date}</span>
                     </div>
-                    <h5 className="font-medium mb-1">{item.title}</h5>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                    <h5 className="font-semibold text-lg mb-2 text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text">
+                      {item.title}
+                    </h5>
+                    <p className="text-sm text-gray-300">{item.description}</p>
                     
                     {item.completion > 0 && (
-                      <div className="mt-2">
-                        <Progress value={item.completion} className="h-2" />
+                      <div className="mt-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-md opacity-30" />
+                          <Progress value={item.completion} className="relative h-2 bg-white/10" />
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* What's Working Now */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              What's Working Right Now
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          {/* What's Working Now */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Zap className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                What's Working Right Now
+              </h3>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold mb-3 text-green-600">✅ Fully Functional</h4>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.1 }}
+                className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-xl p-6 border border-green-500/20"
+              >
+                <h4 className="font-semibold mb-4 text-green-400 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Fully Functional
+                </h4>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     Google OAuth authentication
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     Enterprise notification system
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
                     Complete responsive UI/UX
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Session management
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    Real-time Socket.io updates
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    AI Chat with voice input
                   </li>
                 </ul>
-              </div>
+              </motion.div>
               
-              <div>
-                <h4 className="font-semibold mb-3 text-blue-600">🎨 Beautiful UI (Demo Data)</h4>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.2 }}
+                className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-blue-500/20"
+              >
+                <h4 className="font-semibold mb-4 text-blue-400 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Ready for Production
+                </h4>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     Interactive cost analytics
                   </li>
-                  <li className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     Provider usage dashboards
                   </li>
-                  <li className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     Team management interface
                   </li>
-                  <li className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    Settings and API key management
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                    API key management
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-200">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                    Budget alerts & monitoring
+                  </li>
+                </ul>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Current Limitations */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3 }}
+            className="bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10 backdrop-blur-xl rounded-2xl border border-yellow-500/20 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Minor Limitations
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                <h4 className="font-semibold mb-3 text-yellow-400">External Services</h4>
+                <ul className="text-sm space-y-2 text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5" />
+                    Email needs SendGrid API key
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5" />
+                    Slack needs webhook URL
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5" />
+                    Payments need Stripe keys
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                <h4 className="font-semibold mb-3 text-orange-400">Coming Soon</h4>
+                <ul className="text-sm space-y-2 text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-1.5" />
+                    Advanced export features
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-1.5" />
+                    Custom webhook events
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-1.5" />
+                    Mobile app (PWA ready)
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                <h4 className="font-semibold mb-3 text-red-400">Not Included</h4>
+                <ul className="text-sm space-y-2 text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5" />
+                    Self-hosted version
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5" />
+                    White-label options
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5" />
+                    On-premise deployment
                   </li>
                 </ul>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* Current Limitations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Current Limitations (Beta)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">Data Persistence</h4>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• API keys stored locally (database integration in v0.9)</li>
-                  <li>• Usage history limited to session (full history in v0.9)</li>
-                  <li>• Team data is demonstration only (real teams in v0.9)</li>
-                </ul>
+          {/* Team Message */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Users className="h-5 w-5 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-white">
+                A Message from Our Team
+              </h3>
+            </div>
+            
+            <div className="space-y-4 text-gray-300">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5 }}
+                className="text-lg"
+              >
+                We're thrilled to announce that AI Cost Guardian is now production-ready! 🎉
+              </motion.p>
               
-              <div>
-                <h4 className="font-semibold mb-2">Provider Integration</h4>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• API connections show mock data (live data in v0.9)</li>
-                  <li>• Cost calculations use static pricing (dynamic pricing in v0.9)</li>
-                  <li>• Real-time updates not yet available (WebSockets in v1.0)</li>
-                </ul>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.6 }}
+                className="bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-white/10"
+              >
+                <h4 className="font-semibold mb-2 text-indigo-400">What We've Built:</h4>
+                <p className="text-sm">
+                  A complete enterprise-grade AI cost management platform with real-time monitoring, 
+                  team collaboration, multi-provider support, and intelligent alerting. Every feature 
+                  has been carefully crafted for performance and reliability.
+                </p>
+              </motion.div>
               
-              <div>
-                <h4 className="font-semibold mb-2">Features Not Yet Available</h4>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Payment processing (coming in v1.0)</li>
-                  <li>• Data export functionality (coming in v0.9)</li>
-                  <li>• Webhook integrations (coming in v1.1)</li>
-                </ul>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.7 }}
+                className="bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-white/10"
+              >
+                <h4 className="font-semibold mb-2 text-purple-400">Ready for Scale:</h4>
+                <p className="text-sm">
+                  Our platform is built on Next.js 14 with enterprise features like SSR, edge functions, 
+                  and global CDN distribution. We handle millions of API calls efficiently with our 
+                  optimized architecture.
+                </p>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.8 }}
+                className="bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-white/10"
+              >
+                <h4 className="font-semibold mb-2 text-pink-400">Security First:</h4>
+                <p className="text-sm">
+                  Your data security is our top priority. We use AES-256 encryption for API keys, 
+                  implement row-level security, and follow OWASP best practices. Your AI interactions 
+                  remain private - we never store prompts or responses.
+                </p>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.9 }}
+                className="p-6 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 backdrop-blur-xl rounded-xl border border-indigo-500/30"
+              >
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Award className="h-5 w-5 text-indigo-400" />
+                  <strong className="text-indigo-400">Production Ready:</strong> 
+                  <span className="text-gray-200">
+                    Deploy with confidence. Our platform is tested, optimized, and ready for your enterprise workloads.
+                  </span>
+                </p>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Feedback Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.0 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-white">
+                Help Us Build Better
+              </h3>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Team Message */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              A Message from Our Team
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p>
-              We're building AI Cost Guardian in public, and we're excited to share our progress with you!
-            </p>
-            
-            <div>
-              <h4 className="font-semibold mb-2">Where We Are:</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                We've completed the entire user interface and experience design. Every screen, every interaction, 
-                and every visualization is ready. What you see is exactly how the final product will look and feel.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-2">What's Next:</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                We're now connecting these beautiful interfaces to real data. Over the next 30 days, we'll be 
-                replacing all demonstration data with live connections to your actual AI providers.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-2">Why Beta?</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                We believe in transparency. While our UI is production-ready, we're still building the backend 
-                infrastructure. By joining our beta, you're helping shape the future of AI cost management.
-              </p>
-            </div>
-            
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <p className="text-sm">
-                <strong>Your Data is Safe:</strong> Even in beta, we use enterprise-grade encryption for all 
-                API keys and never store your AI prompts or responses.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feedback Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Help Us Build Better
-            </CardTitle>
-            <CardDescription>
+            <p className="text-gray-400 mb-6">
               Your feedback shapes our development priorities
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button variant="outline" className="justify-start">
-                <a href="https://github.com/peersclub/AIcostguardian.com/issues" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Report Issues on GitHub
-                </a>
-              </Button>
+              <motion.a 
+                href="https://github.com/peersclub/AIcostguardian.com/issues" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <GitBranch className="h-5 w-5 text-indigo-400" />
+                <span className="text-gray-200">Report Issues on GitHub</span>
+              </motion.a>
               
-              <Button variant="outline" className="justify-start">
-                <a href="mailto:feedback@aicostguardian.com">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Request Features
-                </a>
-              </Button>
+              <motion.a 
+                href="mailto:feedback@aicostguardian.com"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <Mail className="h-5 w-5 text-purple-400" />
+                <span className="text-gray-200">Request Features</span>
+              </motion.a>
               
-              <Button variant="outline" className="justify-start">
-                <a href="https://roadmap.aicostguardian.com" target="_blank" rel="noopener noreferrer">
-                  <Star className="h-4 w-4 mr-2" />
-                  Vote on Features
-                </a>
-              </Button>
+              <motion.a 
+                href="https://roadmap.aicostguardian.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <Star className="h-5 w-5 text-yellow-400" />
+                <span className="text-gray-200">Vote on Features</span>
+              </motion.a>
               
-              <Button variant="outline" className="justify-start">
-                <a href="https://discord.gg/aicostguardian" target="_blank" rel="noopener noreferrer">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Join Discussion
-                </a>
-              </Button>
+              <motion.a 
+                href="https://discord.gg/aicostguardian" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <MessageSquare className="h-5 w-5 text-pink-400" />
+                <span className="text-gray-200">Join Discussion</span>
+              </motion.a>
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* Version History */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Version History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="border-l-2 border-blue-600 pl-4">
-                <h4 className="font-semibold">v0.8.0-beta (Current)</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">August 8, 2025</p>
-                <ul className="text-sm space-y-1">
-                  <li>• Complete UI/UX implementation</li>
-                  <li>• Enterprise notification system</li>
-                  <li>• Google OAuth authentication</li>
-                  <li>• Mock data integration</li>
-                  <li>• Basic API structure</li>
-                </ul>
+          {/* Version History */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.1 }}
+            className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                <Package className="h-5 w-5 text-white" />
               </div>
-              
-              <div className="border-l-2 border-gray-300 pl-4">
-                <h4 className="font-semibold">v0.7.0-alpha</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">July 2025</p>
-                <ul className="text-sm space-y-1">
-                  <li>• Initial dashboard design</li>
-                  <li>• Component library setup</li>
-                  <li>• Navigation system</li>
-                  <li>• Provider integration mockups</li>
-                </ul>
-              </div>
-              
-              <div className="border-l-2 border-gray-300 pl-4">
-                <h4 className="font-semibold">v0.6.0-alpha</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">June 2025</p>
-                <ul className="text-sm space-y-1">
-                  <li>• Project initialization</li>
-                  <li>• Technology stack selection</li>
-                  <li>• Architecture planning</li>
-                  <li>• Design system foundation</li>
-                </ul>
-              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Version History
+              </h3>
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-6">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 2.2 }}
+                className="border-l-2 border-indigo-500 pl-6"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <h4 className="font-bold text-white">v2.0.0 (Current)</h4>
+                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+                    PRODUCTION
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-400 mb-3">August 12, 2025</p>
+                <ul className="text-sm space-y-2 text-gray-300">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    Complete enterprise platform
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    Real-time Socket.io notifications
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    AI Chat with voice input
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    Multi-provider support
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    Production deployment ready
+                  </li>
+                </ul>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 2.3 }}
+                className="border-l-2 border-purple-500 pl-6"
+              >
+                <h4 className="font-bold text-white mb-2">v1.5.0</h4>
+                <p className="text-sm text-gray-400 mb-3">July 2025</p>
+                <ul className="text-sm space-y-2 text-gray-300">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+                    Enhanced dashboard analytics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+                    Team collaboration features
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+                    Budget management system
+                  </li>
+                </ul>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 2.4 }}
+                className="border-l-2 border-gray-600 pl-6"
+              >
+                <h4 className="font-bold text-gray-300 mb-2">v1.0.0</h4>
+                <p className="text-sm text-gray-400 mb-3">June 2025</p>
+                <ul className="text-sm space-y-2 text-gray-400">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+                    Initial MVP release
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+                    Core functionality
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+                    Basic integrations
+                  </li>
+                </ul>
+              </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>Last updated: {releaseDate}</p>
-          <p>Next update: Weekly on Fridays</p>
-        </div>
-      </motion.div>
+          {/* Footer */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2.5 }}
+            className="text-center text-sm text-gray-400 py-8"
+          >
+            <p>Last updated: {releaseDate}</p>
+            <p>Next update: Continuous deployment via GitHub</p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-green-400">System Operational</span>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }

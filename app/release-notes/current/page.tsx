@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -30,7 +30,11 @@ import {
   Clock,
   CheckSquare,
   Square,
-  ArrowRight
+  ArrowRight,
+  Activity,
+  Award,
+  Target,
+  TrendingUp
 } from 'lucide-react'
 
 interface ReleaseItem {
@@ -225,12 +229,12 @@ const getTypeIcon = (type: string) => {
 
 const getTypeColor = (type: string) => {
   switch (type) {
-    case 'feature': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-    case 'fix': return 'bg-red-500/10 text-red-500 border-red-500/20'
-    case 'improvement': return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
-    case 'breaking': return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-    case 'security': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-    default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+    case 'feature': return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0'
+    case 'fix': return 'bg-gradient-to-r from-red-500 to-pink-500 text-white border-0'
+    case 'improvement': return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0'
+    case 'breaking': return 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0'
+    case 'security': return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0'
+    default: return 'bg-gray-700 text-gray-300 border-gray-600'
   }
 }
 
@@ -266,237 +270,367 @@ export default function CurrentReleaseNotesPage() {
   const progressPercentage = (completedItems / totalItems) * 100
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Rocket className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold">Release Notes</h1>
-        </div>
-        <p className="text-muted-foreground text-lg">
-          Track the latest updates, features, and improvements to AI Cost Guardian
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
+        <div className="absolute top-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
       </div>
 
-      {/* Current Release Banner */}
-      {currentRelease.status === 'current' && (
-        <Card className="mb-8 border-primary/50 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Badge className="bg-primary text-primary-foreground">
-                  CURRENT RELEASE
-                </Badge>
-                <CardTitle className="text-2xl">{currentRelease.version}</CardTitle>
-                <span className="text-muted-foreground">{currentRelease.date}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <span className="text-sm font-medium">
-                  {completedItems}/{totalItems} Complete
-                </span>
-              </div>
+      <div className="relative container mx-auto py-8 max-w-7xl px-4">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+              <Rocket className="h-8 w-8 text-white" />
             </div>
-            <CardDescription className="text-base mt-2">
-              {currentRelease.summary}
-            </CardDescription>
-            <div className="mt-4">
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
+            <div>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Release Notes
+              </h1>
+              <p className="text-gray-400 mt-1">Track our progress and latest updates</p>
             </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Version Selector */}
-      <Tabs value={selectedVersion} onValueChange={setSelectedVersion} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3">
-          {releases.map(release => (
-            <TabsTrigger key={release.version} value={release.version}>
-              <div className="flex items-center gap-2">
-                {release.status === 'current' && <Zap className="h-4 w-4" />}
-                {release.status === 'upcoming' && <Clock className="h-4 w-4" />}
-                {release.version}
-              </div>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={selectedVersion} className="mt-6">
-          {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Changes
-                </CardTitle>
-                <div className="text-2xl font-bold">{currentRelease.items.length}</div>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Features
-                </CardTitle>
-                <div className="text-2xl font-bold text-blue-500">
-                  {currentRelease.items.filter(i => i.type === 'feature').length}
-                </div>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Fixes
-                </CardTitle>
-                <div className="text-2xl font-bold text-red-500">
-                  {currentRelease.items.filter(i => i.type === 'fix').length}
-                </div>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Improvements
-                </CardTitle>
-                <div className="text-2xl font-bold text-purple-500">
-                  {currentRelease.items.filter(i => i.type === 'improvement').length}
-                </div>
-              </CardHeader>
-            </Card>
           </div>
+        </motion.div>
 
-          {/* Release Items */}
-          <div className="space-y-4">
-            {currentRelease.items.map(item => (
-              <Card 
-                key={item.id} 
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => toggleExpanded(item.id)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        {expandedItems.has(item.id) ? 
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" /> : 
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        }
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="outline" 
-                            className={getTypeColor(item.type)}
-                          >
-                            {getTypeIcon(item.type)}
-                            <span className="ml-1 capitalize">{item.type}</span>
-                          </Badge>
-                          {getStatusIcon(item.status)}
-                        </div>
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                      </div>
-                    </div>
-                    {item.date && (
-                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                        <Calendar className="h-3 w-3" />
-                        {item.date}
-                      </div>
-                    )}
+        {/* Current Release Banner */}
+        {currentRelease.status === 'current' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 rounded-2xl blur-xl" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-4 py-1">
+                      CURRENT RELEASE
+                    </Badge>
+                    <h2 className="text-3xl font-bold text-white">{currentRelease.version}</h2>
+                    <span className="text-gray-400">{currentRelease.date}</span>
                   </div>
-                </CardHeader>
+                  <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg px-4 py-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                    <span className="text-sm font-medium text-gray-200">
+                      {completedItems}/{totalItems} Complete
+                    </span>
+                  </div>
+                </div>
+                <p className="text-lg text-gray-300 mb-4">
+                  {currentRelease.summary}
+                </p>
+                <div className="relative">
+                  <div className="h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-xl">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercentage}%` }}
+                      transition={{ duration: 1, delay: 0.5 }}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-md opacity-30" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Version Selector */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Tabs value={selectedVersion} onValueChange={setSelectedVersion} className="mb-8">
+            <TabsList className="grid w-full grid-cols-3 bg-white/5 backdrop-blur-xl border border-white/10">
+              {releases.map(release => (
+                <TabsTrigger 
+                  key={release.version} 
+                  value={release.version}
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+                >
+                  <div className="flex items-center gap-2">
+                    {release.status === 'current' && <Zap className="h-4 w-4" />}
+                    {release.status === 'upcoming' && <Clock className="h-4 w-4" />}
+                    {release.version}
+                  </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <TabsContent value={selectedVersion} className="mt-6">
+              {/* Statistics */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+              >
+                <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
+                  <div className="text-sm font-medium text-gray-400 mb-2">
+                    Total Changes
+                  </div>
+                  <div className="text-3xl font-bold text-white">{currentRelease.items.length}</div>
+                </div>
                 
-                {expandedItems.has(item.id) && item.details && (
-                  <CardContent>
-                    <div className="pl-7 space-y-2">
-                      <div className="text-sm font-medium text-muted-foreground mb-2">
-                        Implementation Details:
+                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
+                  <div className="text-sm font-medium text-gray-400 mb-2">
+                    Features
+                  </div>
+                  <div className="text-3xl font-bold text-blue-400">
+                    {currentRelease.items.filter(i => i.type === 'feature').length}
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
+                  <div className="text-sm font-medium text-gray-400 mb-2">
+                    Fixes
+                  </div>
+                  <div className="text-3xl font-bold text-red-400">
+                    {currentRelease.items.filter(i => i.type === 'fix').length}
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-white/10">
+                  <div className="text-sm font-medium text-gray-400 mb-2">
+                    Improvements
+                  </div>
+                  <div className="text-3xl font-bold text-purple-400">
+                    {currentRelease.items.filter(i => i.type === 'improvement').length}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Release Items */}
+              <div className="space-y-4">
+                {currentRelease.items.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    className="bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 backdrop-blur-xl rounded-xl border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+                    onClick={() => toggleExpanded(item.id)}
+                  >
+                    <div className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <motion.div 
+                            className="mt-1"
+                            animate={{ rotate: expandedItems.has(item.id) ? 90 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronRight className="h-5 w-5 text-gray-400" />
+                          </motion.div>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <Badge className={getTypeColor(item.type)}>
+                                {getTypeIcon(item.type)}
+                                <span className="ml-1.5 capitalize">{item.type}</span>
+                              </Badge>
+                              {getStatusIcon(item.status)}
+                            </div>
+                            <h3 className="text-xl font-semibold text-white">{item.title}</h3>
+                            <p className="text-gray-300">{item.description}</p>
+                          </div>
+                        </div>
+                        {item.date && (
+                          <div className="flex items-center gap-2 text-gray-400 text-sm bg-white/5 px-3 py-1 rounded-lg">
+                            <Calendar className="h-3 w-3" />
+                            {item.date}
+                          </div>
+                        )}
                       </div>
-                      <ul className="space-y-1">
-                        {item.details.map((detail, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm">
-                            <ArrowRight className="h-3 w-3 text-muted-foreground mt-0.5" />
-                            <span>{detail}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
+                    
+                    <AnimatePresence>
+                      {expandedItems.has(item.id) && item.details && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-6 pb-6">
+                            <div className="pl-8 pt-4 border-t border-white/10">
+                              <div className="text-sm font-medium text-indigo-400 mb-3">
+                                Implementation Details:
+                              </div>
+                              <ul className="space-y-2">
+                                {item.details.map((detail, idx) => (
+                                  <motion.li 
+                                    key={idx} 
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    className="flex items-start gap-3 text-sm text-gray-300"
+                                  >
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5" />
+                                    <span>{detail}</span>
+                                  </motion.li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+              <Target className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white">
+              Quick Actions
+            </h3>
           </div>
-        </TabsContent>
-      </Tabs>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <motion.a
+              href="https://github.com/peersclub/AIcostguardian.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
+            >
+              <GitBranch className="h-5 w-5 text-indigo-400" />
+              <span>GitHub</span>
+            </motion.a>
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
+            >
+              <Package className="h-5 w-5 text-purple-400" />
+              <span>Download</span>
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
+            >
+              <Bell className="h-5 w-5 text-yellow-400" />
+              <span>Subscribe</span>
+            </motion.button>
+            
+            <motion.a
+              href="mailto:feedback@aicostguardian.com"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 p-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition-colors text-gray-200"
+            >
+              <MessageSquare className="h-5 w-5 text-pink-400" />
+              <span>Feedback</span>
+            </motion.a>
+          </div>
+        </motion.div>
 
-      {/* Quick Actions */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm">
-            <GitBranch className="h-4 w-4 mr-2" />
-            View on GitHub
-          </Button>
-          <Button variant="outline" size="sm">
-            <Package className="h-4 w-4 mr-2" />
-            Download Release
-          </Button>
-          <Button variant="outline" size="sm">
-            <Bell className="h-4 w-4 mr-2" />
-            Subscribe to Updates
-          </Button>
-          <Button variant="outline" size="sm">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Provide Feedback
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Deployment Status */}
-      <Card className="mt-8 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
-        <CardHeader>
+        {/* Deployment Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl border border-green-500/20 p-8 shadow-2xl"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                Production Deployment Ready
-              </CardTitle>
-              <CardDescription className="mt-2">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  Production Deployment Ready
+                </h3>
+              </div>
+              <p className="text-gray-300 ml-11">
                 Application has been successfully prepared for Vercel deployment
-              </CardDescription>
+              </p>
             </div>
-            <Badge className="bg-green-500 text-white">
+            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-4 py-2">
               READY TO DEPLOY
             </Badge>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Build Successful</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-green-500" />
-              <span className="text-sm">TypeScript Fixed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Dependencies Installed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Tests Passing</span>
-            </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.0 }}
+              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
+            >
+              <CheckSquare className="h-5 w-5 text-green-400" />
+              <span className="text-sm text-gray-200">Build Successful</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.1 }}
+              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
+            >
+              <CheckSquare className="h-5 w-5 text-green-400" />
+              <span className="text-sm text-gray-200">TypeScript Fixed</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2 }}
+              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
+            >
+              <CheckSquare className="h-5 w-5 text-green-400" />
+              <span className="text-sm text-gray-200">Dependencies Ready</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.3 }}
+              className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-lg p-3"
+            >
+              <CheckSquare className="h-5 w-5 text-green-400" />
+              <span className="text-sm text-gray-200">Production Ready</span>
+            </motion.div>
           </div>
-        </CardContent>
-      </Card>
+        </motion.div>
+
+        {/* Footer Status */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
+          className="mt-12 text-center text-gray-400 pb-8"
+        >
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-green-400">All Systems Operational</span>
+          </div>
+          <p className="text-sm">Version {selectedVersion} • Last updated: {currentRelease.date}</p>
+          <p className="text-xs mt-2">Continuous deployment via GitHub Actions</p>
+        </motion.div>
+      </div>
     </div>
   )
 }
