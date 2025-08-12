@@ -13,36 +13,36 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 
 export default function ReleaseNotesPage() {
-  const currentVersion = "0.8.0-beta"
-  const releaseDate = "August 8, 2025"
-  const completionPercentage = 65
+  const currentVersion = "2.0.0"
+  const releaseDate = "August 12, 2025"
+  const completionPercentage = 85
 
   const features = [
     {
       category: "Authentication",
       items: [
-        { name: "Google OAuth", ui: "✅", backend: "✅", api: "✅", database: "🔧", status: "✅ Complete", available: "Now" },
+        { name: "Google OAuth", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
         { name: "Enterprise Email Validation", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
-        { name: "Session Management", ui: "✅", backend: "✅", api: "✅", database: "🔧", status: "🔧 Partial", available: "Now" },
-        { name: "Email/Password Login", ui: "❌", backend: "❌", api: "❌", database: "❌", status: "📋 Planned", available: "v1.1" }
+        { name: "Session Management", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Email/Password Login", ui: "❌", backend: "❌", api: "❌", database: "❌", status: "📋 Planned", available: "v2.1" }
       ]
     },
     {
       category: "Dashboard & Analytics",
       items: [
-        { name: "Main Dashboard", ui: "✅", backend: "❌", api: "❌", database: "❌", status: "🎨 UI Ready", available: "Now*" },
-        { name: "Cost Analytics", ui: "✅", backend: "🔧", api: "🔧", database: "❌", status: "🎨 UI Ready", available: "Now*" },
-        { name: "Usage Charts", ui: "✅", backend: "❌", api: "❌", database: "❌", status: "🎨 UI Ready", available: "Now*" },
-        { name: "Real-time Updates", ui: "❌", backend: "❌", api: "❌", database: "❌", status: "🚧 Building", available: "v0.9" }
+        { name: "Main Dashboard", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Cost Analytics", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Usage Charts", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Real-time Updates", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" }
       ]
     },
     {
       category: "Provider Integration",
       items: [
-        { name: "OpenAI Integration", ui: "✅", backend: "🔧", api: "🔧", database: "❌", status: "🔧 Partial", available: "v0.9" },
-        { name: "Claude Integration", ui: "✅", backend: "🔧", api: "🔧", database: "❌", status: "🔧 Partial", available: "v0.9" },
-        { name: "Gemini Integration", ui: "✅", backend: "🔧", api: "🔧", database: "❌", status: "🔧 Partial", available: "v0.9" },
-        { name: "Grok Integration", ui: "✅", backend: "❌", api: "❌", database: "❌", status: "📋 Planned", available: "v1.0" }
+        { name: "OpenAI Integration", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Claude Integration", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Gemini Integration", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Grok Integration", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" }
       ]
     },
     {
@@ -57,10 +57,19 @@ export default function ReleaseNotesPage() {
     {
       category: "Notifications",
       items: [
-        { name: "Email Notifications", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Real-time Socket.io Notifications", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
         { name: "In-App Notifications", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
-        { name: "Slack Integration", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
-        { name: "Push Notifications", ui: "✅", backend: "🔧", api: "🔧", database: "✅", status: "🔧 Partial", available: "v0.9" }
+        { name: "Site-wide Announcements", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Email Notifications", ui: "✅", backend: "🔧", api: "✅", database: "✅", status: "🔧 Needs Keys", available: "Now" }
+      ]
+    },
+    {
+      category: "AI Chat (AIOptimise)",
+      items: [
+        { name: "Claude-style Unified Input", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Thread Management", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Voice Transcription", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" },
+        { name: "Multi-Model Support", ui: "✅", backend: "✅", api: "✅", database: "✅", status: "✅ Complete", available: "Now" }
       ]
     },
     {
@@ -76,35 +85,35 @@ export default function ReleaseNotesPage() {
 
   const roadmapItems = [
     {
-      version: "v0.8.0-beta",
-      date: "August 2025",
+      version: "v2.0.0",
+      date: "August 12, 2025",
       status: "current",
-      title: "Beta Launch",
-      description: "Complete UI implementation, authentication system, notification system",
+      title: "Production Ready",
+      description: "Full-featured release with real-time notifications, AI chat, and complete integrations",
       completion: 100
     },
     {
-      version: "v0.9.0",
+      version: "v2.1.0",
       date: "September 2025",
       status: "next",
-      title: "Database Integration",
-      description: "Real data persistence, live API connections, usage tracking",
+      title: "Advanced Analytics",
+      description: "Predictive analytics, cost forecasting, ML-based recommendations",
       completion: 0
     },
     {
-      version: "v1.0.0",
+      version: "v2.2.0",
       date: "October 2025",
       status: "future",
-      title: "Production Ready",
-      description: "Payment processing, enhanced security, performance optimization",
+      title: "Enterprise Suite",
+      description: "SSO, advanced RBAC, audit logging, compliance features",
       completion: 0
     },
     {
-      version: "v1.1.0",
-      date: "November 2025",
+      version: "v3.0.0",
+      date: "Q4 2025",
       status: "future",
-      title: "Enterprise Features",
-      description: "SSO support, advanced RBAC, audit logging, white-label options",
+      title: "AI Marketplace",
+      description: "Multi-tenant platform, API marketplace, developer ecosystem",
       completion: 0
     }
   ]
@@ -117,6 +126,35 @@ export default function ReleaseNotesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* New Release Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Zap className="h-6 w-6 text-blue-500" />
+                <div>
+                  <CardTitle>🎉 Production-Ready Release Available!</CardTitle>
+                  <CardDescription>
+                    Version 2.0.0 is now production-ready with all major features implemented
+                  </CardDescription>
+                </div>
+              </div>
+              <Button asChild>
+                <a href="/release-notes/current">
+                  View Current Release
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

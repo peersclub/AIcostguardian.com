@@ -70,7 +70,9 @@ export async function transcribeAudio(
     // Convert Buffer to File if needed
     let file: File
     if (Buffer.isBuffer(audioFile)) {
-      file = new File([audioFile], 'audio.webm', { type: 'audio/webm' })
+      // Convert Buffer to Blob first, then to File
+      const blob = new Blob([audioFile as any], { type: 'audio/webm' })
+      file = new File([blob], 'audio.webm', { type: 'audio/webm' })
     } else if (audioFile instanceof Blob) {
       file = new File([audioFile], 'audio.webm', { type: audioFile.type || 'audio/webm' })
     } else {

@@ -60,18 +60,32 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
     const notificationType = typeMapping[data.type] || 'SERVICE_UPDATE'
 
+    // Get default values if userId or organizationId is not provided
+    if (!data.userId || !data.organizationId) {
+      // Try to get from any existing user or organization
+      const anyUser = await prisma.user.findFirst()
+      if (anyUser) {
+        data.userId = data.userId || anyUser.id
+        data.organizationId = data.organizationId || anyUser.organizationId || 'default'
+      } else {
+        // Use default values if no user exists
+        data.userId = data.userId || 'system'
+        data.organizationId = data.organizationId || 'default'
+      }
+    }
+
     // Create notification in database
     const notification = await prisma.notification.create({
       data: {
-        userId: data.userId,
-        organizationId: data.organizationId,
+        userId: data.userId!,
+        organizationId: data.organizationId!,
         type: notificationType as any,
         priority: data.priority || 'MEDIUM',
         title: data.title,
         message: data.message,
         status: 'SENT',
         channels: { inApp: true },
-        metadata: {
+        data: {
           ...data.metadata,
           originalType: data.type,
           icon: data.icon,

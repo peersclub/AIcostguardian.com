@@ -239,25 +239,26 @@ export function ShareThreadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-background border-border">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">Share Thread</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+      <DialogContent className="max-w-2xl bg-black/95 backdrop-blur-2xl border-indigo-500/20 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 rounded-lg pointer-events-none" />
+        <DialogHeader className="relative">
+          <DialogTitle className="text-gray-100">Share Thread</DialogTitle>
+          <DialogDescription className="text-gray-400">
             Share "{thread.title}" with others or manage collaborators
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3 bg-muted">
-            <TabsTrigger value="link" className="text-foreground">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-gray-800">
+            <TabsTrigger value="link" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
               <Link className="h-4 w-4 mr-2" />
               Share Link
             </TabsTrigger>
-            <TabsTrigger value="collaborators" className="text-foreground">
+            <TabsTrigger value="collaborators" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
               <Users className="h-4 w-4 mr-2" />
               Collaborators ({collaborators.length})
             </TabsTrigger>
-            <TabsTrigger value="settings" className="text-foreground">
+            <TabsTrigger value="settings" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
               <Shield className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>
@@ -267,18 +268,18 @@ export function ShareThreadDialog({
             {thread.isShared ? (
               <>
                 <div className="space-y-3">
-                  <Label className="text-foreground">Share URL</Label>
+                  <Label className="text-gray-200">Share URL</Label>
                   <div className="flex gap-2">
                     <Input
                       value={shareUrl}
                       readOnly
-                      className="bg-muted text-foreground border-border"
+                      className="bg-gray-900/50 text-gray-200 border-gray-700 focus:border-indigo-500/50"
                     />
                     <Button
                       onClick={handleCopyLink}
                       variant="outline"
                       size="icon"
-                      className="border-border hover:bg-muted"
+                      className="border-gray-700 hover:bg-gray-800/50 text-gray-400 hover:text-gray-200"
                     >
                       {isCopied ? (
                         <Check className="h-4 w-4 text-green-500" />
@@ -291,7 +292,7 @@ export function ShareThreadDialog({
 
                 {qrCodeUrl && (
                   <div className="space-y-3">
-                    <Label className="text-foreground">QR Code</Label>
+                    <Label className="text-gray-200">QR Code</Label>
                     <div className="flex justify-center p-4 bg-white rounded-lg">
                       <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
                     </div>

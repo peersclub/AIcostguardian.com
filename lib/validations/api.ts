@@ -14,6 +14,16 @@ export const sanitizedStringSchema = z.string().transform((val) => {
     .trim()
 })
 
+// Create sanitized string with max length
+export const sanitizedString = (maxLength: number) => 
+  z.string().max(maxLength).transform((val) => {
+    // Remove any HTML tags and script content
+    return val
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+  })
+
 // API Key validation schemas
 export const apiKeySchema = z.object({
   provider: z.enum(['openai', 'anthropic', 'google', 'groq', 'cohere', 'perplexity']),
@@ -25,8 +35,8 @@ export const apiKeySchema = z.object({
 
 // Thread operation schemas
 export const createThreadSchema = z.object({
-  title: sanitizedStringSchema.max(200),
-  description: sanitizedStringSchema.max(1000).optional(),
+  title: sanitizedString(200),
+  description: sanitizedString(1000).optional(),
   mode: z.enum(['standard', 'focus', 'coding', 'research', 'creative']).optional(),
 })
 
@@ -40,7 +50,13 @@ export const shareThreadSchema = z.object({
 export const sendMessageSchema = z.object({
   threadId: uuidSchema,
   message: z.object({
-    content: sanitizedStringSchema.min(1).max(100000), // Max 100k chars
+    content: z.string().min(1).max(100000).transform((val) => {
+      // Remove any HTML tags and script content
+      return val
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+    }), // Max 100k chars
     images: z.array(z.string().url()).max(10).optional(),
     files: z.array(z.object({
       name: z.string().max(255),
@@ -64,7 +80,13 @@ export const addCollaboratorSchema = z.object({
 
 // Search schemas
 export const searchSchema = z.object({
-  query: sanitizedStringSchema.min(1).max(200),
+  query: z.string().min(1).max(200).transform((val) => {
+    // Remove any HTML tags and script content
+    return val
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+  }),
   filters: z.object({
     providers: z.array(z.string()).optional(),
     dateFrom: z.string().datetime().optional(),
@@ -90,15 +112,15 @@ export const trackUsageSchema = z.object({
 // Admin operation schemas
 export const adminUserActionSchema = z.object({
   action: z.enum(['suspend', 'unsuspend', 'delete', 'changeRole']),
-  reason: sanitizedStringSchema.max(500).optional(),
+  reason: sanitizedString(500).optional(),
   role: z.enum(['USER', 'ADMIN']).optional(),
 })
 
 // Notification schemas
 export const createNotificationSchema = z.object({
   type: z.enum(['info', 'warning', 'error', 'success']),
-  title: sanitizedStringSchema.max(200),
-  message: sanitizedStringSchema.max(1000),
+  title: sanitizedString(200),
+  message: sanitizedString(1000),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   expiresAt: z.string().datetime().optional(),
 })

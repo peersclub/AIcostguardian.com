@@ -158,16 +158,17 @@ export function MetricsPanelEnhanced({
     return (
       <div 
         className={cn(
-          "flex flex-col bg-gray-900/50 backdrop-blur-xl border-l border-gray-800 transition-all duration-300",
+          "flex flex-col bg-black/80 backdrop-blur-xl border-l border-indigo-500/20 transition-all duration-300 relative",
           collapsed ? "w-16" : "w-80"
         )}
       >
-        <div className="p-4">
+        <div className="absolute inset-0 bg-gradient-to-bl from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+        <div className="p-4 relative">
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggle}
-            className="h-8 w-8"
+            className="h-8 w-8 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
           >
             {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
@@ -177,12 +178,15 @@ export function MetricsPanelEnhanced({
   }
 
   return (
-    <div className="w-80 flex flex-col bg-gray-900/50 backdrop-blur-xl border-l border-gray-800">
+    <div className="w-80 flex flex-col bg-black/80 backdrop-blur-xl border-l border-indigo-500/20 relative">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-bl from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+      
       {/* Header */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-indigo-500/20 bg-black/50 relative">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm text-white">Live Metrics</h3>
+            <h3 className="font-semibold text-sm text-gray-200">Live Metrics</h3>
             {isLive && (
               <TooltipProvider>
                 <Tooltip>
@@ -200,7 +204,7 @@ export function MetricsPanelEnhanced({
             variant="ghost"
             size="icon"
             onClick={onToggle}
-            className="h-8 w-8"
+            className="h-8 w-8 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -208,7 +212,7 @@ export function MetricsPanelEnhanced({
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 gap-2">
-          <Card className="p-2 bg-gradient-to-br from-green-900/50 to-emerald-800/50 border-green-500/30">
+          <Card className="p-2 bg-gradient-to-br from-green-900/30 to-emerald-800/30 border-green-500/20 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-green-300">Today</p>
@@ -222,7 +226,7 @@ export function MetricsPanelEnhanced({
             </div>
           </Card>
           
-          <Card className="p-2 bg-gradient-to-br from-violet-900/50 to-purple-800/50 border-violet-500/30">
+          <Card className="p-2 bg-gradient-to-br from-violet-900/30 to-purple-800/30 border-violet-500/20 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-violet-300">Saved</p>
@@ -237,12 +241,12 @@ export function MetricsPanelEnhanced({
       </div>
 
       {/* Main metrics */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
         {/* Usage limits */}
         {(metrics.dailyLimit || metrics.monthlyLimit) && (
-          <Card className="p-3 space-y-3 bg-gray-800/50 border-gray-700">
+          <Card className="p-3 space-y-3 bg-gray-900/30 border-gray-800/50 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium flex items-center gap-2 text-white">
+              <h4 className="text-sm font-medium flex items-center gap-2 text-gray-200">
                 <Gauge className="h-4 w-4 text-violet-400" />
                 Usage Limits
               </h4>
@@ -257,7 +261,7 @@ export function MetricsPanelEnhanced({
             {metrics.dailyLimit && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Daily</span>
+                  <span className="text-gray-500">Daily</span>
                   <span className={cn(
                     "font-medium",
                     isNearDailyLimit && "text-red-500"
@@ -278,7 +282,7 @@ export function MetricsPanelEnhanced({
             {metrics.monthlyLimit && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Monthly</span>
+                  <span className="text-gray-500">Monthly</span>
                   <span className={cn(
                     "font-medium",
                     isNearMonthlyLimit && "text-orange-500"

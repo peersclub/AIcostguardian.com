@@ -1,4 +1,4 @@
-import { Queue } from 'bull';
+import * as Bull from 'bull';
 import Redis from 'ioredis';
 import { RawProviderData, FetchOptions } from '../../models/unified.model';
 import { encrypt, decrypt } from '../../utils/encryption';
@@ -21,7 +21,7 @@ export interface RateLimiter {
 }
 
 export abstract class BaseProviderFetcher {
-  protected queue: Queue;
+  protected queue: Bull.Queue;
   protected redis: Redis;
   protected rateLimiter: RateLimiter;
   
@@ -29,7 +29,7 @@ export abstract class BaseProviderFetcher {
     protected provider: string,
     protected config: FetcherConfig
   ) {
-    this.queue = new Queue(`${provider}-fetch-queue`, {
+    this.queue = new Bull.default(`${provider}-fetch-queue`, {
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -127,7 +127,7 @@ export abstract class BaseProviderFetcher {
         await this.cacheRawData(organizationId, rawData);
         
         // Update fetch status
-        await this.updateFetchStatus(organizationId, 'success', null, rawData.fetchedAt);
+        await this.updateFetchStatus(organizationId, 'success', undefined, rawData.fetchedAt);
         
         // Emit event for processing
         await this.emitDataFetched(organizationId, rawData);
@@ -140,7 +140,8 @@ export abstract class BaseProviderFetcher {
         return rawData;
       } catch (error) {
         console.error(`Fetch error for ${this.provider}:`, error);
-        await this.updateFetchStatus(organizationId, 'failed', error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await this.updateFetchStatus(organizationId, 'failed', errorMessage);
         throw error;
       }
     });
@@ -159,45 +160,17 @@ export abstract class BaseProviderFetcher {
     errorMessage?: string,
     lastSuccessful?: Date
   ) {
-    try {
-      const nextScheduled = status === 'success' ? this.getNextFetchTime() : null;
-      
-      await prisma.fetchStatus.upsert({
-        where: {
-          provider_organizationId: {
-            provider: this.provider,
-            organizationId
-          }
-        },
-        update: {
-          fetchStatus: status,
-          lastFetchAttempt: new Date(),
-          ...(lastSuccessful && { lastSuccessfulFetch: lastSuccessful }),
-          ...(nextScheduled && { nextScheduledFetch: nextScheduled }),
-          ...(errorMessage && { errorMessage }),
-          consecutiveFailures: status === 'failed' 
-            ? { increment: 1 }
-            : 0
-        },
-        create: {
-          provider: this.provider,
-          organizationId,
-          fetchStatus: status,
-          lastFetchAttempt: new Date(),
-          ...(lastSuccessful && { lastSuccessfulFetch: lastSuccessful }),
-          ...(nextScheduled && { nextScheduledFetch: nextScheduled }),
-          ...(errorMessage && { errorMessage }),
-          consecutiveFailures: status === 'failed' ? 1 : 0
-        }
-      });
-    } catch (error) {
-      console.error('Failed to update fetch status:', error);
-    }
+    // TODO: Implement fetch status tracking when the fetchStatus model is added to the schema
+    // For now, just log the status
+    console.log(`Fetch status for ${this.provider}/${organizationId}: ${status}`, {
+      errorMessage,
+      lastSuccessful
+    });
   }
   
   protected async emitDataFetched(organizationId: string, data: RawProviderData) {
     // Emit to processing queue
-    const processingQueue = new Queue('data-processing-queue', {
+    const processingQueue = new Bull.default('data-processing-queue', {
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),

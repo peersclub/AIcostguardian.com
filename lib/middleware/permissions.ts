@@ -7,6 +7,7 @@ import {
   AuditAction, 
   AuditSeverity 
 } from '../services/audit-log'
+import type { CollaboratorRole as PrismaCollaboratorRole } from '@prisma/client'
 
 export enum Permission {
   // Thread permissions
@@ -44,39 +45,35 @@ export enum Permission {
   VOICE_UNLIMITED = 'voice:unlimited',
 }
 
-export enum CollaboratorRole {
-  VIEWER = 'VIEWER',
-  EDITOR = 'EDITOR',
-  MODERATOR = 'MODERATOR',
-  OWNER = 'OWNER',
+// Re-export Prisma's CollaboratorRole for backward compatibility
+export const CollaboratorRole = {
+  VIEWER: 'VIEWER' as PrismaCollaboratorRole,
+  COMMENTER: 'COMMENTER' as PrismaCollaboratorRole,
+  EDITOR: 'EDITOR' as PrismaCollaboratorRole,
+  ADMIN: 'ADMIN' as PrismaCollaboratorRole,
 }
 
 // Role-based permission mappings
-const rolePermissions: Record<CollaboratorRole, Permission[]> = {
-  [CollaboratorRole.VIEWER]: [
+const rolePermissions: Record<PrismaCollaboratorRole, Permission[]> = {
+  ['VIEWER']: [
     Permission.THREAD_VIEW,
     Permission.MESSAGE_REACT,
   ],
-  [CollaboratorRole.EDITOR]: [
+  ['COMMENTER']: [
+    Permission.THREAD_VIEW,
+    Permission.MESSAGE_CREATE,
+    Permission.MESSAGE_REACT,
+  ],
+  ['EDITOR']: [
     Permission.THREAD_VIEW,
     Permission.THREAD_EDIT,
     Permission.MESSAGE_CREATE,
     Permission.MESSAGE_EDIT,
-    Permission.MESSAGE_REACT,
-  ],
-  [CollaboratorRole.MODERATOR]: [
-    Permission.THREAD_VIEW,
-    Permission.THREAD_EDIT,
-    Permission.THREAD_SHARE,
-    Permission.MESSAGE_CREATE,
-    Permission.MESSAGE_EDIT,
-    Permission.MESSAGE_DELETE,
     Permission.MESSAGE_REACT,
     Permission.COLLAB_INVITE,
-    Permission.COLLAB_REMOVE,
   ],
-  [CollaboratorRole.OWNER]: [
-    // Owners have all permissions
+  ['ADMIN']: [
+    // Admins have all permissions
     ...Object.values(Permission),
   ],
 }
@@ -120,7 +117,7 @@ export async function checkThreadPermission(
       return false // Not a collaborator
     }
     
-    const role = collaborator.role as CollaboratorRole
+    const role = collaborator.role as PrismaCollaboratorRole
     const permissions = rolePermissions[role] || []
     
     return permissions.includes(permission)
@@ -312,7 +309,7 @@ export async function getThreadPermissions(
       return []
     }
     
-    const role = collaborator.role as CollaboratorRole
+    const role = collaborator.role as PrismaCollaboratorRole
     return rolePermissions[role] || []
   } catch (error) {
     console.error('Get permissions error:', error)
@@ -327,7 +324,7 @@ export async function updateCollaboratorRole(
   requesterId: string,
   threadId: string,
   collaboratorId: string,
-  newRole: CollaboratorRole
+  newRole: PrismaCollaboratorRole
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Check if requester has permission to manage collaborators

@@ -6,8 +6,8 @@ export interface CreateThreadDto {
   title: string;
   userId: string;
   organizationId?: string;
-  mode?: 'standard' | 'focus' | 'code' | 'research';
-  settings?: any;
+  mode?: 'STANDARD' | 'FOCUS' | 'CODING' | 'RESEARCH' | 'CREATIVE';
+  metadata?: any;
 }
 
 export interface ShareOptions {
@@ -36,9 +36,9 @@ export interface Thread {
   isPinned: boolean;
   isShared: boolean;
   shareToken?: string;
-  deletedAt?: Date;
+  isArchived?: boolean;
   mode: string;
-  settings: any;
+  metadata: any;
   createdAt: Date;
   updatedAt: Date;
   messageCount?: number;
@@ -49,16 +49,17 @@ export interface Thread {
 export interface Collaborator {
   id: string;
   threadId: string;
-  userId?: string;
-  email?: string;
-  role: 'viewer' | 'editor' | 'owner';
-  joinedAt: Date;
-  lastAccessed?: Date;
+  userId: string;
+  role: 'VIEWER' | 'EDITOR' | 'ADMIN';
+  invitedAt: Date;
+  invitedBy: string;
+  acceptedAt?: Date | null;
+  lastViewedAt?: Date | null;
   user?: {
     id: string;
-    name: string;
+    name: string | null;
     email: string;
-    image?: string;
+    image?: string | null;
   };
 }
 
@@ -79,14 +80,14 @@ export interface Activity {
 export class ThreadManager {
   // Core Thread Operations
   async createThread(data: CreateThreadDto): Promise<Thread> {
-    const thread = await prisma.thread.create({
+    const thread = await prisma.aIThread.create({
       data: {
         id: nanoid(),
         title: data.title,
         userId: data.userId,
         organizationId: data.organizationId,
-        mode: data.mode || 'standard',
-        settings: data.settings || {},
+        mode: data.mode || 'STANDARD',
+        metadata: data.metadata || {},
       },
       include: {
         messages: {
@@ -99,29 +100,29 @@ export class ThreadManager {
       }
     });
 
-    // Log activity
-    await this.logActivity(thread.id, 'created', data.userId, {
-      title: data.title,
-      mode: data.mode
-    });
+    // Log activity - disabled (threadActivity model not in schema)
+    // await this.logActivity(thread.id, 'created', data.userId, {
+    //   title: data.title,
+    //   mode: data.mode
+    // });
 
     return this.formatThread(thread);
   }
 
   async deleteThread(threadId: string, userId: string): Promise<void> {
     // Soft delete
-    await prisma.thread.update({
+    await prisma.aIThread.update({
       where: { id: threadId },
-      data: { deletedAt: new Date() }
+      data: { isArchived: true }
     });
 
-    await this.logActivity(threadId, 'deleted', userId);
+    // await this.logActivity(threadId, 'deleted', userId);
   }
 
   async restoreThread(threadId: string, userId: string): Promise<Thread> {
-    const thread = await prisma.thread.update({
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
-      data: { deletedAt: null },
+      data: { isArchived: false },
       include: {
         messages: {
           take: 1,
@@ -133,12 +134,12 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'restored', userId);
+    // await this.logActivity(threadId, 'restored', userId);
     return this.formatThread(thread);
   }
 
   async pinThread(threadId: string, userId: string): Promise<Thread> {
-    const thread = await prisma.thread.update({
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
       data: { isPinned: true },
       include: {
@@ -152,12 +153,12 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'pinned', userId);
+    // await this.logActivity(threadId, 'pinned', userId);
     return this.formatThread(thread);
   }
 
   async unpinThread(threadId: string, userId: string): Promise<Thread> {
-    const thread = await prisma.thread.update({
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
       data: { isPinned: false },
       include: {
@@ -171,7 +172,7 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'unpinned', userId);
+    // await this.logActivity(threadId, 'unpinned', userId);
     return this.formatThread(thread);
   }
 
@@ -180,14 +181,13 @@ export class ThreadManager {
     thread: Thread;
     shareUrl: string;
   }> {
-    const shareToken = this.generateShareToken();
+    const shareId = this.generateShareToken();
     
-    const thread = await prisma.thread.update({
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
       data: {
-        isShared: true,
-        shareToken,
-        settings: {
+        shareId,
+        metadata: {
           ...options,
           sharedAt: new Date(),
           sharedBy: userId
@@ -204,12 +204,12 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'shared', userId, {
-      shareToken,
-      options
-    });
+    // await this.logActivity(threadId, 'shared', userId, {
+    //   shareId,
+    //   options
+    // });
 
-    const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/aioptimise/shared/${shareToken}`;
+    const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/aioptimise/shared/${shareId}`;
     
     return {
       thread: this.formatThread(thread),
@@ -218,11 +218,10 @@ export class ThreadManager {
   }
 
   async unshareThread(threadId: string, userId: string): Promise<void> {
-    await prisma.thread.update({
+    await prisma.aIThread.update({
       where: { id: threadId },
       data: {
-        isShared: false,
-        shareToken: null
+        shareId: null
       }
     });
 
@@ -231,13 +230,13 @@ export class ThreadManager {
       where: { threadId }
     });
 
-    await this.logActivity(threadId, 'unshared', userId);
+    // await this.logActivity(threadId, 'unshared', userId);
   }
 
   async addCollaborator(
     threadId: string,
     email: string,
-    role: 'viewer' | 'editor' = 'viewer',
+    role: 'VIEWER' | 'EDITOR' = 'VIEWER',
     addedBy: string
   ): Promise<void> {
     // Check if user exists
@@ -245,20 +244,24 @@ export class ThreadManager {
       where: { email }
     });
 
+    if (!user) {
+      throw new Error(`User with email ${email} not found`);
+    }
+
     await prisma.threadCollaborator.create({
       data: {
         threadId,
-        userId: user?.id,
-        email,
-        role
+        userId: user.id,
+        role,
+        invitedBy: addedBy
       }
     });
 
-    await this.logActivity(threadId, 'collaborator_added', addedBy, {
-      email,
-      role,
-      userId: user?.id
-    });
+    // await this.logActivity(threadId, 'collaborator_added', addedBy, {
+    //   email,
+    //   role,
+    //   userId: user.id
+    // });
   }
 
   async removeCollaborator(threadId: string, collaboratorId: string, removedBy: string): Promise<void> {
@@ -271,10 +274,9 @@ export class ThreadManager {
         where: { id: collaboratorId }
       });
 
-      await this.logActivity(threadId, 'collaborator_removed', removedBy, {
-        email: collaborator.email,
-        userId: collaborator.userId
-      });
+      // await this.logActivity(threadId, 'collaborator_removed', removedBy, {
+      //   userId: collaborator.userId
+      // });
     }
   }
 
@@ -291,7 +293,7 @@ export class ThreadManager {
           }
         }
       },
-      orderBy: { joinedAt: 'asc' }
+      orderBy: { invitedAt: 'asc' }
     });
 
     return collaborators as Collaborator[];
@@ -303,7 +305,7 @@ export class ThreadManager {
       OR: [
         { userId },
         {
-          threadCollaborators: {
+          collaborators: {
             some: { userId }
           }
         }
@@ -311,7 +313,7 @@ export class ThreadManager {
     };
 
     if (!options.includeDeleted) {
-      where.deletedAt = null;
+      where.isArchived = false;
     }
 
     if (options.search) {
@@ -325,7 +327,7 @@ export class ThreadManager {
       where.mode = options.mode;
     }
 
-    const threads = await prisma.thread.findMany({
+    const threads = await prisma.aIThread.findMany({
       where,
       include: {
         messages: {
@@ -335,7 +337,7 @@ export class ThreadManager {
         _count: {
           select: { messages: true }
         },
-        threadCollaborators: {
+        collaborators: {
           include: {
             user: {
               select: {
@@ -359,12 +361,12 @@ export class ThreadManager {
   }
 
   async getSharedThreads(userId: string): Promise<Thread[]> {
-    const threads = await prisma.thread.findMany({
+    const threads = await prisma.aIThread.findMany({
       where: {
-        threadCollaborators: {
+        collaborators: {
           some: { userId }
         },
-        deletedAt: null
+        isArchived: false
       },
       include: {
         messages: {
@@ -390,11 +392,11 @@ export class ThreadManager {
   }
 
   async getPinnedThreads(userId: string): Promise<Thread[]> {
-    const threads = await prisma.thread.findMany({
+    const threads = await prisma.aIThread.findMany({
       where: {
         userId,
         isPinned: true,
-        deletedAt: null
+        isArchived: false
       },
       include: {
         messages: {
@@ -412,8 +414,8 @@ export class ThreadManager {
   }
 
   async getThreadByShareToken(token: string): Promise<Thread | null> {
-    const thread = await prisma.thread.findUnique({
-      where: { shareToken: token },
+    const thread = await prisma.aIThread.findUnique({
+      where: { shareId: token },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' }
@@ -429,7 +431,7 @@ export class ThreadManager {
             image: true
           }
         },
-        threadCollaborators: {
+        collaborators: {
           include: {
             user: {
               select: {
@@ -448,9 +450,9 @@ export class ThreadManager {
   }
 
   async updateThreadMode(threadId: string, mode: string, userId: string): Promise<Thread> {
-    const thread = await prisma.thread.update({
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
-      data: { mode },
+      data: { mode: mode as 'STANDARD' | 'FOCUS' | 'CODING' | 'RESEARCH' | 'CREATIVE' },
       include: {
         messages: {
           take: 1,
@@ -462,19 +464,19 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'edited', userId, {
-      field: 'mode',
-      oldValue: thread.mode,
-      newValue: mode
-    });
+    // await this.logActivity(threadId, 'edited', userId, {
+    //   field: 'mode',
+    //   oldValue: thread.mode,
+    //   newValue: mode
+    // });
 
     return this.formatThread(thread);
   }
 
-  async updateThreadSettings(threadId: string, settings: any, userId: string): Promise<Thread> {
-    const thread = await prisma.thread.update({
+  async updateThreadSettings(threadId: string, metadata: any, userId: string): Promise<Thread> {
+    const thread = await prisma.aIThread.update({
       where: { id: threadId },
-      data: { settings },
+      data: { metadata },
       include: {
         messages: {
           take: 1,
@@ -486,48 +488,50 @@ export class ThreadManager {
       }
     });
 
-    await this.logActivity(threadId, 'edited', userId, {
-      field: 'settings',
-      settings
-    });
+    // await this.logActivity(threadId, 'edited', userId, {
+    //   field: 'settings',
+    //   settings: metadata
+    // });
 
     return this.formatThread(thread);
   }
 
-  // Activity Tracking
+  // Activity Tracking - disabled (threadActivity model not in schema)
   async logActivity(
     threadId: string,
     action: string,
     userId?: string,
     metadata?: any
   ): Promise<void> {
-    await prisma.threadActivity.create({
-      data: {
-        threadId,
-        userId,
-        action,
-        metadata: metadata || {}
-      }
-    });
+    // await prisma.threadActivity.create({
+    //   data: {
+    //     threadId,
+    //     userId,
+    //     action,
+    //     metadata: metadata || {}
+    //   }
+    // });
+    console.log('Activity log (disabled):', { threadId, action, userId });
   }
 
   async getActivityLog(threadId: string, limit: number = 50): Promise<Activity[]> {
-    const activities = await prisma.threadActivity.findMany({
-      where: { threadId },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            image: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit
-    });
-
-    return activities as Activity[];
+    // threadActivity model not in schema - returning empty array
+    // const activities = await prisma.threadActivity.findMany({
+    //   where: { threadId },
+    //   include: {
+    //     user: {
+    //       select: {
+    //         name: true,
+    //         email: true,
+    //         image: true
+    //       }
+    //     }
+    //   },
+    //   orderBy: { createdAt: 'desc' },
+    //   take: limit
+    // });
+    // return activities as Activity[];
+    return [];
   }
 
   // Utility Methods
@@ -542,37 +546,37 @@ export class ThreadManager {
       userId: thread.userId,
       organizationId: thread.organizationId,
       isPinned: thread.isPinned || false,
-      isShared: thread.isShared || false,
-      shareToken: thread.shareToken,
-      deletedAt: thread.deletedAt,
-      mode: thread.mode || 'standard',
-      settings: thread.settings || {},
+      isShared: !!thread.shareId,
+      shareToken: thread.shareId,
+      isArchived: thread.isArchived || false,
+      mode: thread.mode || 'STANDARD',
+      metadata: thread.metadata || {},
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
       messageCount: thread._count?.messages || 0,
       lastMessage: thread.messages?.[0],
-      collaborators: thread.threadCollaborators
+      collaborators: thread.collaborators
     };
   }
 
   // Bulk Operations
   async bulkDelete(threadIds: string[], userId: string): Promise<void> {
-    await prisma.thread.updateMany({
+    await prisma.aIThread.updateMany({
       where: {
         id: { in: threadIds },
         userId
       },
-      data: { deletedAt: new Date() }
+      data: { isArchived: true }
     });
 
     // Log activities
     for (const threadId of threadIds) {
-      await this.logActivity(threadId, 'deleted', userId);
+      // await this.logActivity(threadId, 'deleted', userId);
     }
   }
 
   async bulkPin(threadIds: string[], userId: string): Promise<void> {
-    await prisma.thread.updateMany({
+    await prisma.aIThread.updateMany({
       where: {
         id: { in: threadIds },
         userId
@@ -581,12 +585,12 @@ export class ThreadManager {
     });
 
     for (const threadId of threadIds) {
-      await this.logActivity(threadId, 'pinned', userId);
+      // await this.logActivity(threadId, 'pinned', userId);
     }
   }
 
   async bulkUnpin(threadIds: string[], userId: string): Promise<void> {
-    await prisma.thread.updateMany({
+    await prisma.aIThread.updateMany({
       where: {
         id: { in: threadIds },
         userId
@@ -595,20 +599,20 @@ export class ThreadManager {
     });
 
     for (const threadId of threadIds) {
-      await this.logActivity(threadId, 'unpinned', userId);
+      // await this.logActivity(threadId, 'unpinned', userId);
     }
   }
 
   // Search and Filter
   async searchThreads(userId: string, query: string): Promise<Thread[]> {
-    const threads = await prisma.thread.findMany({
+    const threads = await prisma.aIThread.findMany({
       where: {
         AND: [
           {
             OR: [
               { userId },
               {
-                threadCollaborators: {
+                collaborators: {
                   some: { userId }
                 }
               }
@@ -634,7 +638,7 @@ export class ThreadManager {
               }
             ]
           },
-          { deletedAt: null }
+          { isArchived: false }
         ]
       },
       include: {

@@ -23,8 +23,7 @@ import { cn } from '@/lib/utils';
 import { ThreadSidebarEnhanced } from './components/thread-sidebar-enhanced';
 import { MetricsPanelEnhanced } from './components/metrics-panel-enhanced';
 import { MessageEnhanced } from './components/message-enhanced';
-import { ChatControls } from './components/chat-controls';
-import { PromptAnalysis } from './components/prompt-analysis';
+import { ClaudeUnifiedInput } from './components/claude-unified-input';
 import { VoiceInput } from './components/voice-input';
 import { ModeSettings } from './components/mode-settings';
 import { ModelSelector } from './components/model-selector';
@@ -618,15 +617,13 @@ export default function AIOptimiseProClient() {
   };
 
   const handleImageUpload = (files: FileList) => {
-    const newImages: string[] = [];
-    
     Array.from(files).forEach(file => {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          if (e.target?.result) {
-            newImages.push(e.target.result as string);
-            setUploadedImages(prev => [...prev, ...newImages]);
+          const result = e.target?.result;
+          if (result && typeof result === 'string') {
+            setUploadedImages(prev => [...prev, result]);
           }
         };
         reader.readAsDataURL(file);
@@ -720,20 +717,37 @@ export default function AIOptimiseProClient() {
               </div>
             </ScrollArea>
             
-            <ChatControls
-              input={input}
-              isLoading={isLoading}
-              isStreaming={isStreaming}
-              selectedModel={selectedModel}
-              onInputChange={setInput}
-              onSend={sendMessage}
-              onStop={stopStreaming}
-              onModelSelect={(provider, model) => setSelectedModel({ provider, model })}
-              onImageUpload={handleImageUpload}
-              onVoiceToggle={() => setIsVoiceActive(!isVoiceActive)}
-              isVoiceActive={isVoiceActive}
-              mode="focus"
-            />
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent">
+              <div className="max-w-3xl mx-auto">
+                <ClaudeUnifiedInput
+                  value={input}
+                  onChange={setInput}
+                  onSend={sendMessage}
+                  onStop={stopStreaming}
+                  onImageUpload={handleImageUpload}
+                  onVoiceToggle={() => setIsVoiceActive(!isVoiceActive)}
+                  onModelSelect={(provider, model) => setSelectedModel({ provider, model })}
+                  onModeChange={setMode}
+                  isLoading={isLoading}
+                  isStreaming={isStreaming}
+                  isVoiceActive={isVoiceActive}
+                  selectedModel={selectedModel}
+                  mode={mode}
+                  uploadedImages={uploadedImages}
+                  onRemoveImage={(index) => {
+                    const newImages = [...uploadedImages];
+                    newImages.splice(index, 1);
+                    setUploadedImages(newImages);
+                  }}
+                  promptAnalysis={currentAnalysis}
+                  overrideCount={overrideCount}
+                  onOverrideModel={() => {
+                    // This could open a model selector or reset to auto
+                    setSelectedModel(null);
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -859,35 +873,41 @@ export default function AIOptimiseProClient() {
               </div>
             </ScrollArea>
             
-            {/* Prompt analysis */}
-            {currentThread && currentAnalysis && settings.showAnalysis && (
-              <div className="max-w-4xl mx-auto px-4 pb-2">
-                <PromptAnalysis
-                  analysis={currentAnalysis}
-                  onOverrideModel={() => {
-                    // Open model selector
-                  }}
-                  overrideCount={overrideCount}
-                />
-              </div>
-            )}
+            {/* Prompt analysis is now integrated into ClaudeUnifiedInput */}
             
             {/* Input controls - positioned absolutely within content area */}
             {currentThread && (
-              <ChatControls
-                input={input}
-                isLoading={isLoading}
-                isStreaming={isStreaming}
-                selectedModel={selectedModel}
-                onInputChange={setInput}
-                onSend={sendMessage}
-                onStop={stopStreaming}
-                onModelSelect={(provider, model) => setSelectedModel({ provider, model })}
-                onImageUpload={handleImageUpload}
-                onVoiceToggle={() => setIsVoiceActive(!isVoiceActive)}
-                isVoiceActive={isVoiceActive}
-                mode={mode}
-              />
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent">
+                <div className="max-w-4xl mx-auto">
+                  <ClaudeUnifiedInput
+                    value={input}
+                    onChange={setInput}
+                    onSend={sendMessage}
+                    onStop={stopStreaming}
+                    onImageUpload={handleImageUpload}
+                    onVoiceToggle={() => setIsVoiceActive(!isVoiceActive)}
+                    onModelSelect={(provider, model) => setSelectedModel({ provider, model })}
+                    onModeChange={setMode}
+                    isLoading={isLoading}
+                    isStreaming={isStreaming}
+                    isVoiceActive={isVoiceActive}
+                    selectedModel={selectedModel}
+                    mode={mode}
+                    uploadedImages={uploadedImages}
+                    onRemoveImage={(index) => {
+                      const newImages = [...uploadedImages];
+                      newImages.splice(index, 1);
+                      setUploadedImages(newImages);
+                    }}
+                    promptAnalysis={currentAnalysis}
+                    overrideCount={overrideCount}
+                    onOverrideModel={() => {
+                      // This could open a model selector or reset to auto
+                      setSelectedModel(null);
+                    }}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -923,11 +943,27 @@ export default function AIOptimiseProClient() {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onNewThread={createNewThread}
-        onSelectThread={(threadId) => {
+        onSelectThread={async (threadId) => {
           const thread = threads.find(t => t.id === threadId);
           if (thread) {
             setCurrentThread(thread);
             // Load thread messages
+            try {
+              const response = await fetch(`/api/aioptimise/threads/${threadId}/messages`);
+              if (response.ok) {
+                const data = await response.json();
+                setMessages(data.messages || []);
+                // Update session metrics from thread
+                setSessionMetrics(prev => ({
+                  ...prev,
+                  messageCount: thread.messageCount || 0,
+                  totalCost: thread.totalCost || 0,
+                }));
+              }
+            } catch (error) {
+              console.error('Failed to load thread messages:', error);
+              toast.error('Failed to load messages');
+            }
           }
         }}
         onPinThread={async (threadId) => {

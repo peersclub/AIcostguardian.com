@@ -1,3 +1,5 @@
+'use client'
+
 import { io, Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 
@@ -86,6 +88,8 @@ class NotificationSocketService {
   }
 
   private connect() {
+    if (typeof window === 'undefined') return
+    
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
     
@@ -177,7 +181,11 @@ class NotificationSocketService {
     if (notification.actionUrl) {
       options.action = {
         label: notification.actionLabel || 'View',
-        onClick: () => window.location.href = notification.actionUrl!
+        onClick: () => {
+          if (typeof window !== 'undefined') {
+            window.location.href = notification.actionUrl!
+          }
+        }
       }
     }
 
@@ -275,6 +283,10 @@ class NotificationSocketService {
     if (!this.socket) return
     
     this.socket.emit('notification:trigger-site-wide', data)
+  }
+
+  public get isConnected(): boolean {
+    return this.socket?.connected ?? false
   }
 
   public disconnect() {

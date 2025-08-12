@@ -210,18 +210,66 @@ export class NotificationSocketServer {
       const userId = data.userId || await this.getUserIdFromSocket(socket)
       if (!userId) return
 
+      // Map NotificationEvent to NotificationType
+      const typeMapping: Record<string, string> = {
+        'API_KEY_CREATED': 'SERVICE_UPDATE',
+        'API_KEY_UPDATED': 'SERVICE_UPDATE',
+        'API_KEY_DELETED': 'SERVICE_UPDATE',
+        'API_KEY_EXPIRING': 'API_KEY_EXPIRING',
+        'API_KEY_EXPIRED': 'API_KEY_EXPIRING',
+        'USER_CREATED': 'NEW_TEAM_MEMBER',
+        'USER_UPDATED': 'SERVICE_UPDATE',
+        'USER_DELETED': 'SERVICE_UPDATE',
+        'USER_ROLE_CHANGED': 'SERVICE_UPDATE',
+        'USER_JOINED_ORG': 'NEW_TEAM_MEMBER',
+        'ORG_CREATED': 'SERVICE_UPDATE',
+        'ORG_UPDATED': 'SERVICE_UPDATE',
+        'ORG_SUBSCRIPTION_CHANGED': 'BILLING_UPDATE',
+        'ORG_LIMIT_WARNING': 'USAGE_QUOTA_WARNING',
+        'ORG_LIMIT_EXCEEDED': 'USAGE_QUOTA_EXCEEDED',
+        'COST_THRESHOLD_WARNING': 'COST_THRESHOLD_WARNING',
+        'COST_THRESHOLD_CRITICAL': 'COST_THRESHOLD_CRITICAL',
+        'COST_THRESHOLD_EXCEEDED': 'COST_THRESHOLD_EXCEEDED',
+        'DAILY_COST_SPIKE': 'DAILY_COST_SPIKE',
+        'UNUSUAL_SPENDING_PATTERN': 'UNUSUAL_SPENDING_PATTERN',
+        'API_TEST_STARTED': 'SERVICE_UPDATE',
+        'API_TEST_COMPLETED': 'SERVICE_UPDATE',
+        'API_TEST_FAILED': 'INTEGRATION_FAILURE',
+        'API_PROVIDER_OUTAGE': 'PROVIDER_OUTAGE',
+        'API_RATE_LIMIT_WARNING': 'API_RATE_LIMIT_WARNING',
+        'API_RATE_LIMIT_EXCEEDED': 'API_RATE_LIMIT_EXCEEDED',
+        'THREAD_SHARED': 'SERVICE_UPDATE',
+        'THREAD_COLLABORATION_INVITE': 'NEW_TEAM_MEMBER',
+        'THREAD_MESSAGE_RECEIVED': 'SERVICE_UPDATE',
+        'SYSTEM_UPDATE': 'SERVICE_UPDATE',
+        'MAINTENANCE_SCHEDULED': 'SERVICE_UPDATE',
+        'SECURITY_ALERT': 'SUSPICIOUS_ACTIVITY',
+      }
+
+      const notificationType = data.type ? (typeMapping[data.type] || 'SERVICE_UPDATE') : 'SERVICE_UPDATE'
+
+      // Get organizationId from user if not provided
+      let organizationId = data.organizationId
+      if (!organizationId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { organizationId: true }
+        })
+        organizationId = user?.organizationId || 'default'
+      }
+
       // Create notification in database
       const notification = await prisma.notification.create({
         data: {
           userId,
-          organizationId: data.organizationId,
-          type: data.type || 'SERVICE_UPDATE',
+          organizationId,
+          type: notificationType as any,
           priority: data.priority || 'MEDIUM',
           title: data.title || 'Notification',
           message: data.message || '',
           status: 'SENT',
           channels: { inApp: true },
-          metadata: data.metadata || {},
+          data: data.metadata || {},
           deliveredAt: new Date()
         }
       })
@@ -237,7 +285,7 @@ export class NotificationSocketServer {
         iconColor: data.iconColor,
         actionUrl: data.actionUrl,
         actionLabel: data.actionLabel,
-        metadata: notification.metadata as any,
+        metadata: notification.data as any,
         createdAt: notification.createdAt
       }
 
@@ -282,14 +330,14 @@ export class NotificationSocketServer {
     console.log('Client disconnected:', socket.id)
     
     // Clean up tracking
-    for (const [userId, sockets] of this.userSockets.entries()) {
+    for (const [userId, sockets] of Array.from(this.userSockets.entries())) {
       sockets.delete(socket.id)
       if (sockets.size === 0) {
         this.userSockets.delete(userId)
       }
     }
     
-    for (const [orgId, sockets] of this.orgSockets.entries()) {
+    for (const [orgId, sockets] of Array.from(this.orgSockets.entries())) {
       sockets.delete(socket.id)
       if (sockets.size === 0) {
         this.orgSockets.delete(orgId)

@@ -141,12 +141,15 @@ export function ThreadSidebarEnhanced({
   return (
     <div 
       className={cn(
-        "flex flex-col bg-background/50 backdrop-blur-xl border-r border-border transition-all duration-300",
+        "flex flex-col bg-black/80 backdrop-blur-xl border-r border-indigo-500/20 transition-all duration-300 relative",
         collapsed ? "w-16" : "w-80"
       )}
     >
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+      
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="relative p-4 border-b border-indigo-500/20 bg-black/50">
         <div className="flex items-center justify-between mb-3">
           <div className={cn(
             "flex items-center gap-2",
@@ -156,12 +159,12 @@ export function ThreadSidebarEnhanced({
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="h-8 w-8"
+              className="h-8 w-8 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
             {!collapsed && (
-              <h2 className="font-semibold text-sm text-white">Chat History</h2>
+              <h2 className="font-semibold text-sm text-gray-200">Chat History</h2>
             )}
           </div>
           {!collapsed && (
@@ -180,12 +183,12 @@ export function ThreadSidebarEnhanced({
         {!collapsed && (
           <>
             <div className="relative mb-2">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search chats..."
-                className="pl-8 h-8 text-sm bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
+                className="pl-8 h-8 text-sm bg-gray-900/50 border-gray-700 text-gray-200 placeholder-gray-500 focus:border-indigo-500/50"
               />
             </div>
             
@@ -194,7 +197,12 @@ export function ThreadSidebarEnhanced({
                 variant={filterMode === 'all' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilterMode('all')}
-                className="h-7 text-xs"
+                className={cn(
+                  "h-7 text-xs",
+                  filterMode === 'all' 
+                    ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" 
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
+                )}
               >
                 All
               </Button>
@@ -202,7 +210,12 @@ export function ThreadSidebarEnhanced({
                 variant={filterMode === 'pinned' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilterMode('pinned')}
-                className="h-7 text-xs"
+                className={cn(
+                  "h-7 text-xs",
+                  filterMode === 'pinned' 
+                    ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" 
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
+                )}
               >
                 <Pin className="h-3 w-3 mr-1" />
                 Pinned
@@ -211,7 +224,12 @@ export function ThreadSidebarEnhanced({
                 variant={filterMode === 'shared' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilterMode('shared')}
-                className="h-7 text-xs"
+                className={cn(
+                  "h-7 text-xs",
+                  filterMode === 'shared' 
+                    ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" 
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
+                )}
               >
                 <Users className="h-3 w-3 mr-1" />
                 Shared
@@ -246,8 +264,8 @@ export function ThreadSidebarEnhanced({
       </div>
 
       {/* Threads list */}
-      <ScrollArea className="flex-1">
-        <div className="p-2">
+      <ScrollArea className="flex-1 relative">
+        <div className="p-2 relative">
           {collapsed ? (
             // Collapsed view - show icons only
             <div className="space-y-2">
@@ -257,7 +275,12 @@ export function ThreadSidebarEnhanced({
                   variant={currentThread?.id === thread.id ? 'secondary' : 'ghost'}
                   size="icon"
                   onClick={() => onSelectThread(thread.id)}
-                  className="w-full h-12 relative"
+                  className={cn(
+                    "w-full h-12 relative",
+                    currentThread?.id === thread.id
+                      ? "bg-indigo-500/20 border-indigo-500/30"
+                      : "hover:bg-gray-800/50"
+                  )}
                 >
                   <div className="relative">
                     {getModeIcon(thread.mode) || <MessageSquare className="h-4 w-4" />}
@@ -276,7 +299,7 @@ export function ThreadSidebarEnhanced({
             <div className="space-y-4">
               {Object.entries(groupedThreads).map(([group, groupThreads]) => (
                 <div key={group}>
-                  <div className="text-xs font-medium text-muted-foreground mb-2 px-2">
+                  <div className="text-xs font-medium text-gray-500 mb-2 px-2">
                     {group}
                   </div>
                   <div className="space-y-1">
@@ -284,8 +307,10 @@ export function ThreadSidebarEnhanced({
                       <div
                         key={thread.id}
                         className={cn(
-                          "group relative rounded-lg p-2 hover:bg-muted/50 cursor-pointer transition-all duration-200",
-                          currentThread?.id === thread.id && "bg-muted"
+                          "group relative rounded-lg p-2 cursor-pointer transition-all duration-200",
+                          currentThread?.id === thread.id 
+                            ? "bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/20"
+                            : "hover:bg-gray-800/30 border border-transparent"
                         )}
                         onClick={() => onSelectThread(thread.id)}
                       >
@@ -297,7 +322,10 @@ export function ThreadSidebarEnhanced({
                             {getModeIcon(thread.mode) && (
                               <span className="text-xs">{getModeIcon(thread.mode)}</span>
                             )}
-                            <span className="text-sm font-medium truncate">
+                            <span className={cn(
+                              "text-sm font-medium truncate",
+                              currentThread?.id === thread.id ? "text-gray-100" : "text-gray-300"
+                            )}>
                               {thread.title}
                             </span>
                             {thread.isLive && (
@@ -313,7 +341,7 @@ export function ThreadSidebarEnhanced({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-200"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreVertical className="h-3 w-3" />
@@ -352,7 +380,7 @@ export function ThreadSidebarEnhanced({
                           </DropdownMenu>
                         </div>
                         
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />
                             {thread.messageCount}
@@ -386,8 +414,8 @@ export function ThreadSidebarEnhanced({
                         
                         {thread.isShared && thread.collaborators && thread.collaborators.length > 0 && (
                           <div className="flex items-center gap-1 mt-1">
-                            <Users className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-[10px] text-muted-foreground">
+                            <Users className="h-3 w-3 text-indigo-400" />
+                            <span className="text-[10px] text-indigo-300">
                               Shared with {thread.collaborators.length} {thread.collaborators.length === 1 ? 'person' : 'people'}
                             </span>
                           </div>

@@ -74,64 +74,67 @@ export class HealthCheckService {
   
   private async checkProvider(provider: string): Promise<HealthStatus> {
     try {
-      // Check last successful fetch
-      const fetchStatus = await prisma.fetchStatus.findMany({
+      // Check if provider has any API keys configured
+      const apiKeys = await prisma.apiKey.findMany({
         where: { provider },
-        orderBy: { lastSuccessfulFetch: 'desc' },
         take: 1
       });
       
-      if (fetchStatus.length === 0) {
+      if (apiKeys.length === 0) {
         return {
           provider,
           status: 'unhealthy',
-          message: 'No fetch status found'
+          message: 'No API keys configured for this provider'
         };
       }
       
-      const status = fetchStatus[0];
-      const expectedInterval = this.getExpectedInterval(provider);
-      const timeSinceLastFetch = status.lastSuccessfulFetch 
-        ? Date.now() - status.lastSuccessfulFetch.getTime()
-        : Infinity;
-      
-      // Check if fetch is delayed
-      if (timeSinceLastFetch > expectedInterval * 2) {
-        return {
+      // Check recent usage to determine health
+      const recentUsage = await prisma.usage.findFirst({
+        where: { 
           provider,
-          status: 'unhealthy',
-          message: 'Fetch significantly delayed',
-          lastSuccess: status.lastSuccessfulFetch || undefined,
-          error: `Last successful fetch was ${Math.floor(timeSinceLastFetch / 1000 / 60)} minutes ago`
-        };
-      }
+          timestamp: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+          }
+        },
+        orderBy: { timestamp: 'desc' }
+      });
       
-      if (timeSinceLastFetch > expectedInterval * 1.5) {
+      if (!recentUsage) {
         return {
           provider,
           status: 'degraded',
-          message: 'Fetch delayed',
-          lastSuccess: status.lastSuccessfulFetch || undefined
+          message: 'No recent usage data available',
         };
       }
       
-      // Check consecutive failures
-      if (status.consecutiveFailures >= 3) {
+      // Check for recent high costs or failures (simplified check)
+      const recentHighCosts = await prisma.usage.count({
+        where: {
+          provider,
+          cost: {
+            gte: 1.0 // High cost threshold
+          },
+          timestamp: {
+            gte: new Date(Date.now() - 60 * 60 * 1000) // Last hour
+          }
+        }
+      });
+      
+      if (recentHighCosts > 5) {
         return {
           provider,
           status: 'unhealthy',
-          message: `${status.consecutiveFailures} consecutive failures`,
-          lastSuccess: status.lastSuccessfulFetch || undefined,
-          error: status.errorMessage || undefined
+          message: `${recentHighCosts} high cost requests in the last hour`,
+          lastSuccess: recentUsage.timestamp
         };
       }
       
-      if (status.consecutiveFailures > 0) {
+      if (recentHighCosts > 0) {
         return {
           provider,
           status: 'degraded',
-          message: `${status.consecutiveFailures} recent failures`,
-          lastSuccess: status.lastSuccessfulFetch || undefined
+          message: `${recentHighCosts} high cost requests in the last hour`,
+          lastSuccess: recentUsage.timestamp
         };
       }
       
@@ -142,7 +145,7 @@ export class HealthCheckService {
         provider,
         status: 'healthy',
         message: 'Operating normally',
-        lastSuccess: status.lastSuccessfulFetch || undefined,
+        lastSuccess: recentUsage.timestamp,
         metrics
       };
     } catch (error) {
@@ -261,15 +264,24 @@ export class HealthCheckService {
     details?: string;
   }) {
     try {
+      // Get a system user for alerts
+      const systemUser = await prisma.user.findFirst();
+      if (!systemUser) {
+        console.error('No user found for storing alerts');
+        return;
+      }
+
       // Store alert in database
-      await prisma.costAlerts.create({
+      await prisma.alert.create({
         data: {
-          organizationId: 'system', // System-level alert
-          alertType: 'rate_increase',
+          userId: systemUser.id,
+          type: 'HEALTH_CHECK',
+          provider: alert.provider || 'system',
           message: alert.message,
-          severity: alert.severity === 'high' ? 'critical' : 
-                   alert.severity === 'medium' ? 'warning' : 'info',
-          provider: alert.provider
+          metadata: {
+            severity: alert.severity,
+            details: alert.details
+          }
         }
       });
       
@@ -339,11 +351,12 @@ export class HealthCheckService {
     }
   }
   
-  async getCostAlerts(organizationId: string, limit: number = 10): Promise<any[]> {
-    return prisma.costAlerts.findMany({
+  async getCostAlerts(userId: string, limit: number = 10): Promise<any[]> {
+    return prisma.alert.findMany({
       where: {
-        organizationId,
-        isResolved: false
+        userId,
+        isActive: true,
+        type: 'HEALTH_CHECK'
       },
       orderBy: {
         createdAt: 'desc'
@@ -353,11 +366,13 @@ export class HealthCheckService {
   }
   
   async resolveAlert(alertId: string) {
-    await prisma.costAlerts.update({
+    await prisma.alert.update({
       where: { id: alertId },
       data: {
-        isResolved: true,
-        resolvedAt: new Date()
+        isActive: false,
+        metadata: {
+          resolvedAt: new Date().toISOString()
+        }
       }
     });
   }

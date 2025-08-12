@@ -119,8 +119,8 @@ export async function logApiKeyAccess(
  */
 export async function logAuthEvent(
   action: AuditAction,
-  userId?: string,
   success: boolean,
+  userId?: string,
   metadata?: Record<string, any>
 ): Promise<void> {
   await createAuditLog({
