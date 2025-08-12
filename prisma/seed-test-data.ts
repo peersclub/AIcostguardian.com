@@ -287,17 +287,8 @@ async function main() {
       userId: testAdmin.id,
       dailyCostLimit: 5000,
       monthlyCostLimit: 100000,
-      dailyRequestLimit: 10000,
-      monthlyRequestLimit: 300000,
       dailyTokenLimit: 50000000,
-      monthlyTokenLimit: 1500000000,
-      alertThreshold: 0.8,
-      hardLimit: true,
-      metadata: {
-        approvedBy: 'CTO',
-        department: 'Engineering',
-        costCenter: 'CC-TEST-001'
-      }
+      monthlyTokenLimit: 1500000000
     }
   })
 
@@ -309,17 +300,8 @@ async function main() {
         userId: user.id,
         dailyCostLimit: 500,
         monthlyCostLimit: 10000,
-        dailyRequestLimit: 1000,
-        monthlyRequestLimit: 30000,
         dailyTokenLimit: 5000000,
-        monthlyTokenLimit: 150000000,
-        alertThreshold: 0.75,
-        hardLimit: false,
-        metadata: {
-          approvedBy: testAdmin.name,
-          department: 'Testing',
-          role: 'Developer'
-        }
+        monthlyTokenLimit: 150000000
       }
     })
   }
@@ -334,28 +316,11 @@ async function main() {
     create: {
       userId: testAdmin.id,
       theme: 'dark',
-      language: 'en',
-      timezone: 'America/New_York',
-      dateFormat: 'MM/DD/YYYY',
-      timeFormat: '12h',
-      currency: 'USD',
       showMetrics: true,
-      emailFrequency: 'daily',
       compactView: false,
-      defaultProvider: 'OPENAI',
-      defaultModel: 'gpt-4o',
-      autoSave: true,
-      keyboardShortcuts: true,
-      metadata: {
-        onboardingCompleted: true,
-        tourCompleted: true,
-        features: {
-          aiOptimise: true,
-          advancedAnalytics: true,
-          teamManagement: true,
-          apiPlayground: true
-        }
-      }
+      preferredProvider: 'OPENAI',
+      preferredModel: 'gpt-4o',
+      autoSaveThreads: true
     }
   })
 
@@ -365,23 +330,12 @@ async function main() {
       update: {},
       create: {
         userId: user.id,
-        theme: ['light', 'dark', 'auto'][Math.floor(Math.random() * 3)] as any,
-        language: ['en', 'es', 'fr'][Math.floor(Math.random() * 3)],
-        timezone: ['America/New_York', 'Europe/London', 'Asia/Singapore'][Math.floor(Math.random() * 3)],
-        dateFormat: ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'][Math.floor(Math.random() * 3)],
-        timeFormat: ['12h', '24h'][Math.floor(Math.random() * 2)],
-        currency: ['USD', 'EUR', 'GBP'][Math.floor(Math.random() * 3)],
+        theme: ['light', 'dark', 'system'][Math.floor(Math.random() * 3)],
         showMetrics: Math.random() > 0.3,
-        emailFrequency: ['immediate', 'daily', 'weekly', 'never'][Math.floor(Math.random() * 4)] as any,
         compactView: Math.random() > 0.5,
-        defaultProvider: providers[Math.floor(Math.random() * providers.length)],
-        defaultModel: 'gpt-4o-mini',
-        autoSave: Math.random() > 0.2,
-        keyboardShortcuts: Math.random() > 0.3,
-        metadata: {
-          onboardingCompleted: Math.random() > 0.1,
-          tourCompleted: Math.random() > 0.3
-        }
+        preferredProvider: providers[Math.floor(Math.random() * providers.length)],
+        preferredModel: 'gpt-4o-mini',
+        autoSaveThreads: Math.random() > 0.2
       }
     })
   }
@@ -393,18 +347,25 @@ async function main() {
   const notificationTypes = [
     'COST_THRESHOLD_WARNING',
     'COST_THRESHOLD_CRITICAL',
-    'DAILY_COST_REPORT',
+    'COST_THRESHOLD_EXCEEDED',
+    'DAILY_COST_SPIKE',
+    'UNUSUAL_SPENDING_PATTERN',
+    'API_RATE_LIMIT_WARNING',
+    'API_RATE_LIMIT_EXCEEDED',
+    'USAGE_QUOTA_WARNING',
+    'USAGE_QUOTA_EXCEEDED',
+    'MODEL_DEPRECATION',
+    'API_KEY_EXPIRING',
+    'API_KEY_EXPIRED',
+    'PROVIDER_OUTAGE',
+    'INTEGRATION_FAILURE',
+    'PAYMENT_FAILED',
+    'SUBSCRIPTION_EXPIRING',
+    'NEW_TEAM_MEMBER',
+    'MEMBER_EXCEEDED_LIMIT',
+    'SUSPICIOUS_ACTIVITY',
     'WEEKLY_COST_REPORT',
     'MONTHLY_COST_REPORT',
-    'NEW_TEAM_MEMBER',
-    'API_KEY_EXPIRING',
-    'API_RATE_LIMIT_WARNING',
-    'MODEL_DEPRECATION',
-    'SECURITY_ALERT',
-    'BILLING_ISSUE',
-    'SUBSCRIPTION_RENEWAL',
-    'USAGE_ANOMALY',
-    'SYSTEM_UPDATE',
     'OPTIMIZATION_RECOMMENDATIONS'
   ] as const
 
@@ -577,18 +538,12 @@ async function main() {
       teamsEnabled: true,
       inAppEnabled: true,
       quietHoursEnabled: false,
-      preferences: {
-        costAlerts: true,
-        usageReports: true,
-        securityAlerts: true,
-        systemUpdates: true,
-        optimizationTips: true,
-        teamActivity: true,
-        apiErrors: true,
-        budgetAlerts: true,
-        modelUpdates: true,
-        billingAlerts: true
-      }
+      costAlerts: true,
+      usageAlerts: true,
+      systemAlerts: true,
+      teamAlerts: true,
+      reports: true,
+      recommendations: true
     }
   })
 
@@ -607,18 +562,12 @@ async function main() {
         quietHoursEnabled: Math.random() > 0.5,
         quietHoursStart: `${Math.floor(Math.random() * 4) + 20}:00`,
         quietHoursEnd: `${Math.floor(Math.random() * 4) + 6}:00`,
-        preferences: {
-          costAlerts: Math.random() > 0.2,
-          usageReports: Math.random() > 0.3,
-          securityAlerts: Math.random() > 0.1,
-          systemUpdates: Math.random() > 0.4,
-          optimizationTips: Math.random() > 0.3,
-          teamActivity: Math.random() > 0.5,
-          apiErrors: Math.random() > 0.2,
-          budgetAlerts: Math.random() > 0.2,
-          modelUpdates: Math.random() > 0.4,
-          billingAlerts: Math.random() > 0.2
-        }
+        costAlerts: Math.random() > 0.2,
+        usageAlerts: Math.random() > 0.3,
+        systemAlerts: Math.random() > 0.1,
+        teamAlerts: Math.random() > 0.5,
+        reports: Math.random() > 0.3,
+        recommendations: Math.random() > 0.4
       }
     })
   }
@@ -660,19 +609,9 @@ async function main() {
     }
   ]
 
-  // Store instructions as metadata in user settings
-  for (const instruction of instructions) {
-    await prisma.userSettings.update({
-      where: { userId: testAdmin.id },
-      data: {
-        metadata: {
-          ...(await prisma.userSettings.findUnique({ where: { userId: testAdmin.id } }))?.metadata as any,
-          instructions: instructions
-        }
-      }
-    })
-  }
-  console.log('✅ Created predefined instructions')
+  // Instructions are stored for reference but not in database
+  // as UserSettings doesn't have a metadata field
+  console.log('✅ Created predefined instructions (in memory)')
 
   // Summary
   console.log('\n' + '='.repeat(80))
