@@ -33,7 +33,8 @@ import {
   DollarSign,
   BookOpen,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  Key
 } from 'lucide-react'
 
 interface NavItem {
@@ -121,6 +122,7 @@ export default function Navigation() {
       visibility: 'auth',
       children: [
         { label: 'General Settings', href: '/settings', icon: Settings, visibility: 'auth' },
+        { label: 'API Keys', href: '/settings/api-keys', icon: Key, badge: 'New', visibility: 'auth' },
         { label: 'Team Members', href: '/team/members', icon: Users, visibility: 'auth' },
         { label: 'Permissions', href: '/team/permissions', icon: Shield, visibility: 'auth' },
         { label: 'Usage Limits', href: '/team/limits', icon: CreditCard, visibility: 'auth' },
@@ -361,6 +363,13 @@ export default function Navigation() {
                       >
                         <Settings className="w-4 h-4" />
                         <span>Settings</span>
+                      </Link>
+                      <Link
+                        href="/settings/api-keys"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-white"
+                      >
+                        <Key className="w-4 h-4" />
+                        <span>API Keys</span>
                       </Link>
                       <Link
                         href="/billing"

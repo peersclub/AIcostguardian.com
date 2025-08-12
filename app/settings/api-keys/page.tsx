@@ -1,0 +1,651 @@
+'use client'
+
+// Force dynamic rendering since we use authentication
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { 
+  Key, 
+  Plus, 
+  MoreVertical, 
+  TestTube, 
+  Trash2, 
+  RefreshCw,
+  Shield,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Eye,
+  EyeOff,
+  Copy,
+  Calendar,
+  Clock,
+  Globe,
+  Zap
+} from 'lucide-react'
+import { apiKeyManager, KeyType, ApiKey } from '@/lib/api-key-manager'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { useSession } from 'next-auth/react'
+
+interface KeyDetailsModalProps {
+  apiKey: ApiKey | null
+  onClose: () => void
+}
+
+const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
+  const [showKey, setShowKey] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<any>(null)
+
+  if (!apiKey) return null
+
+  const handleTest = async () => {
+    setTesting(true)
+    try {
+      const result = await apiKeyManager.testKey(apiKey.provider.toLowerCase(), apiKey.encryptedKey)
+      setTestResult(result)
+      if (result.success) {
+        toast.success('Key test successful!')
+      } else {
+        toast.error(`Test failed: ${result.error}`)
+      }
+    } catch (error) {
+      toast.error('Failed to test key')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(apiKey.encryptedKey)
+    toast.success('Key copied to clipboard')
+  }
+
+  return (
+    <Dialog open={!!apiKey} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>API Key Details</DialogTitle>
+          <DialogDescription>
+            Manage and test your {apiKey.provider} API key
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground mb-1">API Key</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 font-mono text-sm">
+                  {showKey ? apiKey.encryptedKey : '••••••••••••••••••••'}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowKey(!showKey)}
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Provider</p>
+              <p className="font-medium">{apiKey.provider}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Type</p>
+              <Badge variant={apiKey.type === KeyType.ADMIN ? 'destructive' : 'default'}>
+                {apiKey.type}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <div className="flex items-center gap-1">
+                {apiKey.isActive ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-green-600">Active</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-red-600">Inactive</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Used</p>
+              <p className="font-medium">
+                {apiKey.lastUsed ? format(apiKey.lastUsed, 'PPp') : 'Never'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Tested</p>
+              <p className="font-medium">
+                {apiKey.lastTested ? format(apiKey.lastTested, 'PPp') : 'Never'}
+              </p>
+            </div>
+          </div>
+
+          {apiKey.metadata && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Metadata</p>
+              <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto">
+                {JSON.stringify(apiKey.metadata, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={handleTest} disabled={testing}>
+              {testing ? (
+                <>Testing...</>
+              ) : (
+                <>
+                  <TestTube className="h-4 w-4 mr-2" />
+                  Test Key
+                </>
+              )}
+            </Button>
+            <Button onClick={onClose}>Close</Button>
+          </div>
+
+          {testResult && (
+            <Alert variant={testResult.success ? 'default' : 'destructive'}>
+              <AlertTitle>Test Result</AlertTitle>
+              <AlertDescription>
+                {testResult.success ? (
+                  <div className="space-y-1">
+                    <p>✓ Key is working correctly</p>
+                    <p className="text-sm">Response: {testResult.response}</p>
+                    <p className="text-sm">Latency: {testResult.latency}ms</p>
+                    {testResult.modelAccess && (
+                      <p className="text-sm">
+                        Models: {testResult.modelAccess.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p>✗ {testResult.error}</p>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface ApiKeyListProps {
+  keys: ApiKey[]
+  onViewDetails: (key: ApiKey) => void
+  onDelete: (key: ApiKey) => void
+  badge?: string
+  description?: string
+  warningMessage?: string
+}
+
+const ApiKeyList = ({ 
+  keys, 
+  onViewDetails, 
+  onDelete,
+  badge,
+  description,
+  warningMessage
+}: ApiKeyListProps) => {
+  return (
+    <div className="space-y-4">
+      {description && (
+        <p className="text-sm text-gray-400">{description}</p>
+      )}
+      
+      {warningMessage && (
+        <Alert className="bg-orange-500/10 border-orange-500/30">
+          <AlertTriangle className="h-4 w-4 text-orange-400" />
+          <AlertDescription className="text-orange-300">{warningMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {keys.length === 0 ? (
+        <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Key className="h-12 w-12 text-gray-600 mb-4" />
+            <p className="text-gray-400">No {badge?.toLowerCase()} keys added yet</p>
+            <p className="text-gray-500 text-sm mt-2">Click "Add New Key" to get started</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {keys.map((key, index) => (
+            <motion.div
+              key={key.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+            >
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800 hover:border-indigo-500/50 transition-all duration-200">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-indigo-500/30">
+                      <Key className="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-white">{key.provider}</p>
+                        {badge && (
+                          <Badge 
+                            variant={key.type === KeyType.ADMIN ? 'destructive' : 'secondary'}
+                            className={key.type === KeyType.ADMIN ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}
+                          >
+                            {badge}
+                          </Badge>
+                        )}
+                        {key.isActive ? (
+                          <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-red-400 border-red-500/30 bg-red-500/10">
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Inactive
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                        {key.createdAt && (
+                          <span>Added {format(new Date(key.createdAt), 'PP')}</span>
+                        )}
+                        {key.lastUsed && (
+                          <span>Last used {format(new Date(key.lastUsed), 'PP')}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="hover:bg-gray-800">
+                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                      <DropdownMenuItem onClick={() => onViewDetails(key)} className="hover:bg-gray-800">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)} className="hover:bg-gray-800">
+                        <TestTube className="h-4 w-4 mr-2" />
+                        Test Key
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onDelete(key)}
+                        className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ApiKeysSettings() {
+  const { data: session } = useSession()
+  const [keys, setKeys] = useState<ApiKey[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
+
+  useEffect(() => {
+    loadKeys()
+  }, [session])
+
+  const loadKeys = async () => {
+    setLoading(true)
+    try {
+      // Pass empty string as userId since the API will use the session
+      const userKeys = await apiKeyManager.getKeys('')
+      setKeys(userKeys)
+    } catch (error) {
+      console.error('Failed to load keys:', error)
+      toast.error('Failed to load API keys')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      // Refresh will validate all keys
+      await loadKeys()
+      toast.success('API keys refreshed')
+    } catch (error) {
+      toast.error('Failed to refresh keys')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const handleDelete = async (key: ApiKey) => {
+    if (confirm(`Are you sure you want to delete this ${key.provider} API key?`)) {
+      try {
+        const response = await fetch(`/api/api-keys?id=${key.id}`, {
+          method: 'DELETE'
+        })
+        if (!response.ok) {
+          throw new Error('Failed to delete key')
+        }
+        await loadKeys()
+        toast.success('API key deleted')
+      } catch (error) {
+        toast.error('Failed to delete key')
+      }
+    }
+  }
+
+  const usageKeys = keys.filter(k => k.type === KeyType.USAGE_TRACKING)
+  const adminKeys = keys.filter(k => k.type === KeyType.ADMIN)
+  const standardKeys = keys.filter(k => k.type === KeyType.STANDARD)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading API keys...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated background gradient - matching dashboard */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="relative z-10 container max-w-7xl mx-auto p-6">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                API Key Management
+              </h1>
+              <p className="text-gray-400 text-lg">
+                Configure and manage your AI provider API keys
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="border-gray-700 hover:bg-gray-800 text-gray-300"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh Status
+              </Button>
+              <Button 
+                onClick={() => setShowAddDialog(true)}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Key
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Total Keys</p>
+                  <p className="text-2xl font-bold text-white">{keys.length}</p>
+                </div>
+                <Key className="h-8 w-8 text-indigo-400" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Active Keys</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {keys.filter(k => k.isActive).length}
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-400" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Providers</p>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {new Set(keys.map(k => k.provider)).size}
+                  </p>
+                </div>
+                <Globe className="h-8 w-8 text-purple-400" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 border border-gray-800"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Admin Keys</p>
+                  <p className="text-2xl font-bold text-orange-400">{adminKeys.length}</p>
+                </div>
+                <Shield className="h-8 w-8 text-orange-400" />
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Main Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Tabs defaultValue="all" className="space-y-6">
+            <TabsList className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-1 rounded-lg grid w-full grid-cols-4">
+              <TabsTrigger 
+                value="all" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                <Key className="h-4 w-4 mr-2" />
+                All Keys
+                <Badge variant="secondary" className="ml-2 bg-gray-700">
+                  {keys.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="usage"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Usage Tracking
+                {usageKeys.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-gray-700">
+                    {usageKeys.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="admin"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Keys
+                {adminKeys.length > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {adminKeys.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="standard"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Standard
+                {standardKeys.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-gray-700">
+                    {standardKeys.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+        <TabsContent value="all">
+          <ApiKeyList
+            keys={keys}
+            onViewDetails={setSelectedKey}
+            onDelete={handleDelete}
+            description="All your API keys across different providers"
+          />
+        </TabsContent>
+
+        <TabsContent value="usage">
+          <ApiKeyList
+            keys={usageKeys}
+            onViewDetails={setSelectedKey}
+            onDelete={handleDelete}
+            badge="Usage Tracking"
+            description="Keys for monitoring API usage and costs. These keys typically have read-only access."
+          />
+        </TabsContent>
+
+        <TabsContent value="admin">
+          <ApiKeyList
+            keys={adminKeys}
+            onViewDetails={setSelectedKey}
+            onDelete={handleDelete}
+            badge="Admin Access"
+            description="Keys with full organization management capabilities."
+            warningMessage="Admin keys have elevated privileges. Handle with care and rotate regularly."
+          />
+        </TabsContent>
+
+        <TabsContent value="standard">
+          <ApiKeyList
+            keys={standardKeys}
+            onViewDetails={setSelectedKey}
+            onDelete={handleDelete}
+            badge="Standard"
+            description="Standard API keys for regular operations."
+          />
+        </TabsContent>
+      </Tabs>
+
+      <KeyDetailsModal
+        apiKey={selectedKey}
+        onClose={() => setSelectedKey(null)}
+      />
+
+      {/* Add Key Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add API Key</DialogTitle>
+            <DialogDescription>
+              Add a new API key for an AI provider
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              To add a new API key, go to the{' '}
+              <a href="/onboarding/api-setup" className="text-primary hover:underline">
+                API Setup page
+              </a>
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => window.location.href = '/onboarding/api-setup'}>
+                Go to Setup
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+        </motion.div>
+      </div>
+    </div>
+  )
+}
