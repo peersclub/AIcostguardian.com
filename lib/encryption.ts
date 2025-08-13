@@ -86,3 +86,107 @@ export function generateEncryptionKey(): string {
 // Export aliases for the services that use these
 export const encryptApiKey = encrypt
 export const decryptApiKey = decrypt
+
+// Hash sensitive data (one-way)
+export function hash(data: string): string {
+  return crypto.createHash('sha256').update(data).digest('hex')
+}
+
+// Generate secure random token
+export function generateSecureToken(length: number = 32): string {
+  return crypto.randomBytes(length).toString('hex')
+}
+
+// Mask sensitive data for display
+export function maskSensitiveData(data: string, visibleChars: number = 4): string {
+  if (!data || data.length <= visibleChars * 2) {
+    return '*'.repeat(data?.length || 0)
+  }
+  
+  const start = data.substring(0, visibleChars)
+  const end = data.substring(data.length - visibleChars)
+  const masked = '*'.repeat(Math.max(8, data.length - visibleChars * 2))
+  
+  return `${start}${masked}${end}`
+}
+
+// Encrypt user tokens with expiration
+export function encryptToken(token: string, expiresAt: Date): string {
+  const payload = JSON.stringify({
+    token,
+    expiresAt: expiresAt.toISOString(),
+  })
+  
+  return encrypt(payload)
+}
+
+// Decrypt and validate token
+export function decryptToken(encryptedToken: string): { token: string; expiresAt: Date } | null {
+  try {
+    const decrypted = decrypt(encryptedToken)
+    const payload = JSON.parse(decrypted)
+    
+    const expiresAt = new Date(payload.expiresAt)
+    
+    // Check if token has expired
+    if (expiresAt < new Date()) {
+      return null
+    }
+    
+    return {
+      token: payload.token,
+      expiresAt,
+    }
+  } catch (error) {
+    console.error('Token decryption failed:', error)
+    return null
+  }
+}
+
+// Secure comparison to prevent timing attacks
+export function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+  
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))
+}
+
+// Generate encrypted share link
+export function generateShareLink(resourceId: string, expiresInHours: number = 24): string {
+  const expiresAt = new Date()
+  expiresAt.setHours(expiresAt.getHours() + expiresInHours)
+  
+  const token = generateSecureToken()
+  const payload = {
+    resourceId,
+    token,
+    expiresAt: expiresAt.toISOString(),
+  }
+  
+  const encrypted = encrypt(JSON.stringify(payload))
+  return Buffer.from(encrypted).toString('base64url')
+}
+
+// Validate share link
+export function validateShareLink(shareLink: string): { valid: boolean; resourceId?: string } {
+  try {
+    const encrypted = Buffer.from(shareLink, 'base64url').toString()
+    const decrypted = decrypt(encrypted)
+    const payload = JSON.parse(decrypted)
+    
+    const expiresAt = new Date(payload.expiresAt)
+    
+    if (expiresAt < new Date()) {
+      return { valid: false }
+    }
+    
+    return {
+      valid: true,
+      resourceId: payload.resourceId,
+    }
+  } catch (error) {
+    console.error('Share link validation failed:', error)
+    return { valid: false }
+  }
+}

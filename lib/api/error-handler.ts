@@ -7,6 +7,59 @@ export interface ApiError {
   error: string;
   details?: any;
   code?: string;
+  timestamp?: string;
+  requestId?: string;
+}
+
+// Custom error classes
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number = 500,
+    public code?: string,
+    public details?: any
+  ) {
+    super(message)
+    this.name = 'APIError'
+  }
+}
+
+export class ValidationError extends APIError {
+  constructor(message: string, details?: any) {
+    super(message, 400, 'VALIDATION_ERROR', details)
+    this.name = 'ValidationError'
+  }
+}
+
+export class AuthenticationError extends APIError {
+  constructor(message: string = 'Authentication required') {
+    super(message, 401, 'AUTHENTICATION_ERROR')
+    this.name = 'AuthenticationError'
+  }
+}
+
+export class AuthorizationError extends APIError {
+  constructor(message: string = 'Insufficient permissions') {
+    super(message, 403, 'AUTHORIZATION_ERROR')
+    this.name = 'AuthorizationError'
+  }
+}
+
+export class NotFoundError extends APIError {
+  constructor(resource: string) {
+    super(`${resource} not found`, 404, 'NOT_FOUND')
+    this.name = 'NotFoundError'
+  }
+}
+
+export class RateLimitError extends APIError {
+  constructor(retryAfter?: number) {
+    super('Too many requests', 429, 'RATE_LIMIT')
+    this.name = 'RateLimitError'
+    if (retryAfter) {
+      this.details = { retryAfter }
+    }
+  }
 }
 
 /**
@@ -114,5 +167,65 @@ export function safeJsonParse<T>(text: string, fallback: T): T {
     return JSON.parse(text);
   } catch {
     return fallback;
+  }
+}
+
+/**
+ * Handle API errors with proper status codes
+ */
+export function handleAPIError(error: any, requestId?: string): NextResponse {
+  console.error('API Error:', error)
+  
+  const timestamp = new Date().toISOString()
+  
+  if (error instanceof APIError) {
+    return NextResponse.json(
+      {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        timestamp,
+        requestId,
+      } as ApiError,
+      { status: error.statusCode }
+    )
+  }
+  
+  // Default error
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  return NextResponse.json(
+    {
+      error: isDevelopment ? error.message : 'An unexpected error occurred',
+      code: 'INTERNAL_ERROR',
+      details: isDevelopment ? error.stack : undefined,
+      timestamp,
+      requestId,
+    } as ApiError,
+    { status: 500 }
+  )
+}
+
+/**
+ * Safe async operation with error recovery
+ */
+export async function safeAsync<T>(
+  operation: () => Promise<T>,
+  fallback?: T | (() => T),
+  onError?: (error: any) => void
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (onError) {
+      onError(error)
+    }
+    
+    console.error('Safe async operation failed:', error)
+    
+    if (fallback !== undefined) {
+      return typeof fallback === 'function' ? (fallback as () => T)() : fallback
+    }
+    
+    throw error
   }
 }
