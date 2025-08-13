@@ -224,24 +224,28 @@ const ApiKeyList = ({
   return (
     <div className="space-y-4">
       {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-gray-400">{description}</p>
       )}
       
       {warningMessage && (
-        <Alert className="bg-amber-500/10 border-amber-500/30">
-          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="text-amber-600 dark:text-amber-400">{warningMessage}</AlertDescription>
-        </Alert>
+        <div className="bg-gradient-to-br from-yellow-900/30 to-orange-800/30 backdrop-blur-xl rounded-xl border border-yellow-500/30 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
+            <p className="text-yellow-300 text-sm">{warningMessage}</p>
+          </div>
+        </div>
       )}
 
       {keys.length === 0 ? (
-        <Card className="bg-card">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Key className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No {badge?.toLowerCase()} keys added yet</p>
-            <p className="text-muted-foreground text-sm mt-2">Click "Add New Key" to get started</p>
-          </CardContent>
-        </Card>
+        <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-12">
+          <div className="flex flex-col items-center justify-center">
+            <div className="p-4 bg-gray-800/50 rounded-full mb-4">
+              <Key className="h-12 w-12 text-gray-400" />
+            </div>
+            <p className="text-gray-300 text-lg">No {badge?.toLowerCase()} keys added yet</p>
+            <p className="text-gray-500 text-sm mt-2">Click "Add New Key" to get started</p>
+          </div>
+        </div>
       ) : (
         <div className="grid gap-4">
           {keys.map((key, index) => (
@@ -251,35 +255,35 @@ const ApiKeyList = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className="bg-card hover:shadow-lg transition-all duration-200">
-                <CardContent className="flex items-center justify-between p-4">
+              <div className="bg-gray-900/50 backdrop-blur-xl rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200 p-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Key className="h-5 w-5 text-primary" />
+                    <div className="h-10 w-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                      <Key className="h-5 w-5 text-indigo-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">{key.provider}</p>
+                        <p className="font-medium text-white">{key.provider}</p>
                         {badge && (
                           <Badge 
-                            variant={key.type === KeyType.ADMIN ? 'destructive' : 'secondary'}
+                            className={key.type === KeyType.ADMIN ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' : 'bg-gray-700/50 text-gray-300 border-gray-600'}
                           >
                             {badge}
                           </Badge>
                         )}
                         {key.isActive ? (
-                          <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/30 bg-green-500/10">
+                          <Badge className="text-green-400 border-green-500/30 bg-green-500/10">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Active
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10">
+                          <Badge className="text-red-400 border-red-500/30 bg-red-500/10">
                             <XCircle className="h-3 w-3 mr-1" />
                             Inactive
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
                         {key.createdAt && (
                           <span>Added {format(new Date(key.createdAt), 'PP')}</span>
                         )}
@@ -292,30 +296,30 @@ const ApiKeyList = ({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button className="bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 border-0" size="icon">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewDetails(key)}>
+                    <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                      <DropdownMenuItem onClick={() => onViewDetails(key)} className="text-gray-300 hover:bg-gray-800">
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)}>
+                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)} className="text-gray-300 hover:bg-gray-800">
                         <TestTube className="h-4 w-4 mr-2" />
                         Test Key
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => onDelete(key)}
-                        className="text-destructive"
+                        className="text-red-400 hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -407,16 +411,16 @@ export default function ApiKeysSettings() {
         >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-4xl font-bold text-white mb-2">
                 API Key Management
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-gray-400 text-lg">
                 Configure and manage your AI provider API keys
               </p>
             </div>
             <div className="flex gap-3">
               <Button
-                variant="outline"
+                className="bg-gray-800/50 backdrop-blur-xl border border-gray-700 text-gray-300 hover:bg-gray-700/50"
                 onClick={handleRefresh}
                 disabled={refreshing}
               >
@@ -425,7 +429,7 @@ export default function ApiKeysSettings() {
               </Button>
               <Button 
                 onClick={() => setShowAddDialog(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Key
@@ -439,76 +443,72 @@ export default function ApiKeysSettings() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
+              className="bg-gradient-to-br from-indigo-900/50 to-purple-800/50 backdrop-blur-xl rounded-xl border border-indigo-500/30 p-4"
             >
-              <Card className="bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Total Keys</p>
-                      <p className="text-2xl font-bold text-foreground">{keys.length}</p>
-                    </div>
-                    <Key className="h-8 w-8 text-primary" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Total Keys</p>
+                  <p className="text-2xl font-bold text-white">{keys.length}</p>
+                </div>
+                <div className="p-2 bg-indigo-500/20 rounded-lg">
+                  <Key className="h-6 w-6 text-indigo-400" />
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.2 }}
+              className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-xl border border-green-500/30 p-4"
             >
-              <Card className="bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Active Keys</p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {keys.filter(k => k.isActive).length}
-                      </p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Active Keys</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {keys.filter(k => k.isActive).length}
+                  </p>
+                </div>
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-green-400" />
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.3 }}
+              className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-xl border border-blue-500/30 p-4"
             >
-              <Card className="bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Providers</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {new Set(keys.map(k => k.provider)).size}
-                      </p>
-                    </div>
-                    <Globe className="h-8 w-8 text-primary" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Providers</p>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {new Set(keys.map(k => k.provider)).size}
+                  </p>
+                </div>
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Globe className="h-6 w-6 text-blue-400" />
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.4 }}
+              className="bg-gradient-to-br from-yellow-900/50 to-orange-800/50 backdrop-blur-xl rounded-xl border border-yellow-500/30 p-4"
             >
-              <Card className="bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Admin Keys</p>
-                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{adminKeys.length}</p>
-                    </div>
-                    <Shield className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Admin Keys</p>
+                  <p className="text-2xl font-bold text-yellow-400">{adminKeys.length}</p>
+                </div>
+                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                  <Shield className="h-6 w-6 text-yellow-400" />
+                </div>
+              </div>
             </motion.div>
           </div>
         </motion.div>
@@ -520,39 +520,39 @@ export default function ApiKeysSettings() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <Tabs defaultValue="all" className="space-y-6">
-            <TabsList className="bg-muted p-1 rounded-lg grid w-full grid-cols-4">
-              <TabsTrigger value="all" className="data-[state=active]:bg-background">
+            <TabsList className="bg-gray-800/30 p-1 rounded-lg grid w-full grid-cols-4">
+              <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-400">
                 <Key className="h-4 w-4 mr-2" />
                 All Keys
-                <Badge variant="secondary" className="ml-2">
+                <span className="ml-2 px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full text-xs">
                   {keys.length}
-                </Badge>
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="usage" className="data-[state=active]:bg-background">
+              <TabsTrigger value="usage" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-400">
                 <Activity className="h-4 w-4 mr-2" />
                 Usage Tracking
                 {usageKeys.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <span className="ml-2 px-2 py-0.5 bg-green-500/20 text-green-300 rounded-full text-xs">
                     {usageKeys.length}
-                  </Badge>
+                  </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="admin" className="data-[state=active]:bg-background">
+              <TabsTrigger value="admin" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-400">
                 <Shield className="h-4 w-4 mr-2" />
                 Admin Keys
                 {adminKeys.length > 0 && (
-                  <Badge variant="destructive" className="ml-2">
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-300 rounded-full text-xs">
                     {adminKeys.length}
-                  </Badge>
+                  </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="standard" className="data-[state=active]:bg-background">
+              <TabsTrigger value="standard" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-400">
                 <Zap className="h-4 w-4 mr-2" />
                 Standard
                 {standardKeys.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <span className="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs">
                     {standardKeys.length}
-                  </Badge>
+                  </span>
                 )}
               </TabsTrigger>
             </TabsList>
