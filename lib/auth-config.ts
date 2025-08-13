@@ -21,6 +21,7 @@ const BLOCKED_DOMAINS = [
 // List of explicitly allowed domains (always allowed)
 const ALLOWED_DOMAINS = [
   'aicostguardian.com',
+  'assetworks.ai',
   'assetworks.com'
 ]
 
