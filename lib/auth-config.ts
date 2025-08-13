@@ -6,48 +6,40 @@ import prisma from '@/lib/prisma'
 // Check if we're in build phase
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 
-// List of blocked domains (consumer email providers)
-const BLOCKED_DOMAINS = [
-  'gmail.com',
-  'yahoo.com',
-  'hotmail.com',
-  'outlook.com',
-  'aol.com',
-  'icloud.com',
-  'mail.com',
-  'protonmail.com'
-]
-
-// List of explicitly allowed domains (always allowed)
-const ALLOWED_DOMAINS = [
-  'aicostguardian.com',
-  'assetworks.ai',
-  'assetworks.com'
-]
-
-// Helper function to validate enterprise email domains
-function isEnterpriseEmail(email: string): boolean {
-  const domain = email.split('@')[1]?.toLowerCase()
-  // Check if explicitly allowed first
-  if (ALLOWED_DOMAINS.includes(domain)) {
-    return true
+// Custom adapter with account linking fix
+const customAdapter = !isBuildPhase ? {
+  ...PrismaAdapter(prisma),
+  linkAccount: async (account: any) => {
+    // Check if user exists first
+    const user = await prisma.user.findUnique({
+      where: { id: account.userId }
+    })
+    
+    if (!user) {
+      throw new Error('User not found')
+    }
+    
+    // Create the account link
+    return await prisma.account.create({
+      data: {
+        userId: account.userId,
+        type: account.type,
+        provider: account.provider,
+        providerAccountId: account.providerAccountId,
+        refresh_token: account.refresh_token,
+        access_token: account.access_token,
+        expires_at: account.expires_at,
+        token_type: account.token_type,
+        scope: account.scope,
+        id_token: account.id_token,
+        session_state: account.session_state,
+      }
+    })
   }
-  // Then check if not blocked
-  return !BLOCKED_DOMAINS.includes(domain)
-}
-
-// Helper function to extract company name from domain
-function getCompanyFromDomain(email: string): string {
-  const domain = email.split('@')[1]?.toLowerCase()
-  if (!domain) return 'Unknown'
-  
-  // Remove common TLD and convert to title case
-  const company = domain.split('.')[0]
-  return company.charAt(0).toUpperCase() + company.slice(1)
-}
+} : undefined as any
 
 export const authOptions: NextAuthOptions = {
-  adapter: !isBuildPhase ? PrismaAdapter(prisma) : undefined as any,
+  adapter: customAdapter,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -58,7 +50,9 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code"
         }
-      }
+      },
+      // Allow linking accounts with the same email
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   callbacks: {
@@ -66,24 +60,47 @@ export const authOptions: NextAuthOptions = {
       try {
         if (!user.email) return false
         
-        // Log for debugging
-        console.log('SignIn attempt for:', user.email)
+        console.log('🔐 SignIn attempt for:', user.email)
         
-        // Check if email domain is allowed
-        const domain = user.email.split('@')[1]?.toLowerCase()
-        if (ALLOWED_DOMAINS.includes(domain)) {
-          console.log('✅ Allowed domain:', domain)
-          return true
+        // Handle OAuth account linking for existing users
+        if (account?.provider === 'google') {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { accounts: true }
+          })
+          
+          if (existingUser) {
+            // Check if OAuth account is already linked
+            const hasGoogleAccount = existingUser.accounts.some(
+              acc => acc.provider === 'google'
+            )
+            
+            if (!hasGoogleAccount) {
+              console.log('🔗 Linking Google account to existing user:', user.email)
+              // Link the OAuth account to the existing user
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state,
+                }
+              })
+            }
+            
+            console.log('✅ User authenticated:', user.email)
+          }
         }
         
-        // Check if it's an enterprise email (not blocked)
-        if (isEnterpriseEmail(user.email)) {
-          console.log('✅ Enterprise email:', user.email)
-          return true
-        }
-        
-        console.log('❌ Blocked domain:', domain)
-        return '/auth/error?error=InvalidDomain'
+        // ALWAYS ALLOW SIGN IN - Remove all domain restrictions for testing
+        return true
       } catch (error) {
         console.error('SignIn error:', error)
         return false
@@ -105,38 +122,53 @@ export const authOptions: NextAuthOptions = {
           
           // Auto-create user if doesn't exist
           if (!dbUser) {
-            const company = user.email?.split('@')[1]?.split('.')[0] || 'default'
+            console.log('📝 Creating new user:', user.email)
+            const domain = user.email?.split('@')[1] || 'default'
+            const company = domain.split('.')[0]
             
             // Find or create organization
             let organization = await prisma.organization.findFirst({
-              where: { 
-                OR: [
-                  { name: company },
-                  { domain: user.email?.split('@')[1] }
-                ]
-              }
+              where: { domain }
             })
             
             if (!organization) {
               organization = await prisma.organization.create({
                 data: {
-                  name: company,
-                  domain: user.email?.split('@')[1] || '',
-                  subscription: 'FREE',
+                  name: company.charAt(0).toUpperCase() + company.slice(1),
+                  domain,
+                  subscription: 'ENTERPRISE', // Give everyone ENTERPRISE for testing
+                  isActive: true,
+                  billingCycle: 'MONTHLY',
+                  allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI', 'GROK', 'PERPLEXITY']
                 }
               })
+              console.log('🏢 Created organization:', organization.name)
             }
             
+            // Create user as SUPER_ADMIN for testing
             dbUser = await prisma.user.create({
               data: {
                 email: user.email!,
                 name: user.name || user.email?.split('@')[0],
-                company,
-                role: 'USER',
+                company: company.charAt(0).toUpperCase() + company.slice(1),
+                role: 'SUPER_ADMIN', // Everyone gets SUPER_ADMIN for testing
                 organizationId: organization.id,
               },
               include: { organization: true }
             })
+            console.log('✅ Created SUPER_ADMIN user:', dbUser.email)
+          } else {
+            console.log('✅ Existing user:', dbUser.email, 'Role:', dbUser.role)
+            
+            // Upgrade to SUPER_ADMIN if not already
+            if (dbUser.role !== 'SUPER_ADMIN') {
+              dbUser = await prisma.user.update({
+                where: { id: dbUser.id },
+                data: { role: 'SUPER_ADMIN' },
+                include: { organization: true }
+              })
+              console.log('⬆️ Upgraded to SUPER_ADMIN')
+            }
           }
           
           // Always use database user ID
@@ -144,7 +176,7 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role
           token.organizationId = dbUser.organizationId
           token.organization = dbUser.organization
-          token.company = dbUser.company || getCompanyFromDomain(dbUser.email)
+          token.company = dbUser.company || dbUser.organization?.name
         }
       } catch (error) {
         console.error('JWT callback error:', error)
@@ -153,6 +185,7 @@ export const authOptions: NextAuthOptions = {
           token.email = user.email
           token.name = user.name
           token.image = user.image
+          token.role = 'SUPER_ADMIN' // Default to SUPER_ADMIN for testing
         }
       }
       
@@ -162,11 +195,11 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         const user = session.user as any
         user.id = token.id as string
-        user.role = token.role as string
+        user.role = token.role as string || 'SUPER_ADMIN'
         user.organizationId = token.organizationId as string
         user.organization = token.organization as any
         user.company = token.company as string
-        user.isEnterpriseUser = isEnterpriseEmail(user.email || '')
+        user.isEnterpriseUser = true // Everyone is enterprise for testing
       }
       return session
     },
@@ -176,7 +209,8 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   session: {
-    strategy: 'jwt', // Use JWT for now, database sessions have issues with middleware
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  debug: true, // Enable debug mode to see what's happening
 }
