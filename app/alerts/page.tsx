@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertTriangle, Bell, Settings, BarChart3, Shield, FileText, AlertCircle } from 'lucide-react'
+import { AlertTriangle, Bell, Settings, BarChart3, Shield, FileText, AlertCircle } from 'lucide-react'
 
 interface AlertRule {
   id: string

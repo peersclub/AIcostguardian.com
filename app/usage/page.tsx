@@ -728,6 +728,7 @@ function UsageContent() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

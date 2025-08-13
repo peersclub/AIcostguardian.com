@@ -168,7 +168,7 @@ export default function Billing() {
                 'from-blue-900/50 to-blue-800/50 border-blue-500/30', 
                 'from-purple-900/50 to-purple-800/50 border-purple-500/30'
               ]
-              const icons = [<Zap className="w-6 h-6" />, <Crown className="w-6 h-6" />, <Building2 className="w-6 h-6" />]
+              const icons = [<Zap key="zap" className="w-6 h-6" />, <Crown key="crown" className="w-6 h-6" />, <Building2 key="building" className="w-6 h-6" />]
               return (
                 <motion.div 
                   key={plan.id} 
