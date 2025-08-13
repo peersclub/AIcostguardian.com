@@ -17,9 +17,16 @@ model User {
   image         String?
   company       String?
   role          UserRole  @default(USER)
+  isSuperAdmin  Boolean   @default(false) // Super admin flag for platform management
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  lastActiveAt  DateTime? // Track user activity
+  invitedBy     String?   // Track who invited the user
+  invitedAt     DateTime? // When the user was invited
+  acceptedAt    DateTime? // When the invitation was accepted
+  department    String?   // Department within organization
+  jobTitle      String?   // Job title
   
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
@@ -55,6 +62,35 @@ model Organization {
   subscription  SubscriptionTier @default(FREE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  isActive      Boolean   @default(true) // Can disable organizations
+  
+  // Enterprise fields
+  industry      String?   // Industry type
+  size          String?   // Company size (e.g., "1-50", "51-200", etc.)
+  website       String?   // Company website
+  description   String?   @db.Text
+  logo          String?   // Logo URL
+  primaryColor  String?   // Brand color
+  
+  // Contact information
+  contactEmail  String?
+  contactPhone  String?
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  postalCode    String?
+  
+  // Settings
+  allowedProviders String[] @default([]) // AI providers this org can use
+  maxUsers         Int?     // Maximum users allowed
+  maxApiKeys       Int?     // Maximum API keys per user
+  requireMFA       Boolean  @default(false) // Require 2FA for all users
+  
+  // Billing
+  billingEmail     String?
+  billingCycle     String   @default("monthly") // monthly, yearly
+  nextBillingDate  DateTime?
   
   users             User[]
   apiKeys           ApiKey[]
@@ -66,6 +102,8 @@ model Organization {
   budgets           Budget[]
   aiThreads         AIThread[]
   usageLimit        UsageLimit?
+  invitations       Invitation[]
+  memberLimits      MemberLimit[]
 }
 
 model ApiKey {
@@ -182,11 +220,53 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// Enterprise Management Models
+model Invitation {
+  id             String   @id @default(cuid())
+  email          String
+  role           UserRole @default(USER)
+  organizationId String
+  invitedBy      String
+  token          String   @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime @default(now())
+  
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@index([email])
+  @@index([token])
+  @@index([organizationId])
+}
+
+model MemberLimit {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  
+  // Limits per user in organization
+  dailyTokenLimit   Int?
+  monthlyTokenLimit Int?
+  dailyCostLimit    Float?
+  monthlyCostLimit  Float?
+  allowedProviders  String[] // Specific providers this user can access
+  allowedModels     String[] // Specific models this user can use
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
 enum UserRole {
-  ADMIN
-  MANAGER
-  USER
-  VIEWER
+  SUPER_ADMIN // Platform super admin
+  ADMIN       // Organization admin
+  MANAGER     // Can manage team members
+  USER        // Regular user
+  VIEWER      // Read-only access
 }
 
 enum SubscriptionTier {
