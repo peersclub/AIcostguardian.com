@@ -28,32 +28,33 @@ export const Logo: React.FC<LogoProps> = ({
   const getColors = () => {
     if (variant === 'white') {
       return {
-        gradient1: ['#ffffff', '#f0f0f0', '#e0e0e0'],
-        gradient2: ['#d0d0d0', '#ffffff'],
-        center: '#0078D4'
+        shield: '#ffffff',
+        blue: '#e0e0e0',
+        gray: '#f5f5f5',
+        divider: '#d0d0d0'
       }
     } else if (variant === 'dark') {
       return {
-        gradient1: ['#003966', '#0078D4', '#00BCF2'],
-        gradient2: ['#002040', '#003966'],
-        center: '#ffffff'
+        shield: '#1F2937',
+        blue: '#2563EB',
+        gray: '#374151',
+        divider: '#111827'
       }
     }
     // Default colors
     return {
-      gradient1: ['#0078D4', '#00BCF2', '#00D4AA'],
-      gradient2: ['#005A9E', '#0078D4'],
-      center: '#ffffff'
+      shield: '#2B3544',
+      blue: '#4A7FC7',
+      gray: '#E8E8E8',
+      divider: '#2B3544'
     }
   }
   
   const colors = getColors()
-  const gradientId = `logo-gradient-${variant}`
-  const gradient2Id = `logo-gradient2-${variant}`
 
   return (
     <div className={`flex items-center ${className}`}>
-      {/* Swirl Logo */}
+      {/* Shield Logo */}
       <div className={`${icon} relative flex items-center justify-center`}>
         <svg
           viewBox="0 0 256 256"
@@ -61,50 +62,62 @@ export const Logo: React.FC<LogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-full"
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={colors.gradient1[0]} />
-              <stop offset="50%" stopColor={colors.gradient1[1]} />
-              <stop offset="100%" stopColor={colors.gradient1[2]} />
-            </linearGradient>
-            <linearGradient id={gradient2Id} x1="100%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor={colors.gradient2[0]} />
-              <stop offset="100%" stopColor={colors.gradient2[1]} />
-            </linearGradient>
-            <filter id={`shadow-${variant}`}>
-              <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.15"/>
-            </filter>
-          </defs>
+          {/* Shield background */}
+          <path d="M 128 24 
+                   C 148 24 168 32 188 32 
+                   L 208 32 
+                   L 208 112 
+                   C 208 152 188 192 158 212
+                   C 148 218 138 224 128 228
+                   C 118 224 108 218 98 212
+                   C 68 192 48 152 48 112
+                   L 48 32
+                   L 68 32
+                   C 88 32 108 24 128 24 Z" 
+                fill={colors.shield}/>
           
-          <g transform="translate(128, 128)" filter={`url(#shadow-${variant})`}>
-            {/* Outer swirl */}
-            <path 
-              d="M 0 -80 A 80 80 0 1 1 0 80 A 40 40 0 1 0 0 0 A 20 20 0 1 1 0 -40 A 60 60 0 1 0 0 -80 Z"
-              fill={`url(#${gradientId})`}
-            />
+          {/* Inner shield with quadrants */}
+          <g>
+            {/* Shield inner area - white background */}
+            <path d="M 128 44
+                     C 144 44 160 50 176 50
+                     L 188 50
+                     L 188 110
+                     C 188 142 172 174 148 192
+                     C 141 197 134 201 128 204
+                     C 122 201 115 197 108 192
+                     C 84 174 68 142 68 110
+                     L 68 50
+                     L 80 50
+                     C 96 50 112 44 128 44 Z"
+                  fill={colors.gray}/>
             
-            {/* Inner swirl */}
-            <path 
-              d="M 0 -50 A 50 50 0 1 1 0 50 A 25 25 0 1 0 0 0 A 12.5 12.5 0 1 1 0 -25 A 37.5 37.5 0 1 0 0 -50 Z"
-              fill={`url(#${gradient2Id})`}
-              opacity="0.9"
-            />
+            {/* Top left quadrant - blue */}
+            <path d="M 68 50 L 128 50 L 128 110 L 68 110 L 68 50 Z" 
+                  fill={colors.blue}/>
             
-            {/* Center circle */}
-            <circle cx="0" cy="0" r="8" fill={colors.center} />
+            {/* Bottom right quadrant - blue */}
+            <path d="M 128 110 L 188 110 C 188 142 172 174 148 192 C 141 197 134 201 128 204 L 128 110 Z" 
+                  fill={colors.blue}/>
+            
+            {/* Vertical divider */}
+            <rect x="126" y="50" width="4" height="154" fill={colors.divider}/>
+            
+            {/* Horizontal divider */}
+            <rect x="68" y="108" width="120" height="4" fill={colors.divider}/>
           </g>
         </svg>
         
-        {/* Glow effect for dark backgrounds */}
-        {variant === 'dark' && (
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/10 to-teal-400/10 blur-xl"></div>
+        {/* Shadow effect for depth */}
+        {variant === 'default' && (
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/5 to-blue-600/5 blur-md"></div>
         )}
       </div>
 
       {/* Brand Text */}
       {showText && (
         <div className={`ml-3 flex flex-col ${textClassName}`}>
-          <span className={`font-bold ${text} bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent tracking-tight`}>
+          <span className={`font-bold ${text} text-foreground tracking-tight`}>
             AICostGuardian
           </span>
           <span className="text-xs text-muted-foreground -mt-1">Enterprise Edition</span>
@@ -121,27 +134,28 @@ export const LogoSymbol: React.FC<{ className?: string; variant?: 'default' | 'w
   const getColors = () => {
     if (variant === 'white') {
       return {
-        gradient1: ['#ffffff', '#f0f0f0', '#e0e0e0'],
-        gradient2: ['#d0d0d0', '#ffffff'],
-        center: '#0078D4'
+        shield: '#ffffff',
+        blue: '#e0e0e0',
+        gray: '#f5f5f5',
+        divider: '#d0d0d0'
       }
     } else if (variant === 'dark') {
       return {
-        gradient1: ['#003966', '#0078D4', '#00BCF2'],
-        gradient2: ['#002040', '#003966'],
-        center: '#ffffff'
+        shield: '#1F2937',
+        blue: '#2563EB',
+        gray: '#374151',
+        divider: '#111827'
       }
     }
     return {
-      gradient1: ['#0078D4', '#00BCF2', '#00D4AA'],
-      gradient2: ['#005A9E', '#0078D4'],
-      center: '#ffffff'
+      shield: '#2B3544',
+      blue: '#4A7FC7',
+      gray: '#E8E8E8',
+      divider: '#2B3544'
     }
   }
   
   const colors = getColors()
-  const gradientId = `symbol-gradient-${variant}`
-  const gradient2Id = `symbol-gradient2-${variant}`
   
   return (
     <svg
@@ -150,29 +164,49 @@ export const LogoSymbol: React.FC<{ className?: string; variant?: 'default' | 'w
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={colors.gradient1[0]} />
-          <stop offset="50%" stopColor={colors.gradient1[1]} />
-          <stop offset="100%" stopColor={colors.gradient1[2]} />
-        </linearGradient>
-        <linearGradient id={gradient2Id} x1="100%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor={colors.gradient2[0]} />
-          <stop offset="100%" stopColor={colors.gradient2[1]} />
-        </linearGradient>
-      </defs>
+      {/* Shield background */}
+      <path d="M 128 24 
+               C 148 24 168 32 188 32 
+               L 208 32 
+               L 208 112 
+               C 208 152 188 192 158 212
+               C 148 218 138 224 128 228
+               C 118 224 108 218 98 212
+               C 68 192 48 152 48 112
+               L 48 32
+               L 68 32
+               C 88 32 108 24 128 24 Z" 
+            fill={colors.shield}/>
       
-      <g transform="translate(128, 128)">
-        <path 
-          d="M 0 -80 A 80 80 0 1 1 0 80 A 40 40 0 1 0 0 0 A 20 20 0 1 1 0 -40 A 60 60 0 1 0 0 -80 Z"
-          fill={`url(#${gradientId})`}
-        />
-        <path 
-          d="M 0 -50 A 50 50 0 1 1 0 50 A 25 25 0 1 0 0 0 A 12.5 12.5 0 1 1 0 -25 A 37.5 37.5 0 1 0 0 -50 Z"
-          fill={`url(#${gradient2Id})`}
-          opacity="0.9"
-        />
-        <circle cx="0" cy="0" r="8" fill={colors.center} />
+      {/* Inner shield with quadrants */}
+      <g>
+        {/* Shield inner area */}
+        <path d="M 128 44
+                 C 144 44 160 50 176 50
+                 L 188 50
+                 L 188 110
+                 C 188 142 172 174 148 192
+                 C 141 197 134 201 128 204
+                 C 122 201 115 197 108 192
+                 C 84 174 68 142 68 110
+                 L 68 50
+                 L 80 50
+                 C 96 50 112 44 128 44 Z"
+              fill={colors.gray}/>
+        
+        {/* Top left quadrant - blue */}
+        <path d="M 68 50 L 128 50 L 128 110 L 68 110 L 68 50 Z" 
+              fill={colors.blue}/>
+        
+        {/* Bottom right quadrant - blue */}
+        <path d="M 128 110 L 188 110 C 188 142 172 174 148 192 C 141 197 134 201 128 204 L 128 110 Z" 
+              fill={colors.blue}/>
+        
+        {/* Vertical divider */}
+        <rect x="126" y="50" width="4" height="154" fill={colors.divider}/>
+        
+        {/* Horizontal divider */}
+        <rect x="68" y="108" width="120" height="4" fill={colors.divider}/>
       </g>
     </svg>
   )
@@ -186,9 +220,9 @@ export const LogoAuto: React.FC<Omit<LogoProps, 'variant'>> = (props) => {
       <div className="dark:hidden">
         <Logo {...props} variant="default" />
       </div>
-      {/* Keep same colors in dark mode for consistency */}
+      {/* Show dark variant in dark mode */}
       <div className="hidden dark:block">
-        <Logo {...props} variant="default" />
+        <Logo {...props} variant="dark" />
       </div>
     </>
   )

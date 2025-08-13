@@ -1,53 +1,48 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Main gradient from blue to green -->
-    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0078D4" />
-      <stop offset="25%" style="stop-color:#00A4EF" />
-      <stop offset="50%" style="stop-color:#00BCF2" />
-      <stop offset="75%" style="stop-color:#00D4AA" />
-      <stop offset="100%" style="stop-color:#70F3C0" />
-    </linearGradient>
-    
-    <!-- Dark blue gradient for inner swirl -->
-    <linearGradient id="innerGradient" x1="100%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#005A9E" />
-      <stop offset="50%" style="stop-color:#0078D4" />
-      <stop offset="100%" style="stop-color:#40A9FF" />
-    </linearGradient>
-    
-    <!-- Shadow gradient -->
-    <radialGradient id="shadowGradient">
-      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
-    </radialGradient>
-  </defs>
+  <!-- Shield background -->
+  <path d="M 128 24 
+           C 148 24 168 32 188 32 
+           L 208 32 
+           L 208 112 
+           C 208 152 188 192 158 212
+           C 148 218 138 224 128 228
+           C 118 224 108 218 98 212
+           C 68 192 48 152 48 112
+           L 48 32
+           L 68 32
+           C 88 32 108 24 128 24 Z" 
+        fill="#2B3544"/>
   
-  <!-- Drop shadow -->
-  <ellipse cx="130" cy="130" rx="100" ry="100" fill="url(#shadowGradient)" opacity="0.2" transform="translate(3, 3)"/>
-  
-  <!-- Main swirl container -->
-  <g transform="translate(128, 128)">
-    <!-- Outer C-shaped swirl -->
-    <path d="M 0 -80
-             A 80 80 0 1 1 0 80
-             A 40 40 0 1 0 0 0
-             A 20 20 0 1 1 0 -40
-             A 60 60 0 1 0 0 -80
-             Z"
-          fill="url(#mainGradient)"/>
+  <!-- Inner shield with quadrants -->
+  <g>
+    <!-- Shield inner area -->
+    <path d="M 128 44
+             C 144 44 160 50 176 50
+             L 188 50
+             L 188 110
+             C 188 142 172 174 148 192
+             C 141 197 134 201 128 204
+             C 122 201 115 197 108 192
+             C 84 174 68 142 68 110
+             L 68 50
+             L 80 50
+             C 96 50 112 44 128 44 Z"
+          fill="white"/>
     
-    <!-- Inner C-shaped swirl (overlapping) -->
-    <path d="M 0 -50
-             A 50 50 0 1 1 0 50
-             A 25 25 0 1 0 0 0
-             A 12.5 12.5 0 1 1 0 -25
-             A 37.5 37.5 0 1 0 0 -50
-             Z"
-          fill="url(#innerGradient)"
-          opacity="0.9"/>
+    <!-- Top left quadrant - blue -->
+    <path d="M 68 50 L 128 50 L 128 110 L 68 110 L 68 50 Z" 
+          fill="#4A7FC7"/>
     
-    <!-- Center white circle -->
-    <circle cx="0" cy="0" r="8" fill="white"/>
+    <!-- Top right quadrant - white (already white from base) -->
+    
+    <!-- Bottom right quadrant - blue -->
+    <path d="M 128 110 L 188 110 C 188 142 172 174 148 192 C 141 197 134 201 128 204 L 128 110 Z" 
+          fill="#4A7FC7"/>
+    
+    <!-- Vertical divider -->
+    <rect x="126" y="50" width="4" height="154" fill="#2B3544"/>
+    
+    <!-- Horizontal divider -->
+    <rect x="68" y="108" width="120" height="4" fill="#2B3544"/>
   </g>
 </svg>

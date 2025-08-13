@@ -1,18 +1,46 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="fg1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0078D4" />
-      <stop offset="50%" style="stop-color:#00BCF2" />
-      <stop offset="100%" style="stop-color:#00D4AA" />
-    </linearGradient>
-    <linearGradient id="fg2" x1="100%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#005A9E" />
-      <stop offset="100%" style="stop-color:#0078D4" />
-    </linearGradient>
-  </defs>
-  <g transform="translate(16, 16)">
-    <path d="M 0 -12 A 12 12 0 1 1 0 12 A 6 6 0 1 0 0 0 A 3 3 0 1 1 0 -6 A 9 9 0 1 0 0 -12 Z" fill="url(#fg1)"/>
-    <path d="M 0 -8 A 8 8 0 1 1 0 8 A 4 4 0 1 0 0 0 A 2 2 0 1 1 0 -4 A 6 6 0 1 0 0 -8 Z" fill="url(#fg2)" opacity="0.8"/>
-    <circle cx="0" cy="0" r="1.5" fill="white"/>
+  <!-- Shield background -->
+  <path d="M 16 3 
+           C 18.5 3 21 4 23.5 4 
+           L 26 4 
+           L 26 14 
+           C 26 19 23.5 24 19.75 26.5
+           C 18.5 27.25 17.25 28 16 28.5
+           C 14.75 28 13.5 27.25 12.25 26.5
+           C 8.5 24 6 19 6 14
+           L 6 4
+           L 8.5 4
+           C 11 4 13.5 3 16 3 Z" 
+        fill="#2B3544"/>
+  
+  <!-- Inner shield with quadrants -->
+  <g>
+    <!-- Shield inner area -->
+    <path d="M 16 5.5
+             C 18 5.5 20 6.25 22 6.25
+             L 23.5 6.25
+             L 23.5 13.75
+             C 23.5 17.75 21.5 21.75 18.5 24
+             C 17.625 24.625 16.75 25.125 16 25.5
+             C 15.25 25.125 14.375 24.625 13.5 24
+             C 10.5 21.75 8.5 17.75 8.5 13.75
+             L 8.5 6.25
+             L 10 6.25
+             C 12 6.25 14 5.5 16 5.5 Z"
+          fill="#E8E8E8"/>
+    
+    <!-- Top left quadrant - blue -->
+    <path d="M 8.5 6.25 L 16 6.25 L 16 13.75 L 8.5 13.75 L 8.5 6.25 Z" 
+          fill="#4A7FC7"/>
+    
+    <!-- Bottom right quadrant - blue -->
+    <path d="M 16 13.75 L 23.5 13.75 C 23.5 17.75 21.5 21.75 18.5 24 C 17.625 24.625 16.75 25.125 16 25.5 L 16 13.75 Z" 
+          fill="#4A7FC7"/>
+    
+    <!-- Vertical divider -->
+    <rect x="15.75" y="6.25" width="0.5" height="19.25" fill="#2B3544"/>
+    
+    <!-- Horizontal divider -->
+    <rect x="8.5" y="13.5" width="15" height="0.5" fill="#2B3544"/>
   </g>
 </svg>
