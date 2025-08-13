@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alert } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
+import { Monitor, DollarSign, Zap, AlertTriangle, BarChart3, Settings, Download, Bell, Eye, Users, Shield } from 'lucide-react'
 // import { ProviderCard } from '@/components/shared/ProviderCard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -258,20 +257,20 @@ export default function MonitoringDashboard() {
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200'
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'low': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'high': return 'bg-red-900/20 text-red-300 border-red-500/30'
+      case 'medium': return 'bg-yellow-900/20 text-yellow-300 border-yellow-500/30'
+      case 'low': return 'bg-green-900/20 text-green-300 border-green-500/30'
+      default: return 'bg-gray-800/30 text-gray-300 border-gray-600/50'
     }
   }
 
   const getInsightIcon = (type: string) => {
     switch (type) {
-      case 'optimization': return '⚡'
-      case 'cost_saving': return '💰'
-      case 'usage_pattern': return '📊'
-      case 'warning': return '⚠️'
-      default: return '📈'
+      case 'optimization': return <Zap className="w-5 h-5" />
+      case 'cost_saving': return <DollarSign className="w-5 h-5" />
+      case 'usage_pattern': return <BarChart3 className="w-5 h-5" />
+      case 'warning': return <AlertTriangle className="w-5 h-5" />
+      default: return <Monitor className="w-5 h-5" />
     }
   }
 
@@ -295,77 +294,97 @@ export default function MonitoringDashboard() {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Usage Monitoring Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Real-time monitoring of AI provider usage, costs, and insights
-          </p>
-          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-            <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${realTimeEnabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-              <span>{realTimeEnabled ? 'Live' : 'Paused'}</span>
+      <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+        {/* Animated gradient orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-green-600 to-blue-600 rounded-full opacity-20 animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-10 animate-pulse delay-500"></div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8 relative z-10">
+          {/* Header */}
+          <motion.div 
+            className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div>
+              <h1 className="text-3xl font-bold text-white flex items-center">
+                <Monitor className="w-8 h-8 mr-3 text-blue-400" />
+                AI Usage Monitoring Dashboard
+              </h1>
+              <p className="text-gray-300 mt-2">
+                Real-time monitoring of AI provider usage, costs, and insights
+              </p>
+              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
+                <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${realTimeEnabled ? 'bg-green-400' : 'bg-gray-500'}`}></div>
+                  <span>{realTimeEnabled ? 'Live' : 'Paused'}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          {/* Time Period Selector */}
-          <select 
-            value={selectedPeriod} 
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-          >
-            <option value="1h">Last Hour</option>
-            <option value="6h">Last 6 Hours</option>
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              {/* Time Period Selector */}
+              <select 
+                value={selectedPeriod} 
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="bg-gray-800/50 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+              >
+                <option value="1h">Last Hour</option>
+                <option value="6h">Last 6 Hours</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+              </select>
 
-          {/* Provider Filter */}
-          <select 
-            value={selectedProvider} 
-            onChange={(e) => setSelectedProvider(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-          >
-            <option value="all">All Providers</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Claude</option>
-            <option value="google_gemini">Gemini</option>
-            <option value="grok">Grok</option>
-          </select>
+              {/* Provider Filter */}
+              <select 
+                value={selectedProvider} 
+                onChange={(e) => setSelectedProvider(e.target.value)}
+                className="bg-gray-800/50 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+              >
+                <option value="all">All Providers</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Claude</option>
+                <option value="google_gemini">Gemini</option>
+                <option value="grok">Grok</option>
+              </select>
 
-          {/* Real-time Toggle */}
-          <div className="flex items-center space-x-2">
-            <Switch 
-              checked={realTimeEnabled}
-              onCheckedChange={setRealTimeEnabled}
-            />
-            <Label>Real-time</Label>
-          </div>
+              {/* Real-time Toggle */}
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  checked={realTimeEnabled}
+                  onCheckedChange={setRealTimeEnabled}
+                />
+                <span className="text-gray-300 text-sm">Real-time</span>
+              </div>
 
-          {/* Export Buttons */}
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => exportData('csv')}
-            >
-              Export CSV
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => exportData('json')}
-            >
-              Export JSON
-            </Button>
-          </div>
-        </div>
+              {/* Export Buttons */}
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => exportData('csv')}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  CSV
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => exportData('json')}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  JSON
+                </Button>
+              </div>
+            </div>
       </div>
 
       {/* Error Display */}
@@ -382,70 +401,100 @@ export default function MonitoringDashboard() {
         />
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">
-              ${totals.cost.toFixed(2)}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Across {Object.keys(usageData).length} providers
-            </p>
-          </CardContent>
-        </Card>
+          {/* Summary Cards */}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <motion.div 
+              className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium text-gray-300">Total Cost</h3>
+                <DollarSign className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="text-3xl font-bold text-blue-300">
+                ${totals.cost.toFixed(2)}
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                Across {Object.keys(usageData).length} providers
+              </p>
+            </motion.div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Tokens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {totals.tokens.toLocaleString()}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {totals.requests.toLocaleString()} requests
-            </p>
-          </CardContent>
-        </Card>
+            <motion.div 
+              className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium text-gray-300">Total Tokens</h3>
+                <Zap className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="text-3xl font-bold text-green-300">
+                {totals.tokens.toLocaleString()}
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                {totals.requests.toLocaleString()} requests
+              </p>
+            </motion.div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Active Alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-600">
-              {alerts.filter(a => a.isActive).length}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {alerts.length} total alerts
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <motion.div 
+              className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-6"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium text-gray-300">Active Alerts</h3>
+                <Bell className="w-5 h-5 text-orange-400" />
+              </div>
+              <div className="text-3xl font-bold text-orange-300">
+                {alerts.filter(a => a.isActive).length}
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                {alerts.length} total alerts
+              </p>
+            </motion.div>
+          </motion.div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="providers">Providers</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          <TabsTrigger value="export">Reports</TabsTrigger>
-        </TabsList>
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="overview" className="space-y-6">
+            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+              {[
+                { id: 'overview', label: 'Overview', icon: Eye },
+                { id: 'providers', label: 'Providers', icon: Users },
+                { id: 'insights', label: 'Insights', icon: BarChart3 },
+                { id: 'alerts', label: 'Alerts', icon: Bell },
+                { id: 'export', label: 'Reports', icon: Download }
+              ].map((tab) => (
+                <TabsTrigger 
+                  key={tab.id}
+                  value={tab.id}
+                  className="px-4 py-2 rounded-xl flex items-center gap-2 transition-all whitespace-nowrap data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-500/20 bg-gray-800/50 text-gray-400 hover:bg-gray-700/50"
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Provider Usage Charts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage by Provider</CardTitle>
-              <CardDescription>Cost and token distribution across AI providers</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">Usage by Provider</h3>
+              <p className="text-gray-300 mt-1">Cost and token distribution across AI providers</p>
+            </div>
+            <div className="space-y-4">
               <LoadingOverlay isLoading={isLoading} message="Loading usage data...">
                 {Object.keys(usageData).length === 0 && !isLoading ? (
                   <EmptyStateDisplay
@@ -456,24 +505,28 @@ export default function MonitoringDashboard() {
                     onAction={fetchUsageData}
                   />
                 ) : (
-                  <div className="space-y-4">
-                    {Object.entries(usageData).map(([provider, data]) => (
-                      <div key={provider} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="font-medium capitalize">{provider.replace('_', ' ')}</div>
-                          <Badge variant="secondary">
-                            {data.totalRequests} requests
-                          </Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold">${data.totalCost.toFixed(2)}</div>
-                          <div className="text-sm text-gray-600">
-                            {data.totalTokens.toLocaleString()} tokens
-                          </div>
-                        </div>
+                {Object.entries(usageData).map(([provider, data], index) => (
+                  <motion.div 
+                    key={provider} 
+                    className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 * index }}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
+                      <Badge className="bg-blue-900/20 text-blue-300 border-blue-500/30">
+                        {data.totalRequests} requests
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-white">${data.totalCost.toFixed(2)}</div>
+                      <div className="text-sm text-gray-400">
+                        {data.totalTokens.toLocaleString()} tokens
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  </motion.div>
+                ))}
                 )}
               </LoadingOverlay>
             </CardContent>
