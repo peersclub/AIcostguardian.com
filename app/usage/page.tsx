@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { motion } from 'framer-motion'
 import AuthWrapper from '@/components/AuthWrapper'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getAIProviderLogo, getProviderInfo } from '@/components/ui/ai-logos'
+import { TrendingUp, TrendingDown, Activity, DollarSign, Zap, Clock, Filter, ChevronRight } from 'lucide-react'
 
 interface AIUsage {
   id: string
@@ -249,12 +250,12 @@ function UsageContent() {
   // Show loading while session is loading
   if (isLoading || !session) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-950 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading AI usage analytics...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading AI usage analytics...</p>
             </div>
           </div>
         </div>
@@ -263,150 +264,170 @@ function UsageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">AI Usage Analytics</h1>
-          <p className="text-gray-600 mt-2">
-            Comprehensive analytics and insights for all your AI provider usage
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-950">
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
-          {/* Provider Filter */}
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Provider:</label>
-            <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Providers</SelectItem>
-                {Object.entries(AI_PROVIDERS).map(([key, provider]) => (
-                  <SelectItem key={key} value={key}>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-white">{getAIProviderLogo(key, 'w-4 h-4')}</span>
-                      <span>{provider.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="relative z-10 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <h1 className="text-3xl font-bold text-white">AI Usage Analytics</h1>
+            <p className="text-gray-400 mt-2">
+              Comprehensive analytics and insights for all your AI provider usage
+            </p>
+          </motion.div>
 
-          {/* Time Range Filter */}
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Time Range:</label>
-            <div className="flex space-x-2">
-              {[
-                { value: '1d', label: 'Last 24h' },
-                { value: '7d', label: 'Last 7 days' },
-                { value: '30d', label: 'Last 30 days' }
-              ].map((range) => (
-                <Button
-                  key={range.value}
-                  variant={timeRange === range.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTimeRange(range.value)}
-                >
-                  {range.label}
-                </Button>
-              ))}
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-6 flex flex-wrap items-center gap-4"
+          >
+            {/* Provider Filter */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-300">Provider:</label>
+              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-gray-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-800">
+                  <SelectItem value="all">All Providers</SelectItem>
+                  {Object.entries(AI_PROVIDERS).map(([key, provider]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center space-x-2">
+                        <span>{getAIProviderLogo(key, 'w-4 h-4')}</span>
+                        <span>{provider.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { id: 'overview', name: 'Overview', icon: '📊' },
-                { id: 'providers', name: 'Providers', icon: '🏭' },
-                { id: 'models', name: 'Models', icon: '🤖' },
-                { id: 'costs', name: 'Costs', icon: '💰' },
-                { id: 'history', name: 'History', icon: '📝' },
-                { id: 'insights', name: 'Insights', icon: '💡' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.name}</span>
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
+            {/* Time Range Filter */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-300">Time Range:</label>
+              <div className="flex space-x-2">
+                {[
+                  { value: '1d', label: 'Last 24h' },
+                  { value: '7d', label: 'Last 7 days' },
+                  { value: '30d', label: 'Last 30 days' }
+                ].map((range) => (
+                  <Button
+                    key={range.value}
+                    className={timeRange === range.value 
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border border-gray-700'}
+                    size="sm"
+                    onClick={() => setTimeRange(range.value)}
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6"
+          >
+            <div className="border-b border-gray-800">
+              <nav className="-mb-px flex space-x-8">
+                {[
+                  { id: 'overview', name: 'Overview', icon: '📊' },
+                  { id: 'providers', name: 'Providers', icon: '🏭' },
+                  { id: 'models', name: 'Models', icon: '🤖' },
+                  { id: 'costs', name: 'Costs', icon: '💰' },
+                  { id: 'history', name: 'History', icon: '📝' },
+                  { id: 'insights', name: 'Insights', icon: '💡' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`${
+                      activeTab === tab.id
+                        ? 'border-indigo-500 text-indigo-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'
+                    } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.name}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </motion.div>
 
         {/* Tab Content */}
         {activeTab === 'overview' && filteredData && (
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-6"
+          >
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Requests</p>
-                      <p className="text-2xl font-bold text-gray-900">{filteredData.totalCalls.toLocaleString()}</p>
-                    </div>
-                    <div className="p-3 bg-blue-100 rounded-full">
-                      <span className="text-2xl">📞</span>
-                    </div>
+              <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">Total Requests</p>
+                    <p className="text-2xl font-bold text-white">{filteredData.totalCalls.toLocaleString()}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-3 bg-blue-500/20 rounded-full">
+                    <Activity className="w-6 h-6 text-blue-400" />
+                  </div>
+                </div>
+              </div>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Tokens</p>
-                      <p className="text-2xl font-bold text-gray-900">{filteredData.totalTokens.toLocaleString()}</p>
-                    </div>
-                    <div className="p-3 bg-purple-100 rounded-full">
-                      <span className="text-2xl">📊</span>
-                    </div>
+              <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">Total Tokens</p>
+                    <p className="text-2xl font-bold text-white">{filteredData.totalTokens.toLocaleString()}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-3 bg-purple-500/20 rounded-full">
+                    <Zap className="w-6 h-6 text-purple-400" />
+                  </div>
+                </div>
+              </div>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Cost</p>
-                      <p className="text-2xl font-bold text-gray-900">{formatCost(filteredData.totalCost)}</p>
-                    </div>
-                    <div className="p-3 bg-green-100 rounded-full">
-                      <span className="text-2xl">💰</span>
-                    </div>
+              <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">Total Cost</p>
+                    <p className="text-2xl font-bold text-white">{formatCost(filteredData.totalCost)}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-3 bg-green-500/20 rounded-full">
+                    <DollarSign className="w-6 h-6 text-green-400" />
+                  </div>
+                </div>
+              </div>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Active Providers</p>
-                      <p className="text-2xl font-bold text-gray-900">{Object.keys(filteredData.byProvider).length}</p>
-                    </div>
-                    <div className="p-3 bg-orange-100 rounded-full">
-                      <span className="text-2xl">🏭</span>
-                    </div>
+              <div className="bg-gradient-to-br from-yellow-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">Active Providers</p>
+                    <p className="text-2xl font-bold text-white">{Object.keys(filteredData.byProvider).length}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-3 bg-yellow-500/20 rounded-full">
+                    <Clock className="w-6 h-6 text-yellow-400" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Daily Usage Chart */}

@@ -314,8 +314,8 @@ const ApiKeyList = ({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -449,8 +449,8 @@ export default function ApiKeysSettings() {
                     </div>
                     <Key className="h-8 w-8 text-primary" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
@@ -469,8 +469,8 @@ export default function ApiKeysSettings() {
                     </div>
                     <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
@@ -489,8 +489,8 @@ export default function ApiKeysSettings() {
                     </div>
                     <Globe className="h-8 w-8 text-primary" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
@@ -507,8 +507,8 @@ export default function ApiKeysSettings() {
                     </div>
                     <Shield className="h-8 w-8 text-amber-600 dark:text-amber-400" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           </div>
         </motion.div>
