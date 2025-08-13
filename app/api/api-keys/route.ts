@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import { encrypt, decrypt } from '@/lib/encryption'
+import { checkCSRF } from '@/lib/csrf'
 import { 
   notifyApiKeyCreatedServer, 
   notifyApiKeyUpdatedServer,
@@ -101,7 +102,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -109,6 +110,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check CSRF token for POST requests
+    const csrfCheck = await checkCSRF(request, session.user.email)
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { error: csrfCheck.error || 'CSRF token validation failed' },
+        { status: 403 }
+      )
+    }
+
+    // Continue with existing POST logic...
+    return await handlePOST(request, session)
+  } catch (error: any) {
+    console.error('POST API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handlePOST(request: NextRequest, session: any) {
+  try {
     const body = await request.json()
     const { provider, apiKey } = body
 
@@ -283,7 +303,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -291,6 +311,25 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check CSRF token for DELETE requests
+    const csrfCheck = await checkCSRF(request, session.user.email)
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { error: csrfCheck.error || 'CSRF token validation failed' },
+        { status: 403 }
+      )
+    }
+
+    // Continue with existing DELETE logic...
+    return await handleDELETE(request, session)
+  } catch (error: any) {
+    console.error('DELETE API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleDELETE(request: NextRequest, session: any) {
+  try {
     const { searchParams } = new URL(request.url)
     const keyId = searchParams.get('id')
 

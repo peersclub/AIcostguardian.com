@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import AuthWrapper from '@/components/AuthWrapper'
 import { motion } from 'framer-motion'
+import { useCSRF, fetchWithCSRF } from '@/components/csrf-provider'
 import Link from 'next/link'
 import { LogoThemed } from '@/components/ui/LogoThemed'
 import {
@@ -248,8 +249,8 @@ export default function SettingsPage() {
         keyType = testData.keyType
       }
       
-      // Save to database
-      const response = await fetch('/api/api-keys', {
+      // Save to database with CSRF protection
+      const response = await fetchWithCSRF('/api/api-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -367,7 +368,7 @@ export default function SettingsPage() {
     setDeletingKeys({ ...deletingKeys, [provider.id]: true })
     
     try {
-      const response = await fetch(`/api/api-keys?id=${provider.dbKey.id}`, {
+      const response = await fetchWithCSRF(`/api/api-keys?id=${provider.dbKey.id}`, {
         method: 'DELETE'
       })
       

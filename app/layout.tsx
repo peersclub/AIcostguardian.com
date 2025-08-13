@@ -9,6 +9,7 @@ import DemoDataProvider from '@/components/DemoDataProvider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import { SiteWideNotificationBanner } from '@/components/notifications/SiteWideNotificationBanner'
+import { CSRFProvider } from '@/components/csrf-provider'
 import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -99,16 +100,18 @@ export default function RootLayout({
       <body className={inter.className}>
         <ErrorBoundary>
           <NextAuthSessionProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <DemoDataProvider>
-                <NavigationProgress />
-                <SiteWideNotificationBanner />
-                <Navigation />
-                {children}
-                <Toaster position="top-right" richColors />
-                <Analytics />
-              </DemoDataProvider>
-            </ThemeProvider>
+            <CSRFProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <DemoDataProvider>
+                  <NavigationProgress />
+                  <SiteWideNotificationBanner />
+                  <Navigation />
+                  {children}
+                  <Toaster position="top-right" richColors />
+                  <Analytics />
+                </DemoDataProvider>
+              </ThemeProvider>
+            </CSRFProvider>
           </NextAuthSessionProvider>
         </ErrorBoundary>
       </body>

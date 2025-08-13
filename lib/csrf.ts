@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server'
 import { cache } from './redis'
 
+// In-memory storage fallback for CSRF tokens when Redis is not available
+const inMemoryCSRFTokens = new Map<string, { token: string; expiry: number }>()
+
 // Use Web Crypto API for Edge Runtime compatibility
 const crypto = globalThis.crypto || (typeof window !== 'undefined' ? window.crypto : require('crypto').webcrypto)
 
@@ -19,7 +22,16 @@ export async function generateCSRFToken(): Promise<string> {
 // Store CSRF token
 export async function storeCSRFToken(sessionId: string, token: string): Promise<void> {
   const key = `csrf:${sessionId}`
-  await cache.set(key, token, { ex: CSRF_TOKEN_TTL })
+  try {
+    await cache.set(key, token, { ex: CSRF_TOKEN_TTL })
+  } catch (error) {
+    // Fallback to in-memory storage
+    console.warn('Failed to store CSRF token in Redis, using in-memory fallback')
+    inMemoryCSRFTokens.set(key, {
+      token,
+      expiry: Date.now() + (CSRF_TOKEN_TTL * 1000)
+    })
+  }
 }
 
 // Validate CSRF token
@@ -28,14 +40,33 @@ export async function validateCSRFToken(
   token: string
 ): Promise<boolean> {
   const key = `csrf:${sessionId}`
-  const storedToken = await cache.get(key)
+  let storedToken: string | null = null
+  
+  try {
+    storedToken = await cache.get(key)
+  } catch (error) {
+    // Fallback to in-memory storage
+    const inMemoryToken = inMemoryCSRFTokens.get(key)
+    if (inMemoryToken && inMemoryToken.expiry > Date.now()) {
+      storedToken = inMemoryToken.token
+    }
+  }
   
   if (!storedToken || storedToken !== token) {
     return false
   }
   
-  // Refresh the token TTL on successful validation
-  await cache.expire(key, CSRF_TOKEN_TTL)
+  try {
+    // Refresh the token TTL on successful validation
+    await cache.expire(key, CSRF_TOKEN_TTL)
+  } catch (error) {
+    // Update in-memory expiry
+    const inMemoryToken = inMemoryCSRFTokens.get(key)
+    if (inMemoryToken) {
+      inMemoryToken.expiry = Date.now() + (CSRF_TOKEN_TTL * 1000)
+    }
+  }
+  
   return true
 }
 

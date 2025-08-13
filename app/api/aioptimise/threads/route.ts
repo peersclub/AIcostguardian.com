@@ -9,13 +9,22 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user from database using email since JWT strategy doesn't provide reliable user.id
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const threads = await prisma.aIThread.findMany({
       where: {
-        userId: session.user.id,
+        userId: user.id,
         isArchived: false,
       },
       orderBy: [
