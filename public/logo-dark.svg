@@ -1,0 +1,23 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple geometric logo for dark backgrounds -->
+  <g>
+    <!-- Top section - rectangle with curved top-right -->
+    <path d="M 40 60
+             L 160 60
+             L 160 30
+             C 160 30 190 30 210 50
+             L 226 66
+             L 226 140
+             L 40 140
+             Z" 
+          fill="#8B5CF6"/>
+    
+    <!-- Bottom section - curved quarter -->
+    <path d="M 176 176
+             L 226 176
+             L 226 226
+             C 200 226 176 202 176 176
+             Z"
+          fill="#8B5CF6"/>
+  </g>
+</svg>

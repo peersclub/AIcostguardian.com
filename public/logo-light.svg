@@ -1,5 +1,5 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Shield with purple quadrants - Default logo -->
+  <!-- Shield with purple quadrants for light backgrounds -->
   
   <!-- Outer black shield border -->
   <path d="M 128 24 
@@ -16,7 +16,7 @@
         fill="#000000"/>
   
   <!-- Inner shield area -->
-  <g>
+  <g transform="translate(0, 0)">
     <!-- White background for inner shield -->
     <path d="M 128 44
              C 144 44 160 50 176 50

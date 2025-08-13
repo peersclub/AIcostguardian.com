@@ -1,5 +1,7 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Shield background -->
+  <!-- Shield favicon with purple quadrants -->
+  
+  <!-- Outer shield -->
   <path d="M 16 3 
            C 18.5 3 21 4 23.5 4 
            L 26 4 
@@ -11,11 +13,11 @@
            L 6 4
            L 8.5 4
            C 11 4 13.5 3 16 3 Z" 
-        fill="#2B3544"/>
+        fill="#000000"/>
   
   <!-- Inner shield with quadrants -->
   <g>
-    <!-- Shield inner area -->
+    <!-- Inner area -->
     <path d="M 16 5.5
              C 18 5.5 20 6.25 22 6.25
              L 23.5 6.25
@@ -27,20 +29,18 @@
              L 8.5 6.25
              L 10 6.25
              C 12 6.25 14 5.5 16 5.5 Z"
-          fill="#E8E8E8"/>
+          fill="white"/>
     
-    <!-- Top left quadrant - blue -->
+    <!-- Top left quadrant - purple -->
     <path d="M 8.5 6.25 L 16 6.25 L 16 13.75 L 8.5 13.75 L 8.5 6.25 Z" 
-          fill="#4A7FC7"/>
+          fill="#8B5CF6"/>
     
-    <!-- Bottom right quadrant - blue -->
+    <!-- Bottom right quadrant - purple -->
     <path d="M 16 13.75 L 23.5 13.75 C 23.5 17.75 21.5 21.75 18.5 24 C 17.625 24.625 16.75 25.125 16 25.5 L 16 13.75 Z" 
-          fill="#4A7FC7"/>
+          fill="#8B5CF6"/>
     
-    <!-- Vertical divider -->
-    <rect x="15.75" y="6.25" width="0.5" height="19.25" fill="#2B3544"/>
-    
-    <!-- Horizontal divider -->
-    <rect x="8.5" y="13.5" width="15" height="0.5" fill="#2B3544"/>
+    <!-- Divider lines -->
+    <rect x="15.75" y="6.25" width="0.5" height="19.25" fill="#000000"/>
+    <rect x="8.5" y="13.5" width="15" height="0.5" fill="#000000"/>
   </g>
 </svg>
