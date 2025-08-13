@@ -18,9 +18,20 @@ const BLOCKED_DOMAINS = [
   'protonmail.com'
 ]
 
+// List of explicitly allowed domains (always allowed)
+const ALLOWED_DOMAINS = [
+  'aicostguardian.com',
+  'assetworks.com'
+]
+
 // Helper function to validate enterprise email domains
 function isEnterpriseEmail(email: string): boolean {
   const domain = email.split('@')[1]?.toLowerCase()
+  // Check if explicitly allowed first
+  if (ALLOWED_DOMAINS.includes(domain)) {
+    return true
+  }
+  // Then check if not blocked
   return !BLOCKED_DOMAINS.includes(domain)
 }
 
@@ -57,7 +68,21 @@ export const authOptions: NextAuthOptions = {
         // Log for debugging
         console.log('SignIn attempt for:', user.email)
         
-        return true
+        // Check if email domain is allowed
+        const domain = user.email.split('@')[1]?.toLowerCase()
+        if (ALLOWED_DOMAINS.includes(domain)) {
+          console.log('✅ Allowed domain:', domain)
+          return true
+        }
+        
+        // Check if it's an enterprise email (not blocked)
+        if (isEnterpriseEmail(user.email)) {
+          console.log('✅ Enterprise email:', user.email)
+          return true
+        }
+        
+        console.log('❌ Blocked domain:', domain)
+        return '/auth/error?error=InvalidDomain'
       } catch (error) {
         console.error('SignIn error:', error)
         return false
