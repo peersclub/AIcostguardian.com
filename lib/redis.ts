@@ -1,5 +1,10 @@
 import { Redis } from '@upstash/redis'
 
+// Suppress Redis warnings in production
+if (process.env.NODE_ENV === 'production' && !process.env.UPSTASH_REDIS_REST_URL) {
+  console.info('Redis not configured, using in-memory rate limiting')
+}
+
 // Initialize Redis client for rate limiting and caching
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL || '',
@@ -70,7 +75,11 @@ class RedisCompatibleStore {
   }
 
   async set(key: string, value: any, options?: { ex?: number }) {
-    return this.store.set(key, value, options)
+    if (this.store instanceof InMemoryStore) {
+      return this.store.set(key, value, options)
+    }
+    // For Redis, pass options directly
+    return (this.store as Redis).set(key, value, options as any)
   }
 
   async del(key: string) {
