@@ -6,40 +6,8 @@ import prisma from '@/lib/prisma'
 // Check if we're in build phase
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 
-// Custom adapter with account linking fix
-const customAdapter = !isBuildPhase ? {
-  ...PrismaAdapter(prisma),
-  linkAccount: async (account: any) => {
-    // Check if user exists first
-    const user = await prisma.user.findUnique({
-      where: { id: account.userId }
-    })
-    
-    if (!user) {
-      throw new Error('User not found')
-    }
-    
-    // Create the account link
-    return await prisma.account.create({
-      data: {
-        userId: account.userId,
-        type: account.type,
-        provider: account.provider,
-        providerAccountId: account.providerAccountId,
-        refresh_token: account.refresh_token,
-        access_token: account.access_token,
-        expires_at: account.expires_at,
-        token_type: account.token_type,
-        scope: account.scope,
-        id_token: account.id_token,
-        session_state: account.session_state,
-      }
-    })
-  }
-} : undefined as any
-
 export const authOptions: NextAuthOptions = {
-  adapter: customAdapter,
+  adapter: !isBuildPhase ? PrismaAdapter(prisma) : undefined as any,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -50,9 +18,7 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code"
         }
-      },
-      // Allow linking accounts with the same email
-      allowDangerousEmailAccountLinking: true,
+      }
     }),
   ],
   callbacks: {
@@ -61,43 +27,6 @@ export const authOptions: NextAuthOptions = {
         if (!user.email) return false
         
         console.log('🔐 SignIn attempt for:', user.email)
-        
-        // Handle OAuth account linking for existing users
-        if (account?.provider === 'google') {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            include: { accounts: true }
-          })
-          
-          if (existingUser) {
-            // Check if OAuth account is already linked
-            const hasGoogleAccount = existingUser.accounts.some(
-              acc => acc.provider === 'google'
-            )
-            
-            if (!hasGoogleAccount) {
-              console.log('🔗 Linking Google account to existing user:', user.email)
-              // Link the OAuth account to the existing user
-              await prisma.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  refresh_token: account.refresh_token,
-                  access_token: account.access_token,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                  session_state: account.session_state,
-                }
-              })
-            }
-            
-            console.log('✅ User authenticated:', user.email)
-          }
-        }
         
         // ALWAYS ALLOW SIGN IN - Remove all domain restrictions for testing
         return true

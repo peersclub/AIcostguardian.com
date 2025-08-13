@@ -51,17 +51,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/favicon.png', type: 'image/png' },
       { url: '/favicon.ico' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180' },
+      { url: '/favicon.png', sizes: '180x180' },
     ],
     other: [
       {
         rel: 'mask-icon',
-        url: '/safari-pinned-tab.svg',
-        color: '#6366f1',
+        url: '/favicon.png',
+        color: '#9333ea',
       },
     ],
   },
