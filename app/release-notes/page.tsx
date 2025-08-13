@@ -1,52 +1,63 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Rocket, CheckCircle, Clock, AlertTriangle, Users, 
   TrendingUp, Zap, Shield, Database, Code, Activity,
-  Star, ExternalLink, GitBranch, Package, Bell,
+  Star, GitBranch, Package, Bell, Bug, Server,
   MessageSquare, Calendar, Target, Award, Sparkles,
   ArrowUpRight, ChevronRight, Download, Filter,
-  RefreshCw, Settings, Brain, Globe, DollarSign
+  RefreshCw, Settings, Brain, Globe, DollarSign,
+  Wrench, Info, ChevronDown, Search, Hash, Box,
+  FileText, BarChart3, Lock, Cpu, Cloud, ArrowRight,
+  Layers, Terminal, Workflow, BookOpen, HelpCircle
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+import Link from 'next/link'
 
 export default function ReleaseNotesPage() {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('current')
-  const [isLoading, setIsLoading] = useState(false)
-  
-  const currentVersion = "2.0.0"
-  const releaseDate = "August 12, 2025"
-  const completionPercentage = 95
+  const [selectedVersion, setSelectedVersion] = useState('2.0.0')
+  const [selectedCategory, setSelectedCategory] = useState('all')
 
-  const features = [
+  const currentVersion = "2.0.0"
+  const releaseDate = "August 13, 2025"
+
+  const versions = [
+    { version: '2.0.0', date: 'August 13, 2025', type: 'major', status: 'current' },
+    { version: '1.9.0', date: 'July 28, 2025', type: 'minor', status: 'stable' },
+    { version: '1.8.0', date: 'July 15, 2025', type: 'minor', status: 'stable' },
+    { version: '1.7.0', date: 'June 30, 2025', type: 'minor', status: 'deprecated' }
+  ]
+
+  const releaseHighlights = [
     {
       category: "Authentication & Security",
       icon: Shield,
       color: "from-green-900/50 to-emerald-800/50",
       borderColor: "border-green-500/30",
+      iconBg: "bg-green-500/20",
       iconColor: "text-green-400",
+      textColor: "text-green-300",
       items: [
-        { name: "Google OAuth", status: "complete", badge: "Production" },
-        { name: "Enterprise SSO", status: "complete", badge: "Production" },
-        { name: "Session Management", status: "complete", badge: "Production" },
-        { name: "2FA Authentication", status: "planned", badge: "Q3 2025" }
+        { name: "Google OAuth Integration", status: "complete", description: "Seamless login with Google accounts" },
+        { name: "Enterprise SSO", status: "complete", description: "Support for SAML 2.0 and OpenID Connect" },
+        { name: "Session Management", status: "complete", description: "Improved session handling and security" },
+        { name: "2FA Authentication", status: "planned", description: "Two-factor authentication for enhanced security" }
       ]
     },
     {
-      category: "AI Integration",
+      category: "AI Provider Integration",
       icon: Brain,
       color: "from-purple-900/50 to-purple-800/50",
       borderColor: "border-purple-500/30",
+      iconBg: "bg-purple-500/20",
       iconColor: "text-purple-400",
+      textColor: "text-purple-300",
       items: [
-        { name: "OpenAI GPT-4", status: "complete", badge: "Live" },
-        { name: "Claude 3.5", status: "complete", badge: "Live" },
-        { name: "Google Gemini", status: "complete", badge: "Live" },
-        { name: "Custom Models", status: "in-progress", badge: "Beta" }
+        { name: "OpenAI GPT-4o", status: "complete", description: "Full support for latest GPT-4o models" },
+        { name: "Claude 3.5 Sonnet", status: "complete", description: "Anthropic Claude integration" },
+        { name: "Google Gemini Pro", status: "complete", description: "Google AI models support" },
+        { name: "Grok Integration", status: "complete", description: "X.AI Grok model support" }
       ]
     },
     {
@@ -54,12 +65,14 @@ export default function ReleaseNotesPage() {
       icon: Activity,
       color: "from-blue-900/50 to-blue-800/50",
       borderColor: "border-blue-500/30",
+      iconBg: "bg-blue-500/20",
       iconColor: "text-blue-400",
+      textColor: "text-blue-300",
       items: [
-        { name: "Real-time Dashboard", status: "complete", badge: "Production" },
-        { name: "Cost Analytics", status: "complete", badge: "Production" },
-        { name: "Usage Tracking", status: "complete", badge: "Production" },
-        { name: "Predictive Insights", status: "in-progress", badge: "Beta" }
+        { name: "Real-time Dashboard", status: "complete", description: "Live cost tracking and monitoring" },
+        { name: "Cost Analytics", status: "complete", description: "Detailed cost breakdown and analysis" },
+        { name: "Usage Patterns", status: "complete", description: "AI usage pattern recognition" },
+        { name: "Predictive Insights", status: "in-progress", description: "ML-powered cost predictions" }
       ]
     },
     {
@@ -67,340 +80,394 @@ export default function ReleaseNotesPage() {
       icon: Users,
       color: "from-yellow-900/50 to-orange-800/50",
       borderColor: "border-yellow-500/30",
+      iconBg: "bg-yellow-500/20",
       iconColor: "text-yellow-400",
+      textColor: "text-yellow-300",
       items: [
-        { name: "Team Management", status: "complete", badge: "Production" },
-        { name: "Role-based Access", status: "complete", badge: "Production" },
-        { name: "Usage Attribution", status: "complete", badge: "Production" },
-        { name: "Department Groups", status: "planned", badge: "Q4 2025" }
+        { name: "Team Management", status: "complete", description: "Invite and manage team members" },
+        { name: "Role-based Access", status: "complete", description: "Granular permission controls" },
+        { name: "Usage Attribution", status: "complete", description: "Track usage by team member" },
+        { name: "Department Budgets", status: "planned", description: "Budget allocation by department" }
       ]
     }
   ]
 
-  const metrics = {
-    totalFeatures: 120,
-    completedFeatures: 95,
-    inProgress: 15,
-    planned: 10
-  }
+  const improvements = [
+    { text: "Dashboard load time reduced by 60%", icon: Zap },
+    { text: "Improved API response caching", icon: Server },
+    { text: "Enhanced mobile responsiveness", icon: Globe },
+    { text: "Optimized database queries", icon: Database },
+    { text: "Dark mode improvements", icon: Settings }
+  ]
 
-  const roadmapItems = [
+  const bugFixes = [
+    "Fixed authentication timeout issues with Google OAuth",
+    "Resolved chart rendering problems on Safari browser",
+    "Corrected timezone handling for international users",
+    "Fixed CSV export formatting for large datasets",
+    "Resolved WebSocket connection stability issues"
+  ]
+
+  const upcomingFeatures = [
     {
-      version: "v2.0.0",
-      date: "August 2025",
-      status: "current",
-      title: "Production Launch",
-      description: "Complete platform with enterprise features",
-      progress: 100,
-      icon: Rocket,
-      highlights: ["Real-time monitoring", "Multi-provider support", "Team collaboration"]
+      title: "AI-Powered Optimization",
+      description: "Machine learning algorithms to optimize your AI usage",
+      progress: 65,
+      targetDate: "September 2025",
+      icon: Brain
     },
     {
-      version: "v2.1.0",
-      date: "September 2025",
-      status: "next",
-      title: "Advanced Analytics",
-      description: "AI-powered insights and predictions",
-      progress: 35,
-      icon: Brain,
-      highlights: ["Predictive analytics", "Cost optimization", "ML recommendations"]
+      title: "Custom Model Support",
+      description: "Integration with self-hosted and custom AI models",
+      progress: 40,
+      targetDate: "September 2025",
+      icon: Box
     },
     {
-      version: "v3.0.0",
-      date: "Q4 2025",
-      status: "planned",
-      title: "Enterprise Suite",
-      description: "Full enterprise deployment capabilities",
-      progress: 0,
-      icon: Globe,
-      highlights: ["SSO integration", "Advanced RBAC", "Compliance tools"]
+      title: "Advanced RBAC",
+      description: "Granular permission system with custom roles",
+      progress: 25,
+      targetDate: "October 2025",
+      icon: Lock
+    },
+    {
+      title: "Compliance Dashboard",
+      description: "SOC2, GDPR, and HIPAA compliance tracking",
+      progress: 10,
+      targetDate: "Q4 2025",
+      icon: Shield
     }
   ]
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Executive Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-pink-900/20" />
-        <div className="relative max-w-7xl mx-auto px-6 py-12">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-xl rounded-full border border-indigo-500/30 mb-6">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-indigo-300 text-sm font-medium">Version {currentVersion} Now Live</span>
-            </div>
-            
-            <h1 className="text-5xl font-bold text-white mb-4">
-              AI Cost Guardian Release Notes
-            </h1>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Track our journey to revolutionize AI cost management with enterprise-grade features and insights
-            </p>
-          </motion.div>
-        </div>
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 pb-20">
-        {/* Executive Summary Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12"
-        >
-          {/* Platform Status */}
-          <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-400" />
-              </div>
-              <Badge className="bg-green-500/20 text-green-300 border-green-500/30">LIVE</Badge>
-            </div>
-            <div className="text-2xl font-bold text-white mb-1">Production Ready</div>
-            <div className="text-green-300 text-sm">All systems operational</div>
-            <div className="mt-4 pt-4 border-t border-green-500/20">
-              <div className="flex items-center gap-2 text-xs text-green-200">
-                <Activity className="w-3 h-3" />
-                <span>99.9% Uptime</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature Completion */}
-          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Target className="w-6 h-6 text-blue-400" />
-              </div>
-              <span className="text-2xl font-bold text-white">{completionPercentage}%</span>
-            </div>
-            <div className="text-blue-300 text-sm mb-2">Features Complete</div>
-            <Progress value={completionPercentage} className="h-2 bg-blue-900/50" />
-            <div className="mt-4 pt-4 border-t border-blue-500/20">
-              <div className="flex items-center gap-2 text-xs text-blue-200">
-                <TrendingUp className="w-3 h-3" />
-                <span>+15% this month</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Development */}
-          <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <Code className="w-6 h-6 text-purple-400" />
-              </div>
-              <span className="text-2xl font-bold text-white">{metrics.inProgress}</span>
-            </div>
-            <div className="text-purple-300 text-sm">In Development</div>
-            <div className="mt-4 pt-4 border-t border-purple-500/20">
-              <div className="flex items-center gap-2 text-xs text-purple-200">
-                <Clock className="w-3 h-3" />
-                <span>Daily updates</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Next Release */}
-          <div className="bg-gradient-to-br from-yellow-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <Calendar className="w-6 h-6 text-yellow-400" />
-              </div>
-              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">v2.1.0</Badge>
-            </div>
-            <div className="text-yellow-300 text-sm">Next Release</div>
-            <div className="text-white font-semibold">September 2025</div>
-            <div className="mt-4 pt-4 border-t border-yellow-500/20">
-              <div className="flex items-center gap-2 text-xs text-yellow-200">
-                <Rocket className="w-3 h-3" />
-                <span>35% Complete</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Feature Categories */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-12"
-        >
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-white">Feature Implementation</h2>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-700/50 transition-all flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filter
-              </button>
-              <button className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-700/50 transition-all flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {features.map((category, index) => (
-              <motion.div
-                key={category.category}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className={`bg-gradient-to-br ${category.color} backdrop-blur-xl rounded-2xl border ${category.borderColor} p-6`}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-black/20 rounded-xl">
-                    <category.icon className={`w-6 h-6 ${category.iconColor}`} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">{category.category}</h3>
-                    <p className="text-gray-400 text-sm">
-                      {category.items.filter(i => i.status === 'complete').length}/{category.items.length} Complete
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {category.items.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {item.status === 'complete' ? (
-                          <CheckCircle className="w-4 h-4 text-green-400" />
-                        ) : item.status === 'in-progress' ? (
-                          <Clock className="w-4 h-4 text-yellow-400" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border-2 border-gray-600" />
-                        )}
-                        <span className="text-gray-200">{item.name}</span>
-                      </div>
-                      <Badge className={
-                        item.status === 'complete' 
-                          ? "bg-green-500/20 text-green-300 border-green-500/30"
-                          : item.status === 'in-progress'
-                          ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-                          : "bg-gray-700/50 text-gray-400 border-gray-600"
-                      }>
-                        {item.badge}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Roadmap Timeline */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12"
-        >
-          <h2 className="text-3xl font-bold text-white mb-8">Development Roadmap</h2>
+      <div className="relative z-10 py-6">
+        <div className="max-w-7xl mx-auto px-6">
           
-          <div className="space-y-6">
-            {roadmapItems.map((item, index) => (
-              <motion.div
-                key={item.version}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-xl ${
-                    item.status === 'current' 
-                      ? 'bg-green-500/20' 
-                      : item.status === 'next'
-                      ? 'bg-blue-500/20'
-                      : 'bg-gray-700/50'
-                  }`}>
-                    <item.icon className={`w-6 h-6 ${
-                      item.status === 'current' 
-                        ? 'text-green-400' 
-                        : item.status === 'next'
-                        ? 'text-blue-400'
-                        : 'text-gray-400'
-                    }`} />
+          {/* Executive Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-indigo-500/20 rounded-lg">
+                    <Rocket className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-white">Release Notes</h1>
+                  <span className="px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-300 text-sm font-medium rounded-full border border-indigo-500/30">
+                    v{currentVersion}
+                  </span>
+                </div>
+                <p className="text-gray-400">Track platform updates, new features, and improvements</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <button className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-700/50 transition-all flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Subscribe
+                </button>
+                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Download PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Version Selector */}
+            <div className="flex space-x-1 bg-gray-800/30 rounded-lg p-1">
+              {versions.map((v) => (
+                <button
+                  key={v.version}
+                  onClick={() => setSelectedVersion(v.version)}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    selectedVersion === v.version
+                      ? 'bg-indigo-600 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
+                  v{v.version}
+                  {v.status === 'current' && (
+                    <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">
+                      Current
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Key Metrics */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          >
+            <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <Package className="w-6 h-6 text-green-400" />
+                </div>
+                <span className="text-2xl font-bold text-white">v{currentVersion}</span>
+              </div>
+              <div className="text-green-300 text-sm">Latest Version</div>
+              <div className="mt-2 text-xs text-green-200">Released {releaseDate}</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Sparkles className="w-6 h-6 text-blue-400" />
+                </div>
+                <span className="text-2xl font-bold text-white">45+</span>
+              </div>
+              <div className="text-blue-300 text-sm">New Features</div>
+              <div className="mt-2 text-xs text-blue-200">This release</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Bug className="w-6 h-6 text-purple-400" />
+                </div>
+                <span className="text-2xl font-bold text-white">28</span>
+              </div>
+              <div className="text-purple-300 text-sm">Bugs Fixed</div>
+              <div className="mt-2 text-xs text-purple-200">Stability improved</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-yellow-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                  <Users className="w-6 h-6 text-yellow-400" />
+                </div>
+                <span className="text-2xl font-bold text-white">15</span>
+              </div>
+              <div className="text-yellow-300 text-sm">Contributors</div>
+              <div className="mt-2 text-xs text-yellow-200">342 commits</div>
+            </div>
+          </motion.div>
+
+          {/* Release Highlights */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <h2 className="text-2xl font-bold text-white mb-6">What&apos;s New</h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {releaseHighlights.map((category, index) => (
+                <motion.div
+                  key={category.category}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className={`bg-gradient-to-br ${category.color} backdrop-blur-xl rounded-2xl border ${category.borderColor} p-6`}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-2 ${category.iconBg} rounded-lg`}>
+                      <category.icon className={`w-6 h-6 ${category.iconColor}`} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">{category.category}</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    {category.items.map((item) => (
+                      <div key={item.name} className="flex items-start gap-3">
+                        <div className="mt-1">
+                          {item.status === 'complete' ? (
+                            <CheckCircle className="w-4 h-4 text-green-400" />
+                          ) : item.status === 'in-progress' ? (
+                            <Clock className="w-4 h-4 text-yellow-400" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full border-2 border-gray-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-white font-medium">{item.name}</div>
+                          <div className={`text-sm ${category.textColor} opacity-80`}>
+                            {item.description}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Improvements & Bug Fixes */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Improvements */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-blue-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Performance Improvements</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {improvements.map((improvement, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <improvement.icon className="w-4 h-4 text-blue-400" />
+                    <span className="text-gray-300">{improvement.text}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Bug Fixes */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <Bug className="w-6 h-6 text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Bug Fixes</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {bugFixes.map((fix, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 text-green-400 mt-0.5" />
+                    <span className="text-gray-300">{fix}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Breaking Changes Alert */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-gradient-to-br from-red-900/50 to-red-800/50 backdrop-blur-xl rounded-2xl border border-red-500/30 p-6 mb-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Breaking Changes</h3>
+            </div>
+            
+            <ul className="space-y-2 text-red-200">
+              <li className="flex items-start gap-2">
+                <ChevronRight className="w-4 h-4 mt-0.5 text-red-400" />
+                <span>API key format has changed - all users must regenerate their keys</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <ChevronRight className="w-4 h-4 mt-0.5 text-red-400" />
+                <span>Legacy v1 endpoints have been deprecated</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <ChevronRight className="w-4 h-4 mt-0.5 text-red-400" />
+                <span>Minimum Node.js version is now 18.0.0</span>
+              </li>
+            </ul>
+          </motion.div>
+
+          {/* Upcoming Features */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mb-8"
+          >
+            <h2 className="text-2xl font-bold text-white mb-6">Roadmap</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {upcomingFeatures.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.8 + index * 0.1 }}
+                  className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-500/20 rounded-lg">
+                        <feature.icon className="w-5 h-5 text-indigo-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-white">{feature.title}</h4>
+                        <p className="text-sm text-gray-400 mt-1">{feature.description}</p>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                        <Badge className={
-                          item.status === 'current'
-                            ? "bg-green-500/20 text-green-300 border-green-500/30"
-                            : item.status === 'next'
-                            ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
-                            : "bg-gray-700/50 text-gray-400 border-gray-600"
-                        }>
-                          {item.version}
-                        </Badge>
-                      </div>
-                      <span className="text-gray-400 text-sm">{item.date}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">Progress</span>
+                      <span className="text-white font-medium">{feature.progress}%</span>
                     </div>
-                    
-                    <p className="text-gray-400 mb-4">{item.description}</p>
-                    
-                    {item.progress > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-gray-400">Progress</span>
-                          <span className="text-white font-medium">{item.progress}%</span>
-                        </div>
-                        <Progress value={item.progress} className="h-2 bg-gray-800" />
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {item.highlights.map((highlight) => (
-                        <div key={highlight} className="flex items-center gap-2 px-3 py-1 bg-gray-800/50 rounded-lg">
-                          <ChevronRight className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-300">{highlight}</span>
-                        </div>
-                      ))}
+                    <div className="w-full bg-gray-800 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all"
+                        style={{ width: `${feature.progress}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <Calendar className="w-3 h-3" />
+                      <span>Target: {feature.targetDate}</span>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
 
-        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-12 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8 text-center"
-        >
-          <h3 className="text-2xl font-bold text-white mb-4">Stay Updated</h3>
-          <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-            Get notified about new features, updates, and improvements to AI Cost Guardian
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Subscribe to Updates
-            </button>
-            <a 
-              href="https://github.com/peersclub/AIcostguardian.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all flex items-center gap-2"
-            >
-              <GitBranch className="w-4 h-4" />
-              View on GitHub
-            </a>
-          </div>
-        </motion.div>
+          {/* Call to Action */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 backdrop-blur-xl rounded-2xl border border-indigo-500/30 p-8 text-center"
+          >
+            <h3 className="text-2xl font-bold text-white mb-4">Stay Updated</h3>
+            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+              Get notified about new features, updates, and improvements to AI Cost Guardian
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                Subscribe to Updates
+              </button>
+              <Link
+                href="https://github.com/peersclub/AIcostguardian.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+              >
+                <GitBranch className="w-4 h-4" />
+                View on GitHub
+              </Link>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   )
