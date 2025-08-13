@@ -431,264 +431,256 @@ function UsageContent() {
             </div>
 
             {/* Daily Usage Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Usage Trend</CardTitle>
-                <CardDescription>API calls and costs over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredData.dailyUsage.slice(-7).map((day, index) => (
-                    <div key={day.date} className="flex items-center space-x-4">
-                      <div className="w-20 text-sm text-gray-600">
-                        {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm font-medium">{day.calls} calls</span>
-                          <span className="text-sm text-gray-600">{formatCost(day.cost)}</span>
-                        </div>
-                        <Progress 
-                          value={filteredData.dailyUsage.length > 0 ? (day.calls / Math.max(...filteredData.dailyUsage.map(d => d.calls))) * 100 : 0} 
-                          className="h-2" 
-                        />
-                      </div>
+            <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white">Daily Usage Trend</h3>
+                <p className="text-gray-300 mt-1">API calls and costs over time</p>
+              </div>
+              <div className="space-y-4">
+                {filteredData.dailyUsage.slice(-7).map((day, index) => (
+                  <div key={day.date} className="flex items-center space-x-4">
+                    <div className="w-20 text-sm text-gray-400">
+                      {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium text-white">{day.calls} calls</span>
+                        <span className="text-sm text-gray-400">{formatCost(day.cost)}</span>
+                      </div>
+                      <Progress 
+                        value={filteredData.dailyUsage.length > 0 ? (day.calls / Math.max(...filteredData.dailyUsage.map(d => d.calls))) * 100 : 0} 
+                        className="h-2" 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {activeTab === 'providers' && filteredData && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Usage by Provider</CardTitle>
-                <CardDescription>Breakdown of usage across different AI providers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(filteredData.byProvider).map(([provider, data]) => {
-                    const providerInfo = getProviderInfo(provider)
-                    return (
-                      <div key={provider} className="p-4 border border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center space-x-3">
-                            {'logo' in providerInfo && (
-                              <span className="text-2xl">{providerInfo.logo}</span>
-                            )}
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{providerInfo.name}</h3>
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: providerInfo.color }}></div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-gray-900">{formatCost(data.cost)}</p>
-                            <p className="text-sm text-gray-600">{data.calls} calls</p>
+            <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white">Usage by Provider</h3>
+                <p className="text-gray-300 mt-1">Breakdown of usage across different AI providers</p>
+              </div>
+              <div className="space-y-4">
+                {Object.entries(filteredData.byProvider).map(([provider, data]) => {
+                  const providerInfo = getProviderInfo(provider)
+                  return (
+                    <div key={provider} className="p-4 border border-gray-600 rounded-lg bg-gray-800/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          {'logo' in providerInfo && (
+                            <span className="text-2xl">{providerInfo.logo}</span>
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-white">{providerInfo.name}</h3>
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: providerInfo.color }}></div>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Tokens</p>
-                            <p className="font-semibold">{data.tokens.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Avg Tokens/Call</p>
-                            <p className="font-semibold">{data.calls > 0 ? Math.round(data.tokens / data.calls).toLocaleString() : '0'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Avg Cost/Call</p>
-                            <p className="font-semibold">{data.calls > 0 ? formatCost(data.cost / data.calls) : '$0.0000'}</p>
-                          </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-white">{formatCost(data.cost)}</p>
+                          <p className="text-sm text-gray-400">{data.calls} calls</p>
                         </div>
-                        <Progress 
-                          value={filteredData.totalCost > 0 ? (data.cost / filteredData.totalCost) * 100 : 0} 
-                          className="mt-3 h-2" 
-                        />
                       </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400">Tokens</p>
+                          <p className="font-semibold text-white">{data.tokens.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Avg Tokens/Call</p>
+                          <p className="font-semibold text-white">{data.calls > 0 ? Math.round(data.tokens / data.calls).toLocaleString() : '0'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Avg Cost/Call</p>
+                          <p className="font-semibold text-white">{data.calls > 0 ? formatCost(data.cost / data.calls) : '$0.0000'}</p>
+                        </div>
+                      </div>
+                      <Progress 
+                        value={filteredData.totalCost > 0 ? (data.cost / filteredData.totalCost) * 100 : 0} 
+                        className="mt-3 h-2" 
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'models' && filteredData && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Usage by Model</CardTitle>
-                <CardDescription>Breakdown of usage across different AI models</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(filteredData.byModel).map(([model, data]) => {
-                    // Try to determine provider from model name
-                    let provider = 'unknown'
-                    if (model.includes('gpt')) provider = 'openai'
-                    else if (model.includes('claude')) provider = 'claude'
-                    else if (model.includes('gemini')) provider = 'gemini'
-                    else if (model.includes('sonar') || model.includes('llama')) provider = 'perplexity'
-                    else if (model.includes('grok')) provider = 'grok'
-                    
-                    const modelInfo = getModelInfo(provider, model)
-                    const providerInfo = getProviderInfo(provider)
-                    
-                    return (
-                      <div key={model} className="p-4 border border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center space-x-3">
-                            {'logo' in providerInfo && (
-                              <span className="text-xl">{providerInfo.logo}</span>
-                            )}
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{modelInfo.name}</h3>
-                              <div className="flex items-center space-x-2">
-                                <Badge 
-                                  variant="outline" 
-                                  className={
-                                    modelInfo.tier === 'premium' ? 'border-purple-200 text-purple-700' :
-                                    modelInfo.tier === 'intelligent' ? 'border-blue-200 text-blue-700' :
-                                    'border-green-200 text-green-700'
-                                  }
-                                >
-                                  {modelInfo.tier}
-                                </Badge>
-                                <span className="text-sm text-gray-500">{providerInfo.name}</span>
-                              </div>
+            <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white">Usage by Model</h3>
+                <p className="text-gray-300 mt-1">Breakdown of usage across different AI models</p>
+              </div>
+              <div className="space-y-4">
+                {Object.entries(filteredData.byModel).map(([model, data]) => {
+                  // Try to determine provider from model name
+                  let provider = 'unknown'
+                  if (model.includes('gpt')) provider = 'openai'
+                  else if (model.includes('claude')) provider = 'claude'
+                  else if (model.includes('gemini')) provider = 'gemini'
+                  else if (model.includes('sonar') || model.includes('llama')) provider = 'perplexity'
+                  else if (model.includes('grok')) provider = 'grok'
+                  
+                  const modelInfo = getModelInfo(provider, model)
+                  const providerInfo = getProviderInfo(provider)
+                  
+                  return (
+                    <div key={model} className="p-4 border border-gray-600 rounded-lg bg-gray-800/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          {'logo' in providerInfo && (
+                            <span className="text-xl">{providerInfo.logo}</span>
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-white">{modelInfo.name}</h3>
+                            <div className="flex items-center space-x-2">
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  modelInfo.tier === 'premium' ? 'border-purple-500/30 text-purple-300 bg-purple-500/10' :
+                                  modelInfo.tier === 'intelligent' ? 'border-blue-500/30 text-blue-300 bg-blue-500/10' :
+                                  'border-green-500/30 text-green-300 bg-green-500/10'
+                                }
+                              >
+                                {modelInfo.tier}
+                              </Badge>
+                              <span className="text-sm text-gray-400">{providerInfo.name}</span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-gray-900">{formatCost(data.cost)}</p>
-                            <p className="text-sm text-gray-600">{data.calls} calls</p>
-                          </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Tokens</p>
-                            <p className="font-semibold">{data.tokens.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Avg Tokens/Call</p>
-                            <p className="font-semibold">{data.calls > 0 ? Math.round(data.tokens / data.calls).toLocaleString() : '0'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Avg Cost/Call</p>
-                            <p className="font-semibold">{data.calls > 0 ? formatCost(data.cost / data.calls) : '$0.0000'}</p>
-                          </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-white">{formatCost(data.cost)}</p>
+                          <p className="text-sm text-gray-400">{data.calls} calls</p>
                         </div>
-                        <Progress 
-                          value={filteredData.totalCost > 0 ? (data.cost / filteredData.totalCost) * 100 : 0} 
-                          className="mt-3 h-2" 
-                        />
                       </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400">Tokens</p>
+                          <p className="font-semibold text-white">{data.tokens.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Avg Tokens/Call</p>
+                          <p className="font-semibold text-white">{data.calls > 0 ? Math.round(data.tokens / data.calls).toLocaleString() : '0'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Avg Cost/Call</p>
+                          <p className="font-semibold text-white">{data.calls > 0 ? formatCost(data.cost / data.calls) : '$0.0000'}</p>
+                        </div>
+                      </div>
+                      <Progress 
+                        value={filteredData.totalCost > 0 ? (data.cost / filteredData.totalCost) * 100 : 0} 
+                        className="mt-3 h-2" 
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'history' && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent API Calls</CardTitle>
-                <CardDescription>Latest API requests across all providers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentUsage.map((usage) => {
-                    const providerInfo = getProviderInfo(usage.provider)
-                    const modelInfo = getModelInfo(usage.provider, usage.model)
-                    
-                    return (
-                      <div key={usage.id} className="p-4 border border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center space-x-2">
-                            {'logo' in providerInfo && (
-                              <span className="text-lg">{providerInfo.logo}</span>
-                            )}
-                            <Badge variant="outline" className="font-mono text-xs">
-                              {modelInfo.name}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs" style={{ borderColor: providerInfo.color, color: providerInfo.color }}>
-                              {providerInfo.name}
-                            </Badge>
-                            <span className="text-sm text-gray-600">
-                              {formatDate(usage.timestamp)}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-green-600">{formatCost(usage.totalCost)}</p>
-                            <p className="text-xs text-gray-500">{usage.totalTokens.toLocaleString()} tokens</p>
-                          </div>
+            <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white">Recent API Calls</h3>
+                <p className="text-gray-300 mt-1">Latest API requests across all providers</p>
+              </div>
+              <div className="space-y-4">
+                {recentUsage.map((usage) => {
+                  const providerInfo = getProviderInfo(usage.provider)
+                  const modelInfo = getModelInfo(usage.provider, usage.model)
+                  
+                  return (
+                    <div key={usage.id} className="p-4 border border-gray-600 rounded-lg bg-gray-800/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center space-x-2">
+                          {'logo' in providerInfo && (
+                            <span className="text-lg">{providerInfo.logo}</span>
+                          )}
+                          <Badge variant="outline" className="font-mono text-xs border-gray-500/30 text-gray-300 bg-gray-700/30">
+                            {modelInfo.name}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-300 bg-gray-700/30" style={{ borderColor: providerInfo.color, color: providerInfo.color }}>
+                            {providerInfo.name}
+                          </Badge>
+                          <span className="text-sm text-gray-400">
+                            {formatDate(usage.timestamp)}
+                          </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Input Tokens</p>
-                            <p className="font-semibold">{usage.inputTokens.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Output Tokens</p>
-                            <p className="font-semibold">{usage.outputTokens.toLocaleString()}</p>
-                          </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-green-400">{formatCost(usage.totalCost)}</p>
+                          <p className="text-xs text-gray-400">{usage.totalTokens.toLocaleString()} tokens</p>
                         </div>
-                        {usage.requestId && (
-                          <p className="text-xs text-gray-400 mt-2 font-mono">
-                            Request ID: {usage.requestId}
-                          </p>
-                        )}
                       </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400">Input Tokens</p>
+                          <p className="font-semibold text-white">{usage.inputTokens.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Output Tokens</p>
+                          <p className="font-semibold text-white">{usage.outputTokens.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      {usage.requestId && (
+                        <p className="text-xs text-gray-500 mt-2 font-mono">
+                          Request ID: {usage.requestId}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'insights' && filteredData && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cost Optimization Tips</CardTitle>
-                  <CardDescription>Ways to reduce your AI API costs</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-semibold text-blue-900 mb-1">💡 Choose the Right Model</h4>
-                    <p className="text-sm text-blue-700">Use faster/cheaper models for simple tasks and premium models for complex reasoning</p>
+              <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-white">Cost Optimization Tips</h3>
+                  <p className="text-gray-300 mt-1">Ways to reduce your AI API costs</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <h4 className="font-semibold text-blue-300 mb-1">💡 Choose the Right Model</h4>
+                    <p className="text-sm text-blue-200">Use faster/cheaper models for simple tasks and premium models for complex reasoning</p>
                   </div>
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-semibold text-green-900 mb-1">🎯 Optimize Prompts</h4>
-                    <p className="text-sm text-green-700">Shorter, more specific prompts reduce token usage and costs across all providers</p>
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <h4 className="font-semibold text-green-300 mb-1">🎯 Optimize Prompts</h4>
+                    <p className="text-sm text-green-200">Shorter, more specific prompts reduce token usage and costs across all providers</p>
                   </div>
-                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                    <h4 className="font-semibold text-purple-900 mb-1">📊 Monitor Usage Patterns</h4>
-                    <p className="text-sm text-purple-700">Track peak usage times to optimize API call scheduling and provider selection</p>
+                  <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                    <h4 className="font-semibold text-purple-300 mb-1">📊 Monitor Usage Patterns</h4>
+                    <p className="text-sm text-purple-200">Track peak usage times to optimize API call scheduling and provider selection</p>
                   </div>
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <h4 className="font-semibold text-orange-900 mb-1">🔄 Multi-Provider Strategy</h4>
-                    <p className="text-sm text-orange-700">Use different providers for different use cases to optimize cost and performance</p>
+                  <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <h4 className="font-semibold text-orange-300 mb-1">🔄 Multi-Provider Strategy</h4>
+                    <p className="text-sm text-orange-200">Use different providers for different use cases to optimize cost and performance</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Usage Statistics</CardTitle>
-                  <CardDescription>Key metrics for your AI usage</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6">
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-white">Usage Statistics</h3>
+                  <p className="text-gray-300 mt-1">Key metrics for your AI usage</p>
+                </div>
+                <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Most Used Provider</span>
-                    <span className="font-semibold">
+                    <span className="text-sm text-gray-400">Most Used Provider</span>
+                    <span className="font-semibold text-white">
                       {Object.keys(filteredData.byProvider).length > 0 ? 
                         getProviderInfo(Object.entries(filteredData.byProvider).reduce((a, b) => a[1].calls > b[1].calls ? a : b)[0]).name :
                         'None'
@@ -696,8 +688,8 @@ function UsageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Most Used Model</span>
-                    <span className="font-semibold">
+                    <span className="text-sm text-gray-400">Most Used Model</span>
+                    <span className="font-semibold text-white">
                       {Object.keys(filteredData.byModel).length > 0 ? 
                         Object.entries(filteredData.byModel).reduce((a, b) => a[1].calls > b[1].calls ? a : b)[0] :
                         'None'
@@ -705,8 +697,8 @@ function UsageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Average Daily Calls</span>
-                    <span className="font-semibold">
+                    <span className="text-sm text-gray-400">Average Daily Calls</span>
+                    <span className="font-semibold text-white">
                       {filteredData.dailyUsage.length > 0 ? 
                         Math.round(filteredData.dailyUsage.reduce((sum, day) => sum + day.calls, 0) / filteredData.dailyUsage.length) :
                         0
@@ -714,8 +706,8 @@ function UsageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Average Daily Cost</span>
-                    <span className="font-semibold">
+                    <span className="text-sm text-gray-400">Average Daily Cost</span>
+                    <span className="font-semibold text-white">
                       {filteredData.dailyUsage.length > 0 ? 
                         formatCost(filteredData.dailyUsage.reduce((sum, day) => sum + day.cost, 0) / filteredData.dailyUsage.length) :
                         '$0.0000'
@@ -723,16 +715,16 @@ function UsageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Peak Usage Day</span>
-                    <span className="font-semibold">
+                    <span className="text-sm text-gray-400">Peak Usage Day</span>
+                    <span className="font-semibold text-white">
                       {filteredData.dailyUsage.length > 0 ? 
                         new Date(filteredData.dailyUsage.reduce((a, b) => a.calls > b.calls ? a : b).date).toLocaleDateString('en-US', { weekday: 'long' }) :
                         'No data'
                       }
                     </span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         )}

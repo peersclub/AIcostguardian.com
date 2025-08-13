@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Monitor, DollarSign, Zap, AlertTriangle, BarChart3, Settings, Download, Bell, Eye, Users, Shield } from 'lucide-react'
 // import { ProviderCard } from '@/components/shared/ProviderCard'
 import { Input } from '@/components/ui/input'
@@ -385,7 +386,7 @@ export default function MonitoringDashboard() {
                 </Button>
               </div>
             </div>
-      </div>
+          </motion.div>
 
       {/* Error Display */}
       {error && (
@@ -505,145 +506,159 @@ export default function MonitoringDashboard() {
                     onAction={fetchUsageData}
                   />
                 ) : (
-                {Object.entries(usageData).map(([provider, data], index) => (
-                  <motion.div 
-                    key={provider} 
-                    className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 * index }}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
-                      <Badge className="bg-blue-900/20 text-blue-300 border-blue-500/30">
-                        {data.totalRequests} requests
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-white">${data.totalCost.toFixed(2)}</div>
-                      <div className="text-sm text-gray-400">
-                        {data.totalTokens.toLocaleString()} tokens
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-                )}
-              </LoadingOverlay>
-            </CardContent>
-          </Card>
-
-          {/* Top Models */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Models by Cost</CardTitle>
-              <CardDescription>Most expensive models in the selected time period</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(usageData)
-                  .flatMap(([provider, data]) => 
-                    Object.entries(data.byModel || {}).map(([model, modelData]) => ({
-                      provider,
-                      model,
-                      ...modelData
-                    }))
-                  )
-                  .sort((a, b) => b.cost - a.cost)
-                  .slice(0, 5)
-                  .map(({ provider, model, cost, tokens, requests }, index) => (
-                    <div key={`${provider}-${model}`} className="flex items-center justify-between py-2">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="font-medium">{model}</div>
-                          <div className="text-sm text-gray-600 capitalize">{provider.replace('_', ' ')}</div>
-                        </div>
+                  Object.entries(usageData).map(([provider, data], index) => (
+                    <motion.div 
+                      key={provider} 
+                      className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: 0.1 * index }}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
+                        <Badge className="bg-blue-900/20 text-blue-300 border-blue-500/30">
+                          {data.totalRequests} requests
+                        </Badge>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">${cost.toFixed(2)}</div>
-                        <div className="text-sm text-gray-600">{tokens.toLocaleString()} tokens</div>
+                        <div className="font-bold text-white">${data.totalCost.toFixed(2)}</div>
+                        <div className="text-sm text-gray-400">
+                          {data.totalTokens.toLocaleString()} tokens
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </LoadingOverlay>
+            </div>
+          </motion.div>
+
+          {/* Top Models */}
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">Top Models by Cost</h3>
+              <p className="text-gray-300 mt-1">Most expensive models in the selected time period</p>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(usageData)
+                .flatMap(([provider, data]) => 
+                  Object.entries(data.byModel || {}).map(([model, modelData]) => ({
+                    provider,
+                    model,
+                    ...modelData
+                  }))
+                )
+                .sort((a, b) => b.cost - a.cost)
+                .slice(0, 5)
+                .map(({ provider, model, cost, tokens, requests }, index) => (
+                  <div key={`${provider}-${model}`} className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-6 h-6 bg-blue-900/20 text-blue-300 border border-blue-500/30 rounded-full flex items-center justify-center text-xs font-medium">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium text-white">{model}</div>
+                        <div className="text-sm text-gray-400 capitalize">{provider.replace('_', ' ')}</div>
                       </div>
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="text-right">
+                      <div className="font-medium text-white">${cost.toFixed(2)}</div>
+                      <div className="text-sm text-gray-400">{tokens.toLocaleString()} tokens</div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </motion.div>
         </TabsContent>
 
         {/* Providers Tab */}
         <TabsContent value="providers" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {Object.entries(usageData).map(([provider, data]) => (
-              <Card key={provider}>
-                <CardHeader>
-                  <CardTitle className="capitalize flex items-center justify-between">
-                    {provider.replace('_', ' ')}
-                    <Badge variant={data.totalCost > 0 ? "default" : "secondary"}>
+              <motion.div 
+                key={provider}
+                className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-semibold text-white capitalize">{provider.replace('_', ' ')}</h3>
+                    <Badge 
+                      variant={data.totalCost > 0 ? "default" : "secondary"}
+                      className={data.totalCost > 0 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-gray-500/20 text-gray-300 border-gray-500/30"}
+                    >
                       {data.totalCost > 0 ? "Active" : "Inactive"}
                     </Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Usage data for the {selectedPeriod} period
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-blue-600">
-                          ${data.totalCost.toFixed(2)}
-                        </div>
-                        <div className="text-sm text-gray-600">Cost</div>
+                  </div>
+                  <p className="text-gray-300">Usage data for the {selectedPeriod} period</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-blue-300">
+                        ${data.totalCost.toFixed(2)}
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-green-600">
-                          {data.totalTokens.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-600">Tokens</div>
+                      <div className="text-sm text-gray-400">Cost</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-green-300">
+                        {data.totalTokens.toLocaleString()}
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-purple-600">
-                          {data.totalRequests}
-                        </div>
-                        <div className="text-sm text-gray-600">Requests</div>
+                      <div className="text-sm text-gray-400">Tokens</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-purple-300">
+                        {data.totalRequests}
+                      </div>
+                      <div className="text-sm text-gray-400">Requests</div>
+                    </div>
+                  </div>
+
+                  {/* Model Breakdown */}
+                  {data.byModel && Object.keys(data.byModel).length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-white">Model Breakdown</h4>
+                      <div className="space-y-2">
+                        {Object.entries(data.byModel)
+                          .sort(([,a], [,b]) => b.cost - a.cost)
+                          .map(([model, modelData]) => (
+                            <div key={model} className="flex justify-between items-center text-sm">
+                              <span className="truncate text-gray-300">{model}</span>
+                              <span className="font-medium text-white">${modelData.cost.toFixed(2)}</span>
+                            </div>
+                          ))}
                       </div>
                     </div>
-
-                    {/* Model Breakdown */}
-                    {data.byModel && Object.keys(data.byModel).length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-2">Model Breakdown</h4>
-                        <div className="space-y-2">
-                          {Object.entries(data.byModel)
-                            .sort(([,a], [,b]) => b.cost - a.cost)
-                            .map(([model, modelData]) => (
-                              <div key={model} className="flex justify-between items-center text-sm">
-                                <span className="truncate">{model}</span>
-                                <span className="font-medium">${modelData.cost.toFixed(2)}</span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  )}
+                </div>
+              </motion.div>
             ))}
           </div>
         </TabsContent>
 
         {/* Insights Tab */}
         <TabsContent value="insights" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI-Powered Insights</CardTitle>
-              <CardDescription>
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">AI-Powered Insights</h3>
+              <p className="text-gray-300 mt-1">
                 Intelligent recommendations to optimize your AI usage and reduce costs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               {isLoading && insights.length === 0 ? (
                 <InsightsSkeleton />
               ) : insights.length > 0 ? (
@@ -654,20 +669,20 @@ export default function MonitoringDashboard() {
                         <div className="text-2xl">{getInsightIcon(insight.type)}</div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold">{insight.title}</h4>
+                            <h4 className="font-semibold text-white">{insight.title}</h4>
                             <Badge className={getImpactColor(insight.impact)}>
                               {insight.impact} impact
                             </Badge>
                           </div>
-                          <p className="text-sm mb-3">{insight.description}</p>
+                          <p className="text-sm mb-3 text-gray-300">{insight.description}</p>
                           {insight.actionItems.length > 0 && (
                             <div>
-                              <h5 className="font-medium text-sm mb-1">Recommended Actions:</h5>
+                              <h5 className="font-medium text-sm mb-1 text-white">Recommended Actions:</h5>
                               <ul className="text-sm space-y-1">
                                 {insight.actionItems.map((item, itemIndex) => (
                                   <li key={itemIndex} className="flex items-start">
-                                    <span className="text-xs mr-2 mt-1">•</span>
-                                    {item}
+                                    <span className="text-xs mr-2 mt-1 text-gray-400">•</span>
+                                    <span className="text-gray-300">{item}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -687,66 +702,74 @@ export default function MonitoringDashboard() {
                   onAction={fetchInsights}
                 />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
 
         {/* Alerts Tab */}
         <TabsContent value="alerts" className="space-y-6">
           {/* Create New Alert */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Cost Alert</CardTitle>
-              <CardDescription>
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6 mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">Create Cost Alert</h3>
+              <p className="text-gray-300 mt-1">
                 Set up alerts to monitor your AI spending in real-time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>Provider</Label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mt-1">
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Claude</option>
-                    <option value="google_gemini">Gemini</option>
-                    <option value="grok">Grok</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Daily Threshold ($)</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="50.00" 
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button className="w-full">Create Alert</Button>
-                </div>
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-gray-300">Provider</Label>
+                <select className="w-full border border-gray-600 bg-gray-800/50 text-gray-300 rounded-md px-3 py-2 text-sm mt-1 focus:border-blue-400 focus:outline-none">
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Claude</option>
+                  <option value="google_gemini">Gemini</option>
+                  <option value="grok">Grok</option>
+                </select>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <Label className="text-gray-300">Daily Threshold ($)</Label>
+                <Input 
+                  type="number" 
+                  placeholder="50.00" 
+                  className="mt-1 bg-gray-800/50 border-gray-600 text-gray-300 focus:border-blue-400"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Create Alert</Button>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Active Alerts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Alerts</CardTitle>
-              <CardDescription>
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">Active Alerts</h3>
+              <p className="text-gray-300 mt-1">
                 Manage your cost monitoring alerts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               {isLoading && alerts.length === 0 ? (
                 <ListSkeleton items={3} />
               ) : alerts.length > 0 ? (
                 <div className="space-y-3">
                   {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={alert.id} className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors">
                       <div className="flex items-center space-x-4">
                         <div className={`w-3 h-3 rounded-full ${alert.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                         <div>
-                          <div className="font-medium">{alert.message}</div>
-                          <div className="text-sm text-gray-600 capitalize">
+                          <div className="font-medium text-white">{alert.message}</div>
+                          <div className="text-sm text-gray-400 capitalize">
                             {alert.provider.replace('_', ' ')} • ${alert.threshold} threshold
                           </div>
                         </div>
@@ -756,7 +779,7 @@ export default function MonitoringDashboard() {
                           checked={alert.isActive}
                           onCheckedChange={(checked) => toggleAlert(alert.id, checked)}
                         />
-                        <Button variant="ghost" size="sm" className="text-red-600">
+                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
                           Delete
                         </Button>
                       </div>
@@ -772,71 +795,75 @@ export default function MonitoringDashboard() {
                   onAction={() => {/* Focus on alert creation form */}}
                 />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
 
         {/* Export Tab */}
         <TabsContent value="export" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage Reports</CardTitle>
-              <CardDescription>
+          <motion.div 
+            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white">Usage Reports</h3>
+              <p className="text-gray-300 mt-1">
                 Export detailed usage reports for analysis and compliance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Export Options</h4>
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={() => exportData('csv')} 
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        📊 Export as CSV
-                        <span className="ml-auto text-sm text-gray-600">Spreadsheet format</span>
-                      </Button>
-                      <Button 
-                        onClick={() => exportData('json')} 
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        🔗 Export as JSON
-                        <span className="ml-auto text-sm text-gray-600">API-friendly format</span>
-                      </Button>
-                    </div>
+              </p>
+            </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-white">Export Options</h4>
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={() => exportData('csv')} 
+                      variant="outline" 
+                      className="w-full justify-start bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                    >
+                      📊 Export as CSV
+                      <span className="ml-auto text-sm text-gray-400">Spreadsheet format</span>
+                    </Button>
+                    <Button 
+                      onClick={() => exportData('json')} 
+                      variant="outline" 
+                      className="w-full justify-start bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                    >
+                      🔗 Export as JSON
+                      <span className="ml-auto text-sm text-gray-400">API-friendly format</span>
+                    </Button>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Report Summary</h4>
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span>Total Records:</span>
-                        <span className="font-medium">{totals.requests.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total Cost:</span>
-                        <span className="font-medium">${totals.cost.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total Tokens:</span>
-                        <span className="font-medium">{totals.tokens.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Active Providers:</span>
-                        <span className="font-medium">{Object.keys(usageData).length}</span>
-                      </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium text-white">Report Summary</h4>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total Records:</span>
+                      <span className="font-medium text-white">{totals.requests.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total Cost:</span>
+                      <span className="font-medium text-white">${totals.cost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total Tokens:</span>
+                      <span className="font-medium text-white">{totals.tokens.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Active Providers:</span>
+                      <span className="font-medium text-white">{Object.keys(usageData).length}</span>
                     </div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
       </Tabs>
+        </div>
       </div>
     </ErrorBoundary>
   )
