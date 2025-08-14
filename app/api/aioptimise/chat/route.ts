@@ -223,10 +223,21 @@ async function processAIResponse(
     // Decrypt API key
     const apiKey = safeDecrypt(apiKeys[0].encryptedKey);
     console.log('Using API key for provider:', dbProvider, 'key starts with:', apiKey?.substring(0, 10));
+    
+    if (!apiKey) {
+      console.error('Failed to decrypt API key for provider:', dbProvider);
+      await writer.write(encoder.encode(`data: ${JSON.stringify({ 
+        type: 'error', 
+        error: `Failed to decrypt API key for ${model.provider}. Please re-add your API key in settings.` 
+      })}\n\n`));
+      await writer.close();
+      return;
+    }
 
     // Stream response based on provider
     // Use the normalized dbProvider for comparison
     if (dbProvider === 'openai') {
+      console.log('Creating OpenAI client with model:', model.model);
       const openai = new OpenAI({ apiKey });
       
       const stream = await openai.chat.completions.create({
@@ -367,9 +378,25 @@ async function processAIResponse(
     await writer.write(encoder.encode('data: [DONE]\n\n'));
   } catch (error) {
     console.error('AI processing error:', error);
+    
+    // Send more detailed error information
+    let errorMessage = 'Failed to process AI response';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Check for specific OpenAI errors
+      if (error.message.includes('401') || error.message.includes('Incorrect API key')) {
+        errorMessage = 'Invalid OpenAI API key. Please check your API key in settings.';
+      } else if (error.message.includes('429')) {
+        errorMessage = 'Rate limit exceeded. Please try again later.';
+      } else if (error.message.includes('model')) {
+        errorMessage = `Model error: ${error.message}`;
+      }
+    }
+    
     await writer.write(encoder.encode(`data: ${JSON.stringify({ 
       type: 'error', 
-      error: 'Failed to process AI response' 
+      error: errorMessage
     })}\n\n`));
   } finally {
     await writer.close();
