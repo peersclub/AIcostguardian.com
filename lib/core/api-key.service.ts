@@ -72,8 +72,15 @@ class ApiKeyService {
    */
   private decrypt(encryptedData: string): string {
     try {
+      // Check if the data might be unencrypted (for migration/debugging)
+      if (!encryptedData.includes(':')) {
+        console.warn('API key appears to be unencrypted, returning as-is')
+        return encryptedData
+      }
+      
       const parts = encryptedData.split(':')
       if (parts.length !== 3) {
+        console.error('Invalid encrypted data format, expected 3 parts, got:', parts.length)
         throw new Error('Invalid encrypted data format')
       }
 
@@ -91,7 +98,8 @@ class ApiKeyService {
       return decrypted
     } catch (error) {
       console.error('Decryption error:', error)
-      throw new Error('Failed to decrypt API key')
+      console.error('Encrypted data format:', encryptedData.substring(0, 50) + '...')
+      throw new Error('Failed to decrypt API key: ' + (error as Error).message)
     }
   }
 
@@ -118,42 +126,57 @@ class ApiKeyService {
    * Get a specific API key
    */
   async getApiKey(userId: string, provider: Provider, organizationId?: string): Promise<string | null> {
-    // Check cache first
-    const cacheKey = `${userId}-${provider}-${organizationId || 'personal'}`
-    const cached = this.cache.get(cacheKey)
-    
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      return cached.key
-    }
+    try {
+      // Check cache first
+      const cacheKey = `${userId}-${provider}-${organizationId || 'personal'}`
+      const cached = this.cache.get(cacheKey)
+      
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        console.log('Returning cached API key for:', { userId, provider, organizationId })
+        return cached.key
+      }
 
-    const where = organizationId
-      ? { userId, provider, organizationId, isActive: true }
-      : { userId, provider, isActive: true }
+      const where = organizationId
+        ? { userId, provider, organizationId, isActive: true }
+        : { userId, provider, isActive: true }
 
-    const apiKey = await prisma.apiKey.findFirst({
-      where,
-      orderBy: { createdAt: 'desc' }
-    })
+      console.log('Searching for API key with:', where)
+      
+      const apiKey = await prisma.apiKey.findFirst({
+        where,
+        orderBy: { createdAt: 'desc' }
+      })
 
-    if (!apiKey) {
+      if (!apiKey) {
+        console.log('No API key found in database for:', { userId, provider, organizationId })
+        return null
+      }
+
+      console.log('Found API key, attempting decryption...')
+      const decryptedKey = this.decrypt(apiKey.encryptedKey)
+      
+      if (!decryptedKey) {
+        console.error('Decryption returned empty key')
+        return null
+      }
+      
+      // Update cache
+      this.cache.set(cacheKey, {
+        key: decryptedKey,
+        timestamp: Date.now()
+      })
+
+      // Update last used timestamp asynchronously
+      prisma.apiKey.update({
+        where: { id: apiKey.id },
+        data: { lastUsed: new Date() }
+      }).catch(console.error)
+
+      return decryptedKey
+    } catch (error) {
+      console.error('Error getting API key:', error)
       return null
     }
-
-    const decryptedKey = this.decrypt(apiKey.encryptedKey)
-    
-    // Update cache
-    this.cache.set(cacheKey, {
-      key: decryptedKey,
-      timestamp: Date.now()
-    })
-
-    // Update last used timestamp asynchronously
-    prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { lastUsed: new Date() }
-    }).catch(console.error)
-
-    return decryptedKey
   }
 
   /**
