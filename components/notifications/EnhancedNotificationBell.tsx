@@ -114,7 +114,18 @@ const eventIcons: Record<NotificationEvent, any> = {
   // System Events
   [NotificationEvent.SYSTEM_UPDATE]: Info,
   [NotificationEvent.MAINTENANCE_SCHEDULED]: Clock,
+  [NotificationEvent.FEATURE_ANNOUNCEMENT]: Sparkles,
   [NotificationEvent.SECURITY_ALERT]: Shield,
+  
+  // Alert Events
+  [NotificationEvent.ALERT_TRIGGERED]: AlertCircle,
+  [NotificationEvent.ALERT_RESOLVED]: CheckCircle,
+  [NotificationEvent.ALERT_ACKNOWLEDGED]: Check,
+  
+  // Site-wide Announcements
+  [NotificationEvent.SITE_ANNOUNCEMENT]: Info,
+  [NotificationEvent.CRITICAL_ALERT]: AlertCircle,
+  [NotificationEvent.PROMOTIONAL_OFFER]: TrendingUp,
 }
 
 interface EnhancedNotificationBellProps {

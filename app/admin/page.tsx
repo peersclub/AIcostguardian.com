@@ -83,6 +83,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     checkAdminAccess()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
     if (session?.user?.email) {
       fetchAdminData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, activeTab])
 
   const checkAdminAccess = async () => {
