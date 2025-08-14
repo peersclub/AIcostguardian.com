@@ -60,16 +60,14 @@ export default async function AIOptimiseV2Page() {
         name: user?.name || session.user.name || '',
         email: session.user.email,
         image: user?.image || session.user.image || '',
-        organization: user?.organization?.name || null,
         hasApiKeys: hasApiKeys || false,
-        isEnterpriseUser: user?.organization?.subscription === 'ENTERPRISE' || false,
+        subscription: user?.organization?.subscription || 'FREE',
       }}
       limits={{
         dailyUsed: usageLimits._sum.cost || 0,
         dailyLimit: 100, // TODO: Get from user settings
         monthlyUsed: monthlyUsage._sum.cost || 0,
         monthlyLimit: 3000, // TODO: Get from organization
-        tokensUsedToday: (usageLimits._sum.inputTokens || 0) + (usageLimits._sum.outputTokens || 0),
       }}
     />
   )

@@ -503,7 +503,17 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
               className="w-72 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 flex flex-col"
             >
               <ThreadManager
-                threads={threads}
+                threads={threads.map(t => ({
+                  id: t.id,
+                  title: t.title,
+                  lastMessage: t.lastMessage || '',
+                  timestamp: new Date(t.updatedAt),
+                  messageCount: t.messageCount,
+                  pinned: t.isPinned || false,
+                  archived: t.isArchived || false,
+                  tags: t.tags || [],
+                  collaborators: t.sharedWith
+                }))}
                 currentThreadId={currentThread?.id || null}
                 onSelectThread={selectThread}
                 onCreateThread={createThread}
@@ -541,9 +551,8 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
             
             <div className="flex items-center gap-2">
               <ModeSelector
-                modes={MODES}
-                selectedMode={selectedMode}
-                onModeChange={setSelectedMode}
+                currentMode={selectedMode as any}
+                onModeChange={(mode) => setSelectedMode(mode)}
               />
               <Select value={selectedModel.id} onValueChange={(id) => setSelectedModel(MODELS.find(m => m.id === id) || MODELS[0])}>
                 <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
@@ -603,12 +612,13 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                         {message.role === 'assistant' ? (
                           <ReactMarkdown
                             components={{
-                              code({ node, inline, className, children, ...props }) {
+                              code({ className, children, ...props }: any) {
                                 const match = /language-(\w+)/.exec(className || '')
-                                return !inline && match ? (
+                                const inline = !match
+                                return !inline ? (
                                   <SyntaxHighlighter
                                     style={oneDark}
-                                    language={match[1]}
+                                    language={match?.[1] || 'text'}
                                     PreTag="div"
                                     {...props}
                                   >
@@ -719,9 +729,14 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                 isLoading={isLoading || isStreaming}
                 currentMode={selectedMode}
                 onModeChange={setSelectedMode}
-                onFileAttach={handleFileUpload}
-                attachedFiles={attachments}
-                onRemoveFile={removeAttachment}
+                onFileAttach={(files) => handleFileUpload(files as any)}
+                attachedFiles={[]}
+                onRemoveFile={(index) => {
+                  const attachmentToRemove = attachments[index]
+                  if (attachmentToRemove) {
+                    removeAttachment(attachmentToRemove.id)
+                  }
+                }}
               />
               
               <div className="mt-2 flex items-center justify-between">
