@@ -1,66 +1,238 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { 
-  Shield, Users, Lock, Key, Settings, Eye, Edit, 
-  Trash2, Plus, Check, X, AlertTriangle, Info
+  Shield, Settings, Users, Eye, Plus, Edit, Trash2, 
+  Key, Lock, UserCheck, AlertTriangle, Check, X
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { toast } from '@/components/ui/use-toast'
 import Link from 'next/link'
 
-const PERMISSION_GROUPS = {
-  admin: {
-    name: 'Administrator',
-    description: 'Full system access',
-    color: 'text-red-400 bg-red-500/20 border-red-500/30',
-    permissions: ['all']
-  },
-  manager: {
-    name: 'Manager',
-    description: 'Team and budget management',
-    color: 'text-orange-400 bg-orange-500/20 border-orange-500/30',
-    permissions: ['view_usage', 'manage_team', 'manage_budgets', 'view_reports']
-  },
-  developer: {
-    name: 'Developer',
-    description: 'API access and usage tracking',
-    color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',
-    permissions: ['view_usage', 'manage_api_keys', 'view_reports']
-  },
-  viewer: {
-    name: 'Viewer',
-    description: 'Read-only access',
-    color: 'text-gray-400 bg-gray-500/20 border-gray-500/30',
-    permissions: ['view_usage', 'view_reports']
-  }
+// Permission resources and actions
+const RESOURCES = ['users', 'billing', 'api_keys', 'roles', 'organization', 'usage', 'alerts']
+const ACTIONS = ['read', 'write', 'delete']
+
+interface Role {
+  id: string
+  name: string
+  description: string
+  isSystem: boolean
+  permissions: Permission[]
+  users: any[]
+  createdAt: string
+  updatedAt: string
 }
 
-const PERMISSIONS_LIST = [
-  { id: 'view_usage', name: 'View Usage', description: 'View AI usage and costs', category: 'viewing' },
-  { id: 'view_reports', name: 'View Reports', description: 'Access analytics and reports', category: 'viewing' },
-  { id: 'manage_api_keys', name: 'Manage API Keys', description: 'Add, edit, delete API keys', category: 'management' },
-  { id: 'manage_team', name: 'Manage Team', description: 'Invite and remove team members', category: 'management' },
-  { id: 'manage_budgets', name: 'Manage Budgets', description: 'Set and modify budget limits', category: 'management' },
-  { id: 'manage_billing', name: 'Manage Billing', description: 'Access billing and payments', category: 'admin' },
-  { id: 'manage_organization', name: 'Manage Organization', description: 'Organization settings', category: 'admin' },
-  { id: 'all', name: 'All Permissions', description: 'Complete system access', category: 'admin' }
-]
+interface Permission {
+  id: string
+  resource: string
+  action: string
+}
 
-export default function OrganizationPermissions() {
+export default function OrganizationPermissionsPage() {
   const { data: session } = useSession()
-  const [selectedRole, setSelectedRole] = useState('developer')
-  const [customRoles, setCustomRoles] = useState<any[]>([])
-  const [isCreatingRole, setIsCreatingRole] = useState(false)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const [newRole, setNewRole] = useState({
+    name: '',
+    description: '',
+    permissions: [] as { resource: string; action: string }[]
+  })
+
+  useEffect(() => {
+    if (session) {
+      fetchRoles()
+    }
+  }, [session])
+
+  const fetchRoles = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/organization/roles')
+      if (response.ok) {
+        const data = await response.json()
+        setRoles(data)
+      } else {
+        console.error('Failed to fetch roles')
+        toast({
+          title: 'Error',
+          description: 'Failed to load roles',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load roles',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreateRole = async () => {
+    if (!newRole.name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Role name is required',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    try {
+      const response = await fetch('/api/organization/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRole)
+      })
+
+      if (response.ok) {
+        const role = await response.json()
+        setRoles([...roles, role])
+        setShowCreateDialog(false)
+        setNewRole({
+          name: '',
+          description: '',
+          permissions: []
+        })
+        toast({
+          title: 'Success',
+          description: 'Role created successfully'
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: 'Error',
+          description: error.error || 'Failed to create role',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error creating role:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create role',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUpdateRole = async () => {
+    if (!editingRole) return
+
+    try {
+      const response = await fetch('/api/organization/roles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roleId: editingRole.id,
+          name: editingRole.name,
+          description: editingRole.description,
+          permissions: editingRole.permissions
+        })
+      })
+
+      if (response.ok) {
+        const updatedRole = await response.json()
+        setRoles(roles.map(r => r.id === updatedRole.id ? updatedRole : r))
+        setEditingRole(null)
+        toast({
+          title: 'Success',
+          description: 'Role updated successfully'
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: 'Error',
+          description: error.error || 'Failed to update role',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error updating role:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update role',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleDeleteRole = async (roleId: string) => {
+    if (!confirm('Are you sure you want to delete this role?')) return
+
+    try {
+      const response = await fetch(`/api/organization/roles?id=${roleId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setRoles(roles.filter(r => r.id !== roleId))
+        toast({
+          title: 'Success',
+          description: 'Role deleted successfully'
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: 'Error',
+          description: error.error || 'Failed to delete role',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting role:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete role',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const togglePermission = (resource: string, action: string, roleState: any, setRoleState: any) => {
+    const permissions = roleState.permissions || []
+    const exists = permissions.some((p: any) => p.resource === resource && p.action === action)
+    
+    if (exists) {
+      setRoleState({
+        ...roleState,
+        permissions: permissions.filter((p: any) => !(p.resource === resource && p.action === action))
+      })
+    } else {
+      setRoleState({
+        ...roleState,
+        permissions: [...permissions, { resource, action }]
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Background - matching dashboard */}
+      {/* Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
@@ -81,101 +253,191 @@ export default function OrganizationPermissions() {
                   <div className="p-2 bg-indigo-500/20 rounded-lg">
                     <Shield className="w-6 h-6 text-indigo-400" />
                   </div>
-                  <h1 className="text-3xl font-bold text-white">Organization Permissions</h1>
+                  <h1 className="text-3xl font-bold text-white">Roles & Permissions</h1>
                 </div>
-                <p className="text-gray-400">Manage roles and permissions for your organization</p>
+                <p className="text-gray-400">Manage access control for your organization</p>
               </div>
               
               <div className="flex items-center gap-3">
-                <Link href="/organization/members">
+                <Link href="/organization">
                   <Button variant="outline" className="border-gray-700 text-gray-300">
-                    <Users className="w-4 h-4 mr-2" />
-                    Team Members
+                    Back to Organization
                   </Button>
                 </Link>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Role
-                </Button>
+                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Role
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-gray-900 border-gray-700">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Create New Role</DialogTitle>
+                      <DialogDescription className="text-gray-400">
+                        Define a new role with specific permissions
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div>
+                        <Label className="text-gray-300">Role Name</Label>
+                        <Input
+                          value={newRole.name}
+                          onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                          placeholder="e.g., Editor"
+                          className="bg-gray-800 border-gray-700 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-300">Description</Label>
+                        <Textarea
+                          value={newRole.description}
+                          onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                          placeholder="Describe what this role can do"
+                          className="bg-gray-800 border-gray-700 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-300 mb-3 block">Permissions</Label>
+                        <div className="space-y-4 max-h-64 overflow-y-auto">
+                          {RESOURCES.map(resource => (
+                            <div key={resource} className="space-y-2">
+                              <div className="text-sm font-medium text-gray-400 capitalize">{resource}</div>
+                              <div className="flex gap-2">
+                                {ACTIONS.map(action => (
+                                  <label
+                                    key={action}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={newRole.permissions.some(p => 
+                                        p.resource === resource && p.action === action
+                                      )}
+                                      onChange={() => togglePermission(resource, action, newRole, setNewRole)}
+                                      className="rounded border-gray-600"
+                                    />
+                                    <span className="text-sm text-gray-300">{action}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowCreateDialog(false)}
+                          className="border-gray-700 text-gray-300"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleCreateRole}
+                          className="bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          Create Role
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </motion.div>
 
-          {/* Tabs */}
+          {/* Content */}
           <Tabs defaultValue="roles" className="space-y-6">
-            <TabsList className="bg-gray-800/30 border border-gray-700">
+            <TabsList className="bg-gray-900/50 border border-gray-700">
               <TabsTrigger value="roles" className="data-[state=active]:bg-indigo-600">
                 <Shield className="w-4 h-4 mr-2" />
                 Roles
               </TabsTrigger>
               <TabsTrigger value="permissions" className="data-[state=active]:bg-indigo-600">
                 <Key className="w-4 h-4 mr-2" />
-                Permissions
-              </TabsTrigger>
-              <TabsTrigger value="audit" className="data-[state=active]:bg-indigo-600">
-                <Eye className="w-4 h-4 mr-2" />
-                Audit Log
+                Permission Matrix
               </TabsTrigger>
             </TabsList>
 
             {/* Roles Tab */}
             <TabsContent value="roles" className="space-y-6">
-              <div className="grid gap-6">
-                {/* Default Roles */}
-                <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Default Roles</CardTitle>
-                    <CardDescription className="text-gray-400">
-                      Pre-configured roles for common use cases
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Organization Roles</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    {roles.length} roles configured for your organization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400 mx-auto mb-4"></div>
+                      <p className="text-gray-400">Loading roles...</p>
+                    </div>
+                  ) : roles.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Shield className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400">No roles configured yet</p>
+                      <p className="text-gray-500 text-sm mt-1">Create your first role to get started</p>
+                    </div>
+                  ) : (
                     <div className="grid gap-4">
-                      {Object.entries(PERMISSION_GROUPS).map(([key, role]) => (
+                      {roles.map((role) => (
                         <div
-                          key={key}
+                          key={role.id}
                           className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 border border-gray-700 hover:bg-gray-800/70 transition-all"
                         >
                           <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-lg ${role.color.replace('text-', 'bg-').replace('400', '500/20')}`}>
-                              <Shield className={`w-5 h-5 ${role.color.split(' ')[0]}`} />
+                            <div className="p-2 bg-indigo-500/20 rounded-lg">
+                              <Shield className="w-5 h-5 text-indigo-400" />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-white">{role.name}</h4>
-                              <p className="text-sm text-gray-400">{role.description}</p>
+                              <h4 className="font-semibold text-white flex items-center gap-2">
+                                {role.name}
+                                {role.isSystem && (
+                                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                    System
+                                  </Badge>
+                                )}
+                              </h4>
+                              <p className="text-sm text-gray-400">{role.description || 'No description'}</p>
+                              <div className="flex items-center gap-4 mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {role.permissions.length} permissions
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {role.users.length} users
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <Badge className={role.color}>
-                              {role.permissions.length} permissions
-                            </Badge>
-                            <Button variant="ghost" size="sm" className="text-gray-400">
-                              <Eye className="w-4 h-4" />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingRole(role)}
+                              className="text-gray-400 hover:text-white"
+                              disabled={role.isSystem}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRole(role.id)}
+                              className="text-red-400 hover:text-red-300"
+                              disabled={role.isSystem}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Custom Roles */}
-                {customRoles.length > 0 && (
-                  <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">Custom Roles</CardTitle>
-                      <CardDescription className="text-gray-400">
-                        Roles created for your organization
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-gray-500 text-center py-8">
-                        No custom roles created yet
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Permissions Tab */}
@@ -184,73 +446,61 @@ export default function OrganizationPermissions() {
                 <CardHeader>
                   <CardTitle className="text-white">Permission Matrix</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Overview of all permissions by category
+                    Overview of all permissions across roles
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    {['viewing', 'management', 'admin'].map(category => (
-                      <div key={category}>
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">
-                          {category} Permissions
-                        </h3>
-                        <div className="grid gap-3">
-                          {PERMISSIONS_LIST
-                            .filter(p => p.category === category)
-                            .map(permission => (
-                              <div
-                                key={permission.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 border border-gray-700"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Key className="w-4 h-4 text-gray-500" />
-                                  <div>
-                                    <div className="font-medium text-white">{permission.name}</div>
-                                    <div className="text-sm text-gray-400">{permission.description}</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-700">
+                          <th className="text-left py-3 px-4 text-gray-400">Resource</th>
+                          {roles.map(role => (
+                            <th key={role.id} className="text-center py-3 px-4 text-gray-400">
+                              {role.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {RESOURCES.map(resource => (
+                          <tr key={resource} className="border-b border-gray-800">
+                            <td className="py-3 px-4 text-white capitalize">{resource}</td>
+                            {roles.map(role => {
+                              const permissions = role.permissions.filter(p => p.resource === resource)
+                              return (
+                                <td key={role.id} className="text-center py-3 px-4">
+                                  <div className="flex justify-center gap-1">
+                                    {ACTIONS.map(action => {
+                                      const hasPermission = permissions.some(p => p.action === action)
+                                      return (
+                                        <div
+                                          key={action}
+                                          className={`w-2 h-2 rounded-full ${
+                                            hasPermission ? 'bg-green-500' : 'bg-gray-700'
+                                          }`}
+                                          title={`${action} ${resource}`}
+                                        />
+                                      )
+                                    })}
                                   </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  {Object.entries(PERMISSION_GROUPS).map(([key, role]) => (
-                                    <div
-                                      key={key}
-                                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                        role.permissions.includes(permission.id) || role.permissions.includes('all')
-                                          ? 'bg-green-500/20 text-green-400'
-                                          : 'bg-gray-700 text-gray-500'
-                                      }`}
-                                      title={role.name}
-                                    >
-                                      {role.permissions.includes(permission.id) || role.permissions.includes('all') ? (
-                                        <Check className="w-4 h-4" />
-                                      ) : (
-                                        <X className="w-4 h-4" />
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    ))}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Audit Log Tab */}
-            <TabsContent value="audit" className="space-y-6">
-              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Permission Changes</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Recent permission and role modifications
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-500 text-center py-12">
-                    <Eye className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                    <p>No permission changes to display</p>
+                  <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span>Has permission</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-700" />
+                      <span>No permission</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -258,6 +508,81 @@ export default function OrganizationPermissions() {
           </Tabs>
         </div>
       </div>
+
+      {/* Edit Role Dialog */}
+      {editingRole && (
+        <Dialog open={!!editingRole} onOpenChange={() => setEditingRole(null)}>
+          <DialogContent className="bg-gray-900 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Edit Role</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Update role details and permissions
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label className="text-gray-300">Role Name</Label>
+                <Input
+                  value={editingRole.name}
+                  onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Description</Label>
+                <Textarea
+                  value={editingRole.description}
+                  onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300 mb-3 block">Permissions</Label>
+                <div className="space-y-4 max-h-64 overflow-y-auto">
+                  {RESOURCES.map(resource => (
+                    <div key={resource} className="space-y-2">
+                      <div className="text-sm font-medium text-gray-400 capitalize">{resource}</div>
+                      <div className="flex gap-2">
+                        {ACTIONS.map(action => (
+                          <label
+                            key={action}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editingRole.permissions.some(p => 
+                                p.resource === resource && p.action === action
+                              )}
+                              onChange={() => togglePermission(resource, action, editingRole, setEditingRole)}
+                              className="rounded border-gray-600"
+                            />
+                            <span className="text-sm text-gray-300">{action}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingRole(null)}
+                  className="border-gray-700 text-gray-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUpdateRole}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Update Role
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

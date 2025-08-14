@@ -53,6 +53,7 @@ model User {
   usageLimit            UsageLimit?
   threadPresences       ThreadPresence[]
   auditLogs             AuditLog[]
+  roles                 Role[]       @relation("UserRoles")
 }
 
 model Organization {
@@ -104,6 +105,8 @@ model Organization {
   usageLimit        UsageLimit?
   invitations       Invitation[]
   memberLimits      MemberLimit[]
+  roles             Role[]
+  permissions       Permission[]
 }
 
 model ApiKey {
@@ -1248,4 +1251,39 @@ enum ProcessingStatus {
   ANALYZING
   COMPLETED
   FAILED
+}
+
+// Role and Permission models for organization management
+model Role {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  isSystem       Boolean      @default(false) // System roles cannot be deleted
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  permissions    Permission[]
+  users          User[]       @relation("UserRoles")
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Permission {
+  id             String       @id @default(cuid())
+  resource       String       // e.g., "users", "billing", "api_keys", "roles"
+  action         String       // e.g., "read", "write", "delete"
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  roles          Role[]
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@unique([organizationId, resource, action])
+  @@index([organizationId])
 }

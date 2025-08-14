@@ -217,19 +217,21 @@ export default function AlertsManagement() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 p-6 relative overflow-hidden">
-        {/* Animated gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-green-600 to-blue-600 rounded-full opacity-20 animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-10 animate-pulse delay-500"></div>
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        {/* Animated background gradient - EXACTLY like main dashboard */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
         
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
-              <p className="text-gray-300">Loading alerts management...</p>
+        <div className="relative z-10 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400 mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading alerts management...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -238,14 +240,16 @@ export default function AlertsManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6 relative overflow-hidden">
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-green-600 to-blue-600 rounded-full opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-10 animate-pulse delay-500"></div>
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated background gradient - EXACTLY like main dashboard */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
-      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
+      
+      <div className="relative z-10 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div 
           className="flex justify-between items-start"
