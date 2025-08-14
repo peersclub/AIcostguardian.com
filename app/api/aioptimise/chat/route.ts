@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       selectedModel,
       message,
       threadId,
-      session.user.id,
+      user.id,
       modelReason,
       writer,
       encoder
@@ -197,12 +197,12 @@ async function processAIResponse(
     // Map provider names to match database convention
     const providerMapping: { [key: string]: string } = {
       'openai': 'openai',
-      'claude': 'anthropic',
-      'anthropic': 'anthropic',
-      'gemini': 'google',
-      'google': 'google',
-      'grok': 'xai',
-      'xai': 'xai',
+      'claude': 'claude',
+      'anthropic': 'claude',
+      'gemini': 'gemini',
+      'google': 'gemini',
+      'grok': 'grok',
+      'xai': 'grok',
       'mistral': 'mistral',
       'perplexity': 'perplexity'
     };

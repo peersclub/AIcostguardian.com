@@ -41,7 +41,7 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { PromptAnalyzer, analyzePrompt } from './components/prompt-analyzer'
-import { AdvancedInput } from './components/advanced-input'
+import { CleanInput } from './components/clean-input'
 import { ParticipantManager } from './components/participant-manager'
 import { ModelSwitcher } from './components/model-switcher'
 import { useWebSocket } from '@/lib/websocket'
@@ -364,6 +364,141 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
       }
     } catch (error) {
       toast.error('Failed to create new thread')
+    }
+  }
+  
+  const handleSendMessage = async (messageText: string, mode: string, modelOverride?: any) => {
+    if (!messageText.trim() || isLoading || !user.hasApiKeys) return
+    
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content: messageText,
+      timestamp: new Date().toISOString(),
+      attachments: [...attachments],
+      status: 'sending'
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setAttachments([])
+    setIsLoading(true)
+    setIsStreaming(true)
+    
+    try {
+      const res = await fetch('/api/aioptimise/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: currentThread?.id,
+          message: messageText,
+          mode: mode,
+          modelOverride: modelOverride
+        })
+      })
+      
+      if (!res.ok) {
+        throw new Error('Failed to send message')
+      }
+      
+      // Handle SSE streaming
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+      
+      const assistantMessage: Message = {
+        id: `msg-${Date.now()}-assistant`,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toISOString(),
+        status: 'streaming'
+      }
+      
+      setMessages(prev => [...prev, assistantMessage])
+      
+      let buffer = ''
+      let fullContent = ''
+      let analysisReceived = false
+      
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') {
+                setIsStreaming(false)
+                break
+              }
+              
+              try {
+                const parsed = JSON.parse(data)
+                
+                if (parsed.type === 'analysis' && !analysisReceived) {
+                  // Handle analysis data
+                  analysisReceived = true
+                  console.log('Analysis received:', parsed.analysis)
+                  // Update message with model info
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessage.id 
+                      ? { 
+                          ...msg, 
+                          model: parsed.analysis.selectedModel?.model,
+                          provider: parsed.analysis.selectedModel?.provider
+                        }
+                      : msg
+                  ))
+                } else if (parsed.type === 'token') {
+                  // Handle streaming tokens
+                  fullContent += parsed.content || ''
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessage.id 
+                      ? { ...msg, content: fullContent }
+                      : msg
+                  ))
+                } else if (parsed.type === 'error') {
+                  toast.error(parsed.error || 'An error occurred')
+                  setIsStreaming(false)
+                  break
+                } else if (parsed.type === 'done') {
+                  // Final message with metadata
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessage.id 
+                      ? { 
+                          ...msg, 
+                          status: 'complete',
+                          cost: parsed.cost,
+                          tokens: parsed.tokens
+                        }
+                      : msg
+                  ))
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e)
+              }
+            }
+          }
+        }
+      }
+      
+      // Mark message as complete
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessage.id 
+          ? { ...msg, status: 'complete' }
+          : msg
+      ))
+      
+    } catch (error) {
+      console.error('Error sending message:', error)
+      toast.error('Failed to send message')
+    } finally {
+      setIsLoading(false)
+      setIsStreaming(false)
     }
   }
   
@@ -1155,33 +1290,15 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
           {/* Input Area */}
           <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-xl p-4">
             <div className="max-w-4xl mx-auto">
-              {/* Prompt Analyzer */}
-              <PromptAnalyzer 
-                prompt={input}
-                isAnalyzing={isAnalyzing}
-                analysis={promptAnalysis}
-                mode={selectedMode}
-              />
-              
-              {/* Advanced Input */}
-              <AdvancedInput
-                value={input}
-                onChange={setInput}
-                onSend={sendMessage}
-                onAttach={handleFileUpload}
-                onRecord={toggleRecording}
-                isRecording={isRecording}
+              {/* Clean Input */}
+              <CleanInput
+                onSend={handleSendMessage}
                 isLoading={isLoading}
-                disabled={!user.hasApiKeys}
-                placeholder={
-                  !user.hasApiKeys 
-                    ? "Please configure API keys to start chatting..." 
-                    : "Type your message... (Shift+Enter for new line)"
-                }
-                selectedModel={selectedModel}
-                attachments={attachments}
-                onRemoveAttachment={removeAttachment}
-                mode={selectedMode}
+                currentMode={selectedMode}
+                onModeChange={setSelectedMode}
+                onFileAttach={(files) => setAttachments(files)}
+                attachedFiles={attachments}
+                onRemoveFile={removeAttachment}
               />
               
               {/* Tips */}
