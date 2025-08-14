@@ -215,10 +215,11 @@ export default function EnterpriseSettings() {
   
   const loadApiKeys = async () => {
     try {
-      const response = await fetch('/api/keys')
+      const response = await fetch('/api/settings/api-keys')
       if (response.ok) {
         const data = await response.json()
-        setApiKeys(data.keys || [])
+        console.log('Loaded API keys:', data)
+        setApiKeys(data.keys || data || [])
       }
     } catch (error) {
       console.error('Failed to load API keys:', error)
@@ -415,23 +416,70 @@ export default function EnterpriseSettings() {
         )
         
       case 'api-keys':
-        // Redirect to the centralized API keys page
-        if (typeof window !== 'undefined') {
-          window.location.href = '/settings/api-keys'
-        }
         return (
           <div className="space-y-6">
+            {/* API Keys Summary */}
             <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800">
-              <CardContent className="p-12 text-center">
-                <Key className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">Redirecting to API Keys...</h3>
-                <p className="text-gray-400 mb-4">Taking you to the API keys management page</p>
-                <Button
-                  onClick={() => window.location.href = '/settings/api-keys'}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                >
-                  Go to API Keys
-                </Button>
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Key className="w-5 h-5 text-indigo-400" />
+                  API Keys Management
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Your AI provider credentials are managed centrally
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Show summary of existing keys */}
+                {apiKeys.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-400 mb-3">You have {apiKeys.length} API key(s) configured:</p>
+                    {apiKeys.map((key) => (
+                      <div key={key.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                        {getAIProviderLogo(key.provider)}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">{key.provider}</p>
+                          <p className="text-xs text-gray-400">
+                            {key.maskedKey || `••••••••••${key.key?.slice(-4) || ''}`}
+                          </p>
+                        </div>
+                        {key.isActive ? (
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
+                            Inactive
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Key className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400">No API keys configured yet</p>
+                  </div>
+                )}
+                
+                {/* Action buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => window.location.href = '/settings/api-keys'}
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    Manage API Keys
+                  </Button>
+                  <Button
+                    onClick={loadApiKeys}
+                    variant="outline"
+                    className="border-gray-700 bg-gray-800/50 hover:bg-gray-700"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
