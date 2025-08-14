@@ -50,9 +50,11 @@ function DashboardV2Content() {
   const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'overview')
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState<any>(null)
+  const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
+    checkApiKeys()
   }, [selectedTimeframe])
 
   useEffect(() => {
@@ -61,6 +63,19 @@ function DashboardV2Content() {
       setSelectedView(tab)
     }
   }, [searchParams])
+
+  const checkApiKeys = async () => {
+    try {
+      const response = await fetch('/api/keys/status')
+      if (response.ok) {
+        const data = await response.json()
+        setHasApiKeys(data.hasAnyKeys || false)
+      }
+    } catch (error) {
+      console.error('Failed to check API keys:', error)
+      setHasApiKeys(false)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -96,19 +111,19 @@ function DashboardV2Content() {
   }
 
   // Use real data if available, otherwise show defaults
-  const executiveMetrics = dashboardData ? {
-    totalSpend: dashboardData.totalCost || 0,
-    monthlyBudget: dashboardData.budget?.amount || 30000,
-    budgetUtilization: dashboardData.budget ? (dashboardData.totalCost / dashboardData.budget.amount) * 100 : 0,
-    costPerEmployee: dashboardData.costPerUser || 0,
-    efficiency: 94.2,
-    riskScore: 23,
-    forecastAccuracy: 87.3,
-    complianceScore: 98.5,
-    monthlyGrowth: dashboardData.growth || 0,
-    quarterlyTrend: 8.3,
-    avgCostPerRequest: 0.0247,
-    peakHourMultiplier: 1.34
+  const executiveMetrics = dashboardData?.executiveMetrics ? {
+    totalSpend: dashboardData.executiveMetrics.totalSpend || 0,
+    monthlyBudget: dashboardData.executiveMetrics.monthlyBudget || 30000,
+    budgetUtilization: dashboardData.executiveMetrics.budgetUtilization || 0,
+    costPerEmployee: dashboardData.executiveMetrics.costPerEmployee || 0,
+    efficiency: dashboardData.executiveMetrics.efficiency || 94.2,
+    riskScore: dashboardData.executiveMetrics.riskScore || 23,
+    forecastAccuracy: dashboardData.executiveMetrics.forecastAccuracy || 87.3,
+    complianceScore: dashboardData.executiveMetrics.complianceScore || 98.5,
+    monthlyGrowth: dashboardData.executiveMetrics.monthlyGrowth || 0,
+    quarterlyTrend: dashboardData.executiveMetrics.quarterlyTrend || 8.3,
+    avgCostPerRequest: dashboardData.executiveMetrics.avgCostPerRequest || 0.0247,
+    peakHourMultiplier: dashboardData.executiveMetrics.peakHourMultiplier || 1.34
   } : {
     totalSpend: 0,
     monthlyBudget: 0,
@@ -125,7 +140,7 @@ function DashboardV2Content() {
   }
 
   // Generate insights based on real data
-  const businessInsights = dashboardData?.insights || [
+  const businessInsights = dashboardData?.businessInsights || [
     {
       type: 'info',
       priority: 'low',
@@ -141,7 +156,7 @@ function DashboardV2Content() {
 
   // Use real provider data or show empty state
   const performanceMetrics = {
-    providers: dashboardData?.providerBreakdown?.map((provider: any) => ({
+    providers: dashboardData?.providers?.map((provider: any) => ({
       id: provider.provider.toLowerCase(),
       name: provider.provider,
       spend: provider.cost,
@@ -164,12 +179,18 @@ function DashboardV2Content() {
   ]
 
   // Use real team data
-  const teamMetrics = {
-    totalUsers: dashboardData?.userCount || 1,
-    activeUsers: dashboardData?.activeUserCount || 1,
+  const teamMetrics = dashboardData?.teamMetrics ? {
+    totalUsers: dashboardData.teamMetrics.totalUsers || 1,
+    activeUsers: dashboardData.teamMetrics.activeUsers || 1,
+    powerUsers: dashboardData.teamMetrics.powerUsers || 0,
+    avgUsagePerUser: dashboardData.teamMetrics.avgUsagePerUser || 0,
+    topDepartments: dashboardData.teamMetrics.topDepartments || []
+  } : {
+    totalUsers: 1,
+    activeUsers: 1,
     powerUsers: 0,
-    avgUsagePerUser: dashboardData?.costPerUser || 0,
-    topDepartments: dashboardData?.departmentBreakdown || []
+    avgUsagePerUser: 0,
+    topDepartments: []
   }
 
   const getStatusColor = (status: string) => {
@@ -274,8 +295,8 @@ function DashboardV2Content() {
             </motion.div>
           )}
 
-          {/* Empty State */}
-          {!isLoading && !dashboardData?.totalCost && selectedView === 'overview' && (
+          {/* Empty State - Show when no API keys are configured */}
+          {!isLoading && hasApiKeys === false && selectedView === 'overview' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -288,7 +309,7 @@ function DashboardV2Content() {
               </p>
               <div className="flex gap-4 justify-center">
                 <Link
-                  href="/settings"
+                  href="/settings/api-keys"
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Settings className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import AuthWrapper from '@/components/AuthWrapper'
-import FullUsageClient from './usage-full'
+import UsageRedesigned from './usage-redesigned'
 
 export const metadata: Metadata = {
   title: 'Usage Analytics | AI Cost Guardian',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function UsagePage() {
   return (
     <AuthWrapper>
-      <FullUsageClient />
+      <UsageRedesigned />
     </AuthWrapper>
   )
 }
