@@ -789,10 +789,9 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
         {/* Main Content */}
         <div className="flex-1 flex">
           <div className="flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
-                      <Sparkles className="w-5 h-5 text-white" />
+            {/* Header */}
+            <div className="h-14 bg-gray-900/50 border-b border-gray-800 flex items-center justify-between px-4">
+              <div className="flex items-center gap-3">
                     </div>
                     <div>
                       <h2 className="font-bold text-white">AIOptimise V2</h2>
@@ -867,45 +866,41 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                 </div>
               </div>
               
-              {/* Threads List */}
-              <div className="flex-1 overflow-y-auto p-2">
-                <div className="space-y-1">
-                  {threads.map((thread) => (
-                    <motion.button
-                      key={thread.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => selectThread(thread)}
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <AnimatePresence>
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
                       className={cn(
-                        "w-full text-left p-3 rounded-lg transition-all",
-                        currentThread?.id === thread.id
-                          ? "bg-indigo-600/20 border border-indigo-500/30"
-                          : "hover:bg-gray-800/50"
+                        "mb-4",
+                        message.role === 'user' ? "flex justify-end" : "flex justify-start"
                       )}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {thread.isPinned && <Star className="w-3 h-3 text-yellow-400" />}
-                            <h3 className="text-sm font-medium text-white truncate">{thread.title}</h3>
-                          </div>
-                          <p className="text-xs text-gray-400 truncate">{thread.preview}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-gray-500">{thread.messageCount} messages</span>
-                            {thread.cost > 0 && (
-                              <span className="text-xs text-green-400">${thread.cost.toFixed(3)}</span>
-                            )}
-                          </div>
+                      <div className={cn(
+                        "max-w-[80%] rounded-xl p-4",
+                        message.role === 'user' 
+                          ? "bg-indigo-600/20 border border-indigo-500/30" 
+                          : "bg-gray-800/50 border border-gray-700"
+                      )}>
+                        <div className="text-sm text-white">
+                          {message.content}
                         </div>
-                        {thread.collaborators && thread.collaborators.length > 0 && (
-                          <div className="flex -space-x-1">
-                            {thread.collaborators.slice(0, 3).map((_, i) => (
-                              <div key={i} className="w-5 h-5 rounded-full bg-gray-700 border border-gray-600" />
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-500">
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                          </span>
+                          {message.model && (
+                            <Badge variant="secondary" className="text-xs">
+                              {message.model}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </motion.button>
+                    </motion.div>
                   ))}
                 </div>
               </div>
