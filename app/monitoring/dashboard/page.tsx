@@ -295,12 +295,12 @@ export default function MonitoringDashboard() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-950 relative overflow-hidden">
-        {/* Animated gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-green-600 to-blue-600 rounded-full opacity-20 animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-10 animate-pulse delay-500"></div>
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
 
         <div className="container mx-auto px-4 py-8 relative z-10">
@@ -333,7 +333,7 @@ export default function MonitoringDashboard() {
               <select 
                 value={selectedPeriod} 
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-gray-800/50 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+                className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none backdrop-blur-xl"
               >
                 <option value="1h">Last Hour</option>
                 <option value="6h">Last 6 Hours</option>
@@ -346,7 +346,7 @@ export default function MonitoringDashboard() {
               <select 
                 value={selectedProvider} 
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                className="bg-gray-800/50 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+                className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none backdrop-blur-xl"
               >
                 <option value="all">All Providers</option>
                 <option value="openai">OpenAI</option>
@@ -370,7 +370,7 @@ export default function MonitoringDashboard() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => exportData('csv')}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                 >
                   <Download className="w-4 h-4 mr-1" />
                   CSV
@@ -379,7 +379,7 @@ export default function MonitoringDashboard() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => exportData('json')}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                 >
                   <Download className="w-4 h-4 mr-1" />
                   JSON
@@ -410,52 +410,52 @@ export default function MonitoringDashboard() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <motion.div 
-              className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6"
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-300">Total Cost</h3>
+                <h3 className="text-lg font-medium text-gray-400">Total Cost</h3>
                 <DollarSign className="w-5 h-5 text-blue-400" />
               </div>
-              <div className="text-3xl font-bold text-blue-300">
+              <div className="text-3xl font-bold text-white">
                 ${totals.cost.toFixed(2)}
               </div>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Across {Object.keys(usageData).length} providers
               </p>
             </motion.div>
 
             <motion.div 
-              className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6"
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-300">Total Tokens</h3>
+                <h3 className="text-lg font-medium text-gray-400">Total Tokens</h3>
                 <Zap className="w-5 h-5 text-green-400" />
               </div>
-              <div className="text-3xl font-bold text-green-300">
+              <div className="text-3xl font-bold text-white">
                 {totals.tokens.toLocaleString()}
               </div>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {totals.requests.toLocaleString()} requests
               </p>
             </motion.div>
 
             <motion.div 
-              className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-6"
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-300">Active Alerts</h3>
+                <h3 className="text-lg font-medium text-gray-400">Active Alerts</h3>
                 <Bell className="w-5 h-5 text-orange-400" />
               </div>
-              <div className="text-3xl font-bold text-orange-300">
+              <div className="text-3xl font-bold text-white">
                 {alerts.filter(a => a.isActive).length}
               </div>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {alerts.length} total alerts
               </p>
             </motion.div>
@@ -474,7 +474,7 @@ export default function MonitoringDashboard() {
                 <TabsTrigger 
                   key={tab.id}
                   value={tab.id}
-                  className="px-4 py-2 rounded-xl flex items-center gap-2 transition-all whitespace-nowrap data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-500/20 bg-gray-800/50 text-gray-400 hover:bg-gray-700/50"
+                  className="px-4 py-2 rounded-xl flex items-center gap-2 transition-all whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/20 bg-gray-900/50 text-gray-400 hover:bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 data-[state=active]:border-blue-600"
                 >
                   <tab.icon className="w-4 h-4" />
                   <span>{tab.label}</span>
@@ -486,7 +486,7 @@ export default function MonitoringDashboard() {
         <TabsContent value="overview" className="space-y-6">
           {/* Provider Usage Charts */}
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -542,7 +542,7 @@ export default function MonitoringDashboard() {
 
           {/* Top Models */}
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -589,7 +589,7 @@ export default function MonitoringDashboard() {
             {Object.entries(usageData).map(([provider, data]) => (
               <motion.div 
                 key={provider}
-                className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -654,7 +654,7 @@ export default function MonitoringDashboard() {
         {/* Insights Tab */}
         <TabsContent value="insights" className="space-y-6">
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -717,7 +717,7 @@ export default function MonitoringDashboard() {
         <TabsContent value="alerts" className="space-y-6">
           {/* Create New Alert */}
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6 mb-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -731,7 +731,7 @@ export default function MonitoringDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="text-gray-300">Provider</Label>
-                <select className="w-full border border-gray-600 bg-gray-800/50 text-gray-300 rounded-md px-3 py-2 text-sm mt-1 focus:border-blue-400 focus:outline-none">
+                <select className="w-full border border-gray-700 bg-gray-900/50 text-white rounded-lg px-3 py-2 text-sm mt-1 focus:border-blue-500 focus:outline-none backdrop-blur-xl">
                   <option value="openai">OpenAI</option>
                   <option value="anthropic">Claude</option>
                   <option value="google_gemini">Gemini</option>
@@ -743,7 +743,7 @@ export default function MonitoringDashboard() {
                 <Input 
                   type="number" 
                   placeholder="50.00" 
-                  className="mt-1 bg-gray-800/50 border-gray-600 text-gray-300 focus:border-blue-400"
+                  className="mt-1 bg-gray-900/50 border-gray-700 text-white focus:border-blue-500 backdrop-blur-xl"
                 />
               </div>
               <div className="flex items-end">
@@ -754,7 +754,7 @@ export default function MonitoringDashboard() {
 
           {/* Active Alerts */}
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -809,7 +809,7 @@ export default function MonitoringDashboard() {
         {/* Export Tab */}
         <TabsContent value="export" className="space-y-6">
           <motion.div 
-            className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -828,7 +828,7 @@ export default function MonitoringDashboard() {
                     <Button 
                       onClick={() => exportData('csv')} 
                       variant="outline" 
-                      className="w-full justify-start bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                      className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                     >
                       📊 Export as CSV
                       <span className="ml-auto text-sm text-gray-400">Spreadsheet format</span>
@@ -836,7 +836,7 @@ export default function MonitoringDashboard() {
                     <Button 
                       onClick={() => exportData('json')} 
                       variant="outline" 
-                      className="w-full justify-start bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                      className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                     >
                       🔗 Export as JSON
                       <span className="ml-auto text-sm text-gray-400">API-friendly format</span>
