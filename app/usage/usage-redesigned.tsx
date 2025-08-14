@@ -71,6 +71,7 @@ import {
 } from 'recharts'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 interface UsageStats {
   totalCost: number
@@ -84,7 +85,7 @@ interface UsageStats {
   avgCostPerRequest?: number
 }
 
-const PROVIDER_COLORS = {
+const PROVIDER_COLORS: Record<string, string> = {
   openai: '#10a37f',
   anthropic: '#8b5cf6',
   google: '#4285f4',
@@ -117,6 +118,7 @@ export default function UsageRedesigned() {
     if (status === 'authenticated' && session?.user) {
       fetchUsageData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session, selectedTimeframe, selectedProvider])
 
   const fetchUsageData = async () => {

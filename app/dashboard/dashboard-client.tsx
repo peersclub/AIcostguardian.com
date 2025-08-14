@@ -55,6 +55,7 @@ function DashboardV2Content() {
   useEffect(() => {
     fetchDashboardData()
     checkApiKeys()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTimeframe])
 
   useEffect(() => {

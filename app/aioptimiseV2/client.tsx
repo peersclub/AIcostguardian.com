@@ -231,6 +231,7 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   useEffect(() => {
     loadThreads()
     checkApiKeys()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   const loadThreads = async () => {
@@ -945,7 +946,10 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                               className="p-2 bg-gray-700 rounded-lg flex items-center gap-2"
                             >
                               {attachment.type === 'image' ? (
-                                <Image className="w-4 h-4 text-blue-400" />
+                                <>
+                                  <Image className="w-4 h-4 text-blue-400" />
+                                  <span className="sr-only">Image attachment</span>
+                                </>
                               ) : (
                                 <FileText className="w-4 h-4 text-gray-400" />
                               )}
@@ -1007,7 +1011,10 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                     >
                       <div className="p-2 bg-gray-800 rounded-lg border border-gray-700 flex items-center gap-2">
                         {attachment.type === 'image' ? (
-                          <Image className="w-4 h-4 text-blue-400" />
+                          <>
+                            <Image className="w-4 h-4 text-blue-400" />
+                            <img src={attachment.url} alt={attachment.name} className="hidden" />
+                          </>
                         ) : (
                           <FileText className="w-4 h-4 text-gray-400" />
                         )}
