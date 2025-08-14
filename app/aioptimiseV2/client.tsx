@@ -43,6 +43,8 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { PromptAnalyzer, analyzePrompt } from './components/prompt-analyzer'
 import { AdvancedInput } from './components/advanced-input'
 import { ParticipantManager } from './components/participant-manager'
+import { ModelSwitcher } from './components/model-switcher'
+import { useWebSocket } from '@/lib/websocket'
 
 // Types
 interface User {
@@ -200,6 +202,18 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [threadParticipants, setThreadParticipants] = useState<any[]>([])
   
+  // WebSocket integration
+  const {
+    isConnected: wsConnected,
+    participants: wsParticipants,
+    typingUsers: wsTypingUsers,
+    startTyping: wsStartTyping,
+    stopTyping: wsStopTyping,
+    updatePresence,
+    broadcastModelChange,
+    broadcastCostUpdate
+  } = useWebSocket(user.email, currentThread?.id)
+  
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -239,16 +253,29 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   useEffect(() => {
     if (input.length > 5) {
       setIsAnalyzing(true)
+      // Notify others that we're typing
+      if (wsConnected && currentThread) {
+        wsStartTyping()
+      }
       const timer = setTimeout(() => {
         const analysis = analyzePrompt(input, selectedMode)
         setPromptAnalysis(analysis)
         setIsAnalyzing(false)
       }, 300) // Debounce analysis
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+        // Stop typing notification
+        if (wsConnected && currentThread) {
+          wsStopTyping()
+        }
+      }
     } else {
       setPromptAnalysis(null)
+      if (wsConnected && currentThread) {
+        wsStopTyping()
+      }
     }
-  }, [input, selectedMode])
+  }, [input, selectedMode, wsConnected, currentThread, wsStartTyping, wsStopTyping])
   
   // Load initial data
   useEffect(() => {
@@ -374,6 +401,12 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
         const saved = (selectedModel.inputCost - modelToUse.inputCost) * input.length / 1000
         setSavedAmount(prev => prev + saved)
         toast.success(`Optimized! Saved $${saved.toFixed(4)} by using ${modelToUse.name}`)
+      }
+      
+      // Broadcast cost update via WebSocket
+      if (wsConnected && currentThread) {
+        const estimatedCost = calculateEstimatedCost(input, modelToUse)
+        broadcastCostUpdate(estimatedCost)
       }
       
       const res = await fetch('/api/aioptimise/chat', {
@@ -782,6 +815,14 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
             </div>
             
             <div className="flex items-center gap-2">
+              {/* WebSocket Status */}
+              {wsConnected && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1" />
+                  Live
+                </Badge>
+              )}
+              
               {/* Mode Selector */}
               <div className="flex items-center bg-gray-800/50 rounded-lg border border-gray-700 p-1">
                 {[
@@ -823,40 +864,27 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
               </div>
               
               {/* Model Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-gray-700 bg-gray-800/50 text-white">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{selectedModel.icon}</span>
-                      <span className="text-sm">{selectedModel.name}</span>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64 bg-gray-900 border-gray-700">
-                  {MODELS.map((model) => (
-                    <DropdownMenuItem
-                      key={model.id}
-                      onClick={() => setSelectedModel(model)}
-                      className="hover:bg-gray-800"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{model.icon}</span>
-                          <div>
-                            <p className="text-sm font-medium text-white">{model.name}</p>
-                            <p className="text-xs text-gray-400">{model.provider}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-green-400">${model.inputCost}/1K</p>
-                          <p className="text-xs text-gray-500">{model.speed}</p>
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ModelSwitcher
+                selectedModel={selectedModel}
+                onModelChange={(model) => {
+                  setSelectedModel(model)
+                  // Broadcast model change to other participants
+                  if (wsConnected && currentThread) {
+                    broadcastModelChange(model.name)
+                  }
+                }}
+                mode={selectedMode}
+                usage={{
+                  dailySpent: limits.dailyUsed,
+                  dailyLimit: limits.dailyLimit,
+                  tokensUsed: limits.tokensUsedToday
+                }}
+                isEnterprise={user.isEnterpriseUser}
+                onCompare={(models) => {
+                  console.log('Comparing models:', models)
+                  // Could open a comparison modal here
+                }}
+              />
               
               {/* Current Session Cost */}
               <div className="px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
