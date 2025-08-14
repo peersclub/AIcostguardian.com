@@ -4,9 +4,6 @@ import { authOptions } from '@/lib/auth-config'
 import prisma from '@/lib/prisma'
 import OpenAI from 'openai'
 import { safeDecrypt } from '@/lib/crypto-helper'
-import { writeFile, mkdir, unlink, readFile } from 'fs/promises'
-import { join } from 'path'
-import crypto from 'crypto'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -14,8 +11,6 @@ export const maxDuration = 60 // 60 seconds timeout for transcription
 
 // POST /api/aioptimise/transcribe - Transcribe audio to text
 export async function POST(req: NextRequest) {
-  let tempFilePath: string | null = null
-  
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -90,41 +85,18 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Save audio file temporarily
-    const tempDir = join(process.cwd(), 'tmp', 'audio')
-    await mkdir(tempDir, { recursive: true })
-    
-    const uniqueId = crypto.randomBytes(16).toString('hex')
-    const fileExtension = audioFile.name.split('.').pop() || 'mp3'
-    const tempFileName = `${uniqueId}.${fileExtension}`
-    tempFilePath = join(tempDir, tempFileName)
-    
-    const bytes = await audioFile.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(tempFilePath, buffer)
-
     // Initialize OpenAI client
     const decryptedKey = safeDecrypt(apiKey.encryptedKey)
     const openai = new OpenAI({ apiKey: decryptedKey })
 
-    // Transcribe audio using Whisper
-    // Read the file as a blob for OpenAI
-    const audioFileBuffer = await readFile(tempFilePath)
-    const audioBlob = new Blob([audioFileBuffer], { type: fileType })
-    const audioFileForOpenAI = new File([audioBlob], tempFileName, { type: fileType })
-    
+    // Transcribe audio using Whisper directly with the uploaded file
     const transcription = await openai.audio.transcriptions.create({
-      file: audioFileForOpenAI,
+      file: audioFile,
       model: 'whisper-1',
       language, // ISO-639-1 language code
       prompt, // Optional prompt to guide the model
       response_format: 'verbose_json' // Get timestamps and more details
     })
-
-    // Clean up temp file
-    if (tempFilePath) {
-      await unlink(tempFilePath).catch(console.error)
-    }
 
     // Calculate cost (Whisper costs $0.006 per minute)
     const durationInMinutes = (transcription as any).duration ? 
@@ -136,18 +108,18 @@ export async function POST(req: NextRequest) {
     await prisma.usage.create({
       data: {
         userId: user.id,
-        organizationId: user.organizationId || '',
         provider: 'openai',
         model: 'whisper-1',
-        promptTokens: 0,
-        completionTokens: Math.ceil(transcription.text.length / 4), // Estimate tokens
+        inputTokens: 0,
+        outputTokens: Math.ceil(transcription.text.length / 4), // Estimate tokens
         totalTokens: Math.ceil(transcription.text.length / 4),
         cost,
         metadata: {
           type: 'transcription',
           duration: durationInMinutes * 60,
           language,
-          audioSize: audioFile.size
+          audioSize: audioFile.size,
+          organizationId: user.organizationId
         }
       }
     })
@@ -168,11 +140,6 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (error) {
-    // Clean up temp file if it exists
-    if (tempFilePath) {
-      await unlink(tempFilePath).catch(console.error)
-    }
-
     console.error('Transcription error:', error)
     
     // Handle specific OpenAI errors
