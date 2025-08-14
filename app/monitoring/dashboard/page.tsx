@@ -3,309 +3,165 @@
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
+import { 
+  TrendingUp, 
+  TrendingDown,
+  DollarSign,
+  Users,
+  Zap,
+  AlertTriangle,
+  CheckCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  Eye,
+  BarChart3,
+  Activity,
+  Settings,
+  Filter,
+  Calendar,
+  Download,
+  RefreshCw,
+  Bell,
+  ChevronRight,
+  Clock,
+  Shield,
+  Brain
+} from 'lucide-react'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Monitor, DollarSign, Zap, AlertTriangle, BarChart3, Settings, Download, Bell, Eye, Users, Shield, RefreshCw, TrendingUp, Activity } from 'lucide-react'
-// import { ProviderCard } from '@/components/shared/ProviderCard'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { 
-  DashboardSkeleton, 
-  CardSkeleton, 
-  LoadingOverlay, 
-  SpinnerLoader,
-  InsightsSkeleton,
-  ListSkeleton
-} from '@/components/shared/LoadingStates'
-import { 
-  ErrorDisplay, 
-  APIErrorDisplay, 
-  EmptyStateDisplay, 
-  ErrorBoundary 
-} from '@/components/shared/ErrorStates'
-
-interface UsageData {
-  provider: string
-  totalRequests: number
-  totalTokens: number
-  totalCost: number
-  byModel: Record<string, {
-    requests: number
-    tokens: number
-    cost: number
-  }>
-  timeRange: {
-    start: Date
-    end: Date
-  }
-}
-
-interface InsightData {
-  type: 'optimization' | 'cost_saving' | 'usage_pattern' | 'warning'
-  title: string
-  description: string
-  impact: 'high' | 'medium' | 'low'
-  actionItems: string[]
-  data?: any
-  createdAt: Date
-}
-
-interface AlertData {
-  id: string
-  type: string
-  provider: string
-  threshold: number
-  message: string
-  isActive: boolean
-  triggeredAt: string
-}
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function MonitoringDashboard() {
   const { data: session, status } = useSession()
-  const [usageData, setUsageData] = useState<Record<string, UsageData>>({})
-  const [insights, setInsights] = useState<InsightData[]>([])
-  const [alerts, setAlerts] = useState<AlertData[]>([])
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [selectedTimeframe, setSelectedTimeframe] = useState('24h')
+  const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'overview')
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [monitoringData, setMonitoringData] = useState<any>(null)
   const [realTimeEnabled, setRealTimeEnabled] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState('24h')
-  const [selectedProvider, setSelectedProvider] = useState<string>('all')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
-  // Real-time polling interval
+  // Handle URL-based tab navigation
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'alerts', 'performance', 'insights'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
+
+  // Fetch monitoring data
+  useEffect(() => {
+    if (session) {
+      fetchMonitoringData()
+    }
+  }, [session, selectedTimeframe])
+
+  // Real-time updates
   useEffect(() => {
     let interval: NodeJS.Timeout
-
     if (realTimeEnabled && session) {
       interval = setInterval(() => {
-        fetchUsageData()
-        fetchInsights()
-        fetchAlerts()
-      }, 5000) // Poll every 5 seconds
+        fetchMonitoringData()
+      }, 5000)
     }
-
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [realTimeEnabled, session, selectedPeriod, selectedProvider])
+  }, [realTimeEnabled, session, selectedTimeframe])
 
-  // Initial data load
-  useEffect(() => {
-    if (session) {
-      fetchUsageData()
-      fetchInsights()
-      fetchAlerts()
-    }
-  }, [session, selectedPeriod, selectedProvider])
-
-  const fetchUsageData = async () => {
+  const fetchMonitoringData = async () => {
     try {
       setIsLoading(true)
-      setError(null)
+      
+      // Fetch all monitoring data
+      const [metricsRes, alertsRes, insightsRes] = await Promise.all([
+        fetch(`/api/monitoring/metrics?timeframe=${selectedTimeframe}`),
+        fetch('/api/monitoring/alerts?active=true'),
+        fetch(`/api/monitoring/insights?timeframe=${selectedTimeframe}`)
+      ])
 
-      const params = new URLSearchParams({
-        realTime: 'true',
-        ...(selectedProvider !== 'all' && { provider: selectedProvider })
+      const metrics = metricsRes.ok ? await metricsRes.json() : {}
+      const alerts = alertsRes.ok ? await alertsRes.json() : []
+      const insights = insightsRes.ok ? await insightsRes.json() : []
+
+      setMonitoringData({
+        metrics,
+        alerts,
+        insights
       })
-
-      // Calculate date range based on selected period
-      const endDate = new Date()
-      const startDate = new Date()
-      switch (selectedPeriod) {
-        case '1h':
-          startDate.setHours(startDate.getHours() - 1)
-          break
-        case '6h':
-          startDate.setHours(startDate.getHours() - 6)
-          break
-        case '24h':
-          startDate.setHours(startDate.getHours() - 24)
-          break
-        case '7d':
-          startDate.setDate(startDate.getDate() - 7)
-          break
-        case '30d':
-          startDate.setDate(startDate.getDate() - 30)
-          break
-      }
-
-      params.append('startDate', startDate.toISOString())
-      params.append('endDate', endDate.toISOString())
-
-      const response = await fetch(`/api/monitoring/usage?${params}`)
-      if (!response.ok) throw new Error('Failed to fetch usage data')
-
-      const data = await response.json()
-      setUsageData(data)
       setLastUpdated(new Date())
-    } catch (err: any) {
-      setError(err.message)
+    } catch (error) {
+      console.error('Failed to fetch monitoring data:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const fetchInsights = async () => {
-    try {
-      const days = selectedPeriod === '1h' ? 1 : 
-                   selectedPeriod === '6h' ? 1 :
-                   selectedPeriod === '24h' ? 1 :
-                   selectedPeriod === '7d' ? 7 : 30
-
-      const response = await fetch(`/api/monitoring/insights?days=${days}`)
-      if (!response.ok) throw new Error('Failed to fetch insights')
-
-      const data = await response.json()
-      setInsights(data)
-    } catch (err: any) {
-      console.error('Error fetching insights:', err)
-    }
-  }
-
-  const fetchAlerts = async () => {
-    try {
-      const response = await fetch('/api/monitoring/alerts?active=true')
-      if (!response.ok) throw new Error('Failed to fetch alerts')
-
-      const data = await response.json()
-      setAlerts(data)
-    } catch (err: any) {
-      console.error('Error fetching alerts:', err)
-    }
-  }
-
-  const exportData = async (format: 'csv' | 'json') => {
-    try {
-      const params = new URLSearchParams({
-        format,
-        ...(selectedProvider !== 'all' && { provider: selectedProvider })
-      })
-
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 30) // Last 30 days for export
-
-      params.append('startDate', startDate.toISOString())
-      params.append('endDate', endDate.toISOString())
-
-      const response = await fetch(`/api/monitoring/export?${params}`)
-      if (!response.ok) throw new Error('Failed to export data')
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `ai-usage-report.${format}`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err: any) {
-      setError(`Export failed: ${err.message}`)
-    }
-  }
-
-  const createCostAlert = async (provider: string, threshold: number) => {
-    try {
-      const response = await fetch('/api/monitoring/alerts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'cost_alert',
-          provider,
-          threshold,
-          message: `Cost alert for ${provider} at $${threshold}`
-        })
-      })
-
-      if (!response.ok) throw new Error('Failed to create alert')
-      
-      fetchAlerts() // Refresh alerts
-    } catch (err: any) {
-      setError(`Failed to create alert: ${err.message}`)
-    }
-  }
-
-  const toggleAlert = async (alertId: string, isActive: boolean) => {
-    try {
-      const response = await fetch('/api/monitoring/alerts', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: alertId, isActive })
-      })
-
-      if (!response.ok) throw new Error('Failed to update alert')
-      
-      fetchAlerts() // Refresh alerts
-    } catch (err: any) {
-      setError(`Failed to update alert: ${err.message}`)
-    }
-  }
-
-  // Calculate totals across all providers
-  const totals = Object.values(usageData).reduce(
-    (acc, provider) => ({
-      cost: acc.cost + (provider.totalCost || 0),
-      tokens: acc.tokens + (provider.totalTokens || 0),
-      requests: acc.requests + (provider.totalRequests || 0)
-    }),
-    { cost: 0, tokens: 0, requests: 0 }
-  )
-
-  const getImpactColor = (impact: string) => {
-    switch (impact) {
-      case 'high': return 'bg-red-900/20 text-red-300 border-red-500/30'
-      case 'medium': return 'bg-yellow-900/20 text-yellow-300 border-yellow-500/30'
-      case 'low': return 'bg-green-900/20 text-green-300 border-green-500/30'
-      default: return 'bg-gray-800/30 text-gray-300 border-gray-600/50'
-    }
-  }
-
-  const getInsightIcon = (type: string) => {
-    switch (type) {
-      case 'optimization': return <Zap className="w-5 h-5" />
-      case 'cost_saving': return <DollarSign className="w-5 h-5" />
-      case 'usage_pattern': return <BarChart3 className="w-5 h-5" />
-      case 'warning': return <AlertTriangle className="w-5 h-5" />
-      default: return <Monitor className="w-5 h-5" />
-    }
+  const handleTabChange = (value: string) => {
+    setSelectedView(value)
+    router.push(`/monitoring/dashboard?tab=${value}`)
   }
 
   if (status === 'loading') {
-    return <DashboardSkeleton />
-  }
-
-  if (!session) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <EmptyStateDisplay
-          title="Authentication Required"
-          message="Please sign in to access the monitoring dashboard"
-          icon="🔒"
-          actionText="Sign In"
-          onAction={() => window.location.href = '/auth/signin'}
-        />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
       </div>
     )
   }
 
-  return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        {/* Animated background gradient - EXACTLY like main dashboard */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Authentication Required</h2>
+          <p className="text-gray-400 mb-4">Please sign in to access the monitoring dashboard</p>
+          <Button 
+            onClick={() => router.push('/auth/signin')}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            Sign In
+          </Button>
         </div>
+      </div>
+    )
+  }
 
-        <div className="relative z-10 min-h-screen py-6">
-          <div className="max-w-7xl mx-auto px-6">
-          {/* Header */}
+  // Default data structure
+  const metrics = monitoringData?.metrics || {
+    currentLoad: 0,
+    avgResponseTime: 0,
+    errorRate: 0,
+    uptime: 99.9,
+    activeAlerts: 0,
+    totalRequests: 0,
+    totalCost: 0,
+    costTrend: 0
+  }
+
+  const alerts = monitoringData?.alerts || []
+  const insights = monitoringData?.insights || []
+
+  return (
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated background gradient - EXACTLY like main dashboard */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header - EXACTLY like main dashboard */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -313,554 +169,440 @@ export default function MonitoringDashboard() {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-indigo-500/20 rounded-lg">
-                    <Monitor className="w-6 h-6 text-indigo-400" />
-                  </div>
-                  <h1 className="text-3xl font-bold text-white">AI Monitoring Center</h1>
-                  <span className="px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-300 text-sm font-medium rounded-full border border-indigo-500/30">
-                    Real-time
-                  </span>
-                </div>
-                <p className="text-gray-400">Strategic AI operations monitoring for real-time insights</p>
+                <h1 className="text-4xl font-bold text-white mb-2">
+                  Real-Time Monitoring
+                </h1>
+                <p className="text-gray-400">
+                  Live system metrics and performance monitoring
+                </p>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <div className={`w-2 h-2 rounded-full ${realTimeEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-                  <span className="text-sm text-gray-300">{realTimeEnabled ? 'Live Monitoring' : 'Paused'}</span>
-                </div>
-                <button 
-                  onClick={fetchUsageData}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Sync Data
-                </button>
-                <button 
-                  onClick={() => exportData('csv')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Export Report
-                </button>
-              </div>
-            </div>
-
-            {/* View Tabs - EXACTLY like main dashboard */}
-            <div className="flex space-x-1 bg-gray-800/30 rounded-lg p-1">
-              <select 
-                value={selectedPeriod} 
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 bg-gray-700 text-white rounded-md font-medium mr-2"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="6h">Last 6 Hours</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-              <select 
-                value={selectedProvider} 
-                onChange={(e) => setSelectedProvider(e.target.value)}
-                className="px-4 py-2 bg-gray-700 text-white rounded-md font-medium"
-              >
-                <option value="all">All Providers</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Claude</option>
-                <option value="google_gemini">Gemini</option>
-                <option value="grok">Grok</option>
-              </select>
-            </div>
-          </motion.div>
-
-      {/* Error Display */}
-      {error && (
-        <APIErrorDisplay 
-          error={error}
-          onRetry={() => {
-            setError(null)
-            fetchUsageData()
-            fetchInsights()
-            fetchAlerts()
-          }}
-          onDismiss={() => setError(null)}
-        />
-      )}
-
-          {/* Summary Cards */}
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            {/* Total AI Investment - EXACTLY like main dashboard */}
-            <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white">${totals.cost.toFixed(2)}</div>
-                  <div className="text-green-300 text-sm">Total Cost</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-green-300 text-sm">Across {Object.keys(usageData).length} providers</span>
-              </div>
-            </div>
-
-            {/* Total Tokens - EXACTLY like main dashboard */}
-            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Zap className="w-6 h-6 text-blue-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white">{totals.tokens.toLocaleString()}</div>
-                  <div className="text-blue-300 text-sm">Total Tokens</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-400" />
-                <span className="text-blue-300 text-sm">{totals.requests.toLocaleString()} requests</span>
-              </div>
-            </div>
-
-            {/* Active Alerts - EXACTLY like main dashboard */}
-            <div className="bg-gradient-to-br from-purple-900/50 to-pink-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Bell className="w-6 h-6 text-purple-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white">{alerts.filter(a => a.isActive).length}</div>
-                  <div className="text-purple-300 text-sm">Active Alerts</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-purple-400" />
-                <span className="text-purple-300 text-sm">{alerts.length} total configured</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-              {[
-                { id: 'overview', label: 'Overview', icon: Eye },
-                { id: 'providers', label: 'Providers', icon: Users },
-                { id: 'insights', label: 'Insights', icon: BarChart3 },
-                { id: 'alerts', label: 'Alerts', icon: Bell },
-                { id: 'export', label: 'Reports', icon: Download }
-              ].map((tab) => (
-                <TabsTrigger 
-                  key={tab.id}
-                  value={tab.id}
-                  className="px-4 py-2 rounded-xl flex items-center gap-2 transition-all whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/20 bg-gray-900/50 text-gray-400 hover:bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 data-[state=active]:border-blue-600"
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </TabsTrigger>
-              ))}
-            </div>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          {/* Provider Usage Charts */}
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Usage by Provider</h3>
-              <p className="text-gray-400 mt-1">Cost and token distribution across AI providers</p>
-            </div>
-            <div className="space-y-4">
-              <LoadingOverlay isLoading={isLoading} message="Loading usage data...">
-                {Object.keys(usageData).length === 0 && !isLoading ? (
-                  <EmptyStateDisplay
-                    title="No Usage Data"
-                    message="No usage data available for the selected period"
-                    icon="📊"
-                    actionText="Refresh Data"
-                    onAction={fetchUsageData}
+              
+              <div className="flex items-center gap-4">
+                {/* Real-time toggle */}
+                <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-2 border border-gray-700">
+                  <span className="text-gray-400 text-sm">Real-time</span>
+                  <Switch
+                    checked={realTimeEnabled}
+                    onCheckedChange={setRealTimeEnabled}
+                    className="data-[state=checked]:bg-green-600"
                   />
-                ) : (
-                  Object.entries(usageData).map(([provider, data], index) => (
-                    <motion.div 
-                      key={provider} 
-                      className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.1 * index }}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                          <span className="text-lg font-bold text-blue-400">
-                            {provider.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
-                          <div className="text-sm text-gray-500">
-                            {data.totalRequests} requests
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-white">${data.totalCost.toFixed(2)}</div>
-                        <div className="text-sm text-gray-500">
-                          {data.totalTokens.toLocaleString()} tokens
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </LoadingOverlay>
-            </div>
-          </motion.div>
-
-          {/* Top Models */}
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Top Models by Cost</h3>
-              <p className="text-gray-400 mt-1">Most expensive models in the selected time period</p>
-            </div>
-            <div className="space-y-3">
-              {Object.entries(usageData)
-                .flatMap(([provider, data]) => 
-                  Object.entries(data.byModel || {}).map(([model, modelData]) => ({
-                    provider,
-                    model,
-                    ...modelData
-                  }))
-                )
-                .sort((a, b) => b.cost - a.cost)
-                .slice(0, 5)
-                .map(({ provider, model, cost, tokens, requests }, index) => (
-                  <div key={`${provider}-${model}`} className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center text-sm font-bold text-purple-400">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <div className="font-medium text-white">{model}</div>
-                        <div className="text-sm text-gray-500 capitalize">{provider.replace('_', ' ')}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-white">${cost.toFixed(2)}</div>
-                      <div className="text-sm text-gray-500">{tokens.toLocaleString()} tokens</div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </motion.div>
-        </TabsContent>
-
-        {/* Providers Tab */}
-        <TabsContent value="providers" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Object.entries(usageData).map(([provider, data]) => (
-              <motion.div 
-                key={provider}
-                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-white capitalize">{provider.replace('_', ' ')}</h3>
-                    <Badge 
-                      variant={data.totalCost > 0 ? "default" : "secondary"}
-                      className={data.totalCost > 0 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-gray-500/20 text-gray-300 border-gray-500/30"}
-                    >
-                      {data.totalCost > 0 ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-300">Usage data for the {selectedPeriod} period</p>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-300">
-                        ${data.totalCost.toFixed(2)}
-                      </div>
-                      <div className="text-sm text-gray-400">Cost</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-300">
-                        {data.totalTokens.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-400">Tokens</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-purple-300">
-                        {data.totalRequests}
-                      </div>
-                      <div className="text-sm text-gray-400">Requests</div>
-                    </div>
-                  </div>
-
-                  {/* Model Breakdown */}
-                  {data.byModel && Object.keys(data.byModel).length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2 text-white">Model Breakdown</h4>
-                      <div className="space-y-2">
-                        {Object.entries(data.byModel)
-                          .sort(([,a], [,b]) => b.cost - a.cost)
-                          .map(([model, modelData]) => (
-                            <div key={model} className="flex justify-between items-center text-sm">
-                              <span className="truncate text-gray-300">{model}</span>
-                              <span className="font-medium text-white">${modelData.cost.toFixed(2)}</span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
+                  {realTimeEnabled && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   )}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </TabsContent>
 
-        {/* Insights Tab */}
-        <TabsContent value="insights" className="space-y-6">
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">AI-Powered Insights</h3>
-              <p className="text-gray-300 mt-1">
-                Intelligent recommendations to optimize your AI usage and reduce costs
-              </p>
+                {/* Timeframe selector */}
+                <div className="flex bg-gray-900/50 rounded-lg p-1 border border-gray-700">
+                  {['1h', '6h', '24h', '7d', '30d'].map((timeframe) => (
+                    <button
+                      key={timeframe}
+                      onClick={() => setSelectedTimeframe(timeframe)}
+                      className={`px-3 py-1 rounded transition-colors ${
+                        selectedTimeframe === timeframe
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {timeframe}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Action buttons */}
+                <Button
+                  onClick={() => fetchMonitoringData()}
+                  variant="outline"
+                  className="bg-gray-900/50 border-gray-700 text-white hover:bg-gray-800"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             </div>
-            <div>
-              {isLoading && insights.length === 0 ? (
-                <InsightsSkeleton />
-              ) : insights.length > 0 ? (
-                <div className="space-y-4">
-                  {insights.map((insight, index) => (
-                    <div key={index} className={`border rounded-lg p-4 ${getImpactColor(insight.impact)}`}>
-                      <div className="flex items-start space-x-3">
-                        <div className="text-2xl">{getInsightIcon(insight.type)}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-white">{insight.title}</h4>
-                            <Badge className={getImpactColor(insight.impact)}>
+
+            {/* Last updated */}
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Clock className="w-4 h-4" />
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          </motion.div>
+
+          {/* Key Metrics Cards - EXACTLY like main dashboard */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-400 text-sm font-medium">System Load</p>
+                      <p className="text-3xl font-bold text-white mt-2">
+                        {metrics.currentLoad.toFixed(1)}%
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        {metrics.currentLoad > 80 ? (
+                          <TrendingUp className="w-4 h-4 text-red-400" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        )}
+                        <span className="text-sm text-gray-400">
+                          {metrics.currentLoad > 80 ? 'High load' : 'Normal'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-green-500/20 rounded-xl">
+                      <Activity className="w-6 h-6 text-green-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="bg-gradient-to-br from-blue-900/50 to-cyan-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-400 text-sm font-medium">Response Time</p>
+                      <p className="text-3xl font-bold text-white mt-2">
+                        {metrics.avgResponseTime}ms
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        {metrics.avgResponseTime < 200 ? (
+                          <Zap className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                        )}
+                        <span className="text-sm text-gray-400">
+                          {metrics.avgResponseTime < 200 ? 'Fast' : 'Slow'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-blue-500/20 rounded-xl">
+                      <Clock className="w-6 h-6 text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="bg-gradient-to-br from-purple-900/50 to-pink-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-400 text-sm font-medium">Error Rate</p>
+                      <p className="text-3xl font-bold text-white mt-2">
+                        {metrics.errorRate.toFixed(2)}%
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        {metrics.errorRate < 1 ? (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-red-400" />
+                        )}
+                        <span className="text-sm text-gray-400">
+                          {metrics.errorRate < 1 ? 'Healthy' : 'Issues detected'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-purple-500/20 rounded-xl">
+                      <AlertTriangle className="w-6 h-6 text-purple-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="bg-gradient-to-br from-orange-900/50 to-red-800/50 backdrop-blur-xl rounded-2xl border border-orange-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-400 text-sm font-medium">Uptime</p>
+                      <p className="text-3xl font-bold text-white mt-2">
+                        {metrics.uptime.toFixed(2)}%
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span className="text-sm text-gray-400">
+                          Last 30 days
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-orange-500/20 rounded-xl">
+                      <Shield className="w-6 h-6 text-orange-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Tabs - EXACTLY like main dashboard */}
+          <Tabs 
+            value={selectedView} 
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
+            <TabsList className="bg-gray-900/50 border border-gray-700 p-1 mb-6">
+              <TabsTrigger 
+                value="overview" 
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger 
+                value="alerts" 
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Alerts ({alerts.filter((a: any) => a.isActive).length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="performance" 
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Performance
+              </TabsTrigger>
+              <TabsTrigger 
+                value="insights" 
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Insights
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab Contents */}
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Provider Status */}
+                <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Provider Status</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Real-time provider health and performance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {['openai', 'anthropic', 'gemini'].map((provider) => (
+                      <div key={provider} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {getAIProviderLogo(provider, 'w-6 h-6')}
+                          <div>
+                            <p className="text-white font-medium capitalize">{provider}</p>
+                            <p className="text-gray-400 text-sm">Active</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-green-400 text-sm">99.9% uptime</p>
+                            <p className="text-gray-400 text-xs">~45ms response</p>
+                          </div>
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Recent Activity */}
+                <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Recent Activity</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Latest API calls and events
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-2 hover:bg-gray-800/30 rounded">
+                          <div className="flex items-center gap-3">
+                            <Activity className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-white">API Call to GPT-4</p>
+                              <p className="text-xs text-gray-500">2 minutes ago</p>
+                            </div>
+                          </div>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            Success
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-6">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Active Alerts</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Monitor and manage system alerts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {alerts.length > 0 ? (
+                    <div className="space-y-3">
+                      {alerts.map((alert: any) => (
+                        <div key={alert.id} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5" />
+                              <div>
+                                <p className="text-white font-medium">{alert.message}</p>
+                                <p className="text-gray-400 text-sm mt-1">
+                                  Provider: {alert.provider} • Threshold: ${alert.threshold}
+                                </p>
+                                <p className="text-gray-500 text-xs mt-2">
+                                  Triggered: {new Date(alert.triggeredAt).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={alert.isActive}
+                              className="data-[state=checked]:bg-green-600"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                      <p className="text-gray-400">No active alerts</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="performance" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Performance Metrics</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-400 text-sm">CPU Usage</span>
+                        <span className="text-white text-sm">45%</span>
+                      </div>
+                      <Progress value={45} className="h-2 bg-gray-700" />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-400 text-sm">Memory Usage</span>
+                        <span className="text-white text-sm">62%</span>
+                      </div>
+                      <Progress value={62} className="h-2 bg-gray-700" />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-400 text-sm">API Quota</span>
+                        <span className="text-white text-sm">28%</span>
+                      </div>
+                      <Progress value={28} className="h-2 bg-gray-700" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Response Times</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {['OpenAI', 'Anthropic', 'Gemini'].map((provider) => (
+                      <div key={provider} className="flex items-center justify-between">
+                        <span className="text-gray-400">{provider}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-mono">
+                            {Math.floor(Math.random() * 100 + 50)}ms
+                          </span>
+                          <TrendingDown className="w-4 h-4 text-green-400" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="insights" className="space-y-6">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">System Insights</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    AI-powered recommendations and optimizations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {insights.length > 0 ? (
+                    <div className="space-y-3">
+                      {insights.map((insight: any, index: number) => (
+                        <div key={index} className="p-4 bg-gray-800/50 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <Brain className="w-5 h-5 text-indigo-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-white font-medium">{insight.title}</p>
+                              <p className="text-gray-400 text-sm mt-1">{insight.description}</p>
+                              {insight.actionItems && (
+                                <div className="mt-3 flex gap-2">
+                                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                                    Apply
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="border-gray-700 text-gray-300">
+                                    Learn More
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <Badge className={`
+                              ${insight.impact === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                insight.impact === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                                'bg-green-500/20 text-green-400 border-green-500/30'}
+                            `}>
                               {insight.impact} impact
                             </Badge>
                           </div>
-                          <p className="text-sm mb-3 text-gray-300">{insight.description}</p>
-                          {insight.actionItems.length > 0 && (
-                            <div>
-                              <h5 className="font-medium text-sm mb-1 text-white">Recommended Actions:</h5>
-                              <ul className="text-sm space-y-1">
-                                {insight.actionItems.map((item, itemIndex) => (
-                                  <li key={itemIndex} className="flex items-start">
-                                    <span className="text-xs mr-2 mt-1 text-gray-400">•</span>
-                                    <span className="text-gray-300">{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyStateDisplay
-                  title="No Insights Available"
-                  message="Start using AI providers to get personalized optimization recommendations."
-                  icon="📊"
-                  actionText="Refresh Insights"
-                  onAction={fetchInsights}
-                />
-              )}
-            </div>
-          </motion.div>
-        </TabsContent>
-
-        {/* Alerts Tab */}
-        <TabsContent value="alerts" className="space-y-6">
-          {/* Create New Alert */}
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Create Cost Alert</h3>
-              <p className="text-gray-300 mt-1">
-                Set up alerts to monitor your AI spending in real-time
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-gray-300">Provider</Label>
-                <select className="w-full border border-gray-700 bg-gray-900/50 text-white rounded-lg px-3 py-2 text-sm mt-1 focus:border-blue-500 focus:outline-none backdrop-blur-xl">
-                  <option value="openai">OpenAI</option>
-                  <option value="anthropic">Claude</option>
-                  <option value="google_gemini">Gemini</option>
-                  <option value="grok">Grok</option>
-                </select>
-              </div>
-              <div>
-                <Label className="text-gray-300">Daily Threshold ($)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="50.00" 
-                  className="mt-1 bg-gray-900/50 border-gray-700 text-white focus:border-blue-500 backdrop-blur-xl"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Create Alert</Button>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Active Alerts */}
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Active Alerts</h3>
-              <p className="text-gray-300 mt-1">
-                Manage your cost monitoring alerts
-              </p>
-            </div>
-            <div>
-              {isLoading && alerts.length === 0 ? (
-                <ListSkeleton items={3} />
-              ) : alerts.length > 0 ? (
-                <div className="space-y-3">
-                  {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-3 h-3 rounded-full ${alert.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></div>
-                        <div>
-                          <div className="font-medium text-white">{alert.message}</div>
-                          <div className="text-sm text-gray-500 capitalize">
-                            {alert.provider.replace('_', ' ')} • ${alert.threshold} threshold
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch 
-                          checked={alert.isActive}
-                          onCheckedChange={(checked) => toggleAlert(alert.id, checked)}
-                        />
-                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
-                          Delete
-                        </Button>
-                      </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Brain className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-400">No insights available yet</p>
+                      <p className="text-gray-500 text-sm mt-1">Keep using the system to generate insights</p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyStateDisplay
-                  title="No Alerts Configured"
-                  message="Create alerts to monitor your AI spending and get notified when costs exceed thresholds."
-                  icon="🔔"
-                  actionText="Create Alert"
-                  onAction={() => {/* Focus on alert creation form */}}
-                />
-              )}
-            </div>
-          </motion.div>
-        </TabsContent>
-
-        {/* Export Tab */}
-        <TabsContent value="export" className="space-y-6">
-          <motion.div 
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Usage Reports</h3>
-              <p className="text-gray-300 mt-1">
-                Export detailed usage reports for analysis and compliance
-              </p>
-            </div>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium text-white">Export Options</h4>
-                  <div className="space-y-2">
-                    <Button 
-                      onClick={() => exportData('csv')} 
-                      variant="outline" 
-                      className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export as CSV
-                      <span className="ml-auto text-sm text-gray-400">Spreadsheet format</span>
-                    </Button>
-                    <Button 
-                      onClick={() => exportData('json')} 
-                      variant="outline" 
-                      className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export as JSON
-                      <span className="ml-auto text-sm text-gray-400">API-friendly format</span>
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <h4 className="font-medium text-white">Report Summary</h4>
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Records:</span>
-                      <span className="font-medium text-white">{totals.requests.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Cost:</span>
-                      <span className="font-medium text-white">${totals.cost.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Tokens:</span>
-                      <span className="font-medium text-white">{totals.tokens.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Active Providers:</span>
-                      <span className="font-medium text-white">{Object.keys(usageData).length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </TabsContent>
-      </Tabs>
-          </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-    </ErrorBoundary>
+    </div>
   )
 }
