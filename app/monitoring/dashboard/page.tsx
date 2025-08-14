@@ -285,7 +285,7 @@ export default function MonitoringDashboard() {
         <EmptyStateDisplay
           title="Authentication Required"
           message="Please sign in to access the monitoring dashboard"
-          icon="🔐"
+          icon={Shield}
           actionText="Sign In"
           onAction={() => window.location.href = '/auth/signin'}
         />
@@ -296,44 +296,63 @@ export default function MonitoringDashboard() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-black relative overflow-hidden">
-        {/* Animated gradient background */}
+        {/* Animated background gradient - EXACTLY like main dashboard */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
 
-        <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="relative z-10 min-h-screen py-6">
+          <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
-          <motion.div 
-            className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0"
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <div>
-              <h1 className="text-3xl font-bold text-white flex items-center">
-                <Monitor className="w-8 h-8 mr-3 text-blue-400" />
-                AI Usage Monitoring Dashboard
-              </h1>
-              <p className="text-gray-300 mt-2">
-                Real-time monitoring of AI provider usage, costs, and insights
-              </p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
-                <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${realTimeEnabled ? 'bg-green-400' : 'bg-gray-500'}`}></div>
-                  <span>{realTimeEnabled ? 'Live' : 'Paused'}</span>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-indigo-500/20 rounded-lg">
+                    <Monitor className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-white">AI Monitoring Center</h1>
+                  <span className="px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-300 text-sm font-medium rounded-full border border-indigo-500/30">
+                    Real-time
+                  </span>
                 </div>
+                <p className="text-gray-400">Strategic AI operations monitoring for real-time insights</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className={`w-2 h-2 rounded-full ${realTimeEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                  <span className="text-sm text-gray-300">{realTimeEnabled ? 'Live Monitoring' : 'Paused'}</span>
+                </div>
+                <button 
+                  onClick={fetchUsageData}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Sync Data
+                </button>
+                <button 
+                  onClick={() => exportData('csv')}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Export Report
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              {/* Time Period Selector */}
+            {/* View Tabs - EXACTLY like main dashboard */}
+            <div className="flex space-x-1 bg-gray-800/30 rounded-lg p-1">
               <select 
                 value={selectedPeriod} 
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none backdrop-blur-xl"
+                className="px-4 py-2 bg-gray-700 text-white rounded-md font-medium mr-2"
               >
                 <option value="1h">Last Hour</option>
                 <option value="6h">Last 6 Hours</option>
@@ -341,12 +360,10 @@ export default function MonitoringDashboard() {
                 <option value="7d">Last 7 Days</option>
                 <option value="30d">Last 30 Days</option>
               </select>
-
-              {/* Provider Filter */}
               <select 
                 value={selectedProvider} 
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none backdrop-blur-xl"
+                className="px-4 py-2 bg-gray-700 text-white rounded-md font-medium"
               >
                 <option value="all">All Providers</option>
                 <option value="openai">OpenAI</option>
@@ -354,37 +371,6 @@ export default function MonitoringDashboard() {
                 <option value="google_gemini">Gemini</option>
                 <option value="grok">Grok</option>
               </select>
-
-              {/* Real-time Toggle */}
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={realTimeEnabled}
-                  onCheckedChange={setRealTimeEnabled}
-                />
-                <span className="text-gray-300 text-sm">Real-time</span>
-              </div>
-
-              {/* Export Buttons */}
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => exportData('csv')}
-                  className="border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  CSV
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => exportData('json')}
-                  className="border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  JSON
-                </Button>
-              </div>
             </div>
           </motion.div>
 
@@ -409,56 +395,56 @@ export default function MonitoringDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <motion.div 
-              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-400">Total Cost</h3>
-                <DollarSign className="w-5 h-5 text-blue-400" />
+            {/* Total AI Investment - EXACTLY like main dashboard */}
+            <div className="bg-gradient-to-br from-green-900/50 to-emerald-800/50 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-white">${totals.cost.toFixed(2)}</div>
+                  <div className="text-green-300 text-sm">Total Cost</div>
+                </div>
               </div>
-              <div className="text-3xl font-bold text-white">
-                ${totals.cost.toFixed(2)}
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+                <span className="text-green-300 text-sm">Across {Object.keys(usageData).length} providers</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Across {Object.keys(usageData).length} providers
-              </p>
-            </motion.div>
+            </div>
 
-            <motion.div 
-              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-400">Total Tokens</h3>
-                <Zap className="w-5 h-5 text-green-400" />
+            {/* Total Tokens - EXACTLY like main dashboard */}
+            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Zap className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-white">{totals.tokens.toLocaleString()}</div>
+                  <div className="text-blue-300 text-sm">Total Tokens</div>
+                </div>
               </div>
-              <div className="text-3xl font-bold text-white">
-                {totals.tokens.toLocaleString()}
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-300 text-sm">{totals.requests.toLocaleString()} requests</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                {totals.requests.toLocaleString()} requests
-              </p>
-            </motion.div>
+            </div>
 
-            <motion.div 
-              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-400">Active Alerts</h3>
-                <Bell className="w-5 h-5 text-orange-400" />
+            {/* Active Alerts - EXACTLY like main dashboard */}
+            <div className="bg-gradient-to-br from-purple-900/50 to-pink-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Bell className="w-6 h-6 text-purple-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-white">{alerts.filter(a => a.isActive).length}</div>
+                  <div className="text-purple-300 text-sm">Active Alerts</div>
+                </div>
               </div>
-              <div className="text-3xl font-bold text-white">
-                {alerts.filter(a => a.isActive).length}
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-purple-400" />
+                <span className="text-purple-300 text-sm">{alerts.length} total configured</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                {alerts.length} total alerts
-              </p>
-            </motion.div>
+            </div>
           </motion.div>
 
           {/* Main Content Tabs */}
@@ -501,7 +487,7 @@ export default function MonitoringDashboard() {
                   <EmptyStateDisplay
                     title="No Usage Data"
                     message="No usage data available for the selected period"
-                    icon="📊"
+                    icon={BarChart3}
                     actionText="Refresh Data"
                     onAction={fetchUsageData}
                   />
@@ -797,7 +783,7 @@ export default function MonitoringDashboard() {
                 <EmptyStateDisplay
                   title="No Alerts Configured"
                   message="Create alerts to monitor your AI spending and get notified when costs exceed thresholds."
-                  icon="🔔"
+                  icon={Bell}
                   actionText="Create Alert"
                   onAction={() => {/* Focus on alert creation form */}}
                 />
@@ -830,7 +816,8 @@ export default function MonitoringDashboard() {
                       variant="outline" 
                       className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                     >
-                      📊 Export as CSV
+                      <Download className="w-4 h-4 mr-2" />
+                      Export as CSV
                       <span className="ml-auto text-sm text-gray-400">Spreadsheet format</span>
                     </Button>
                     <Button 
@@ -838,7 +825,8 @@ export default function MonitoringDashboard() {
                       variant="outline" 
                       className="w-full justify-start bg-gray-900/50 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:text-white backdrop-blur-xl"
                     >
-                      🔗 Export as JSON
+                      <Download className="w-4 h-4 mr-2" />
+                      Export as JSON
                       <span className="ml-auto text-sm text-gray-400">API-friendly format</span>
                     </Button>
                   </div>
@@ -870,6 +858,7 @@ export default function MonitoringDashboard() {
           </motion.div>
         </TabsContent>
       </Tabs>
+          </div>
         </div>
       </div>
     </ErrorBoundary>
