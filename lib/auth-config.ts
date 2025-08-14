@@ -110,6 +110,7 @@ export const authOptions: NextAuthOptions = {
       try {
         // Initial sign in
         if (account && user) {
+          token.id = user.id || user.email || 'unknown' // Set id early with fallback
           token.email = user.email
           token.name = user.name
           token.image = user.image
@@ -182,6 +183,7 @@ export const authOptions: NextAuthOptions = {
         console.error('JWT callback error:', error)
         // Return basic token without database data
         if (user) {
+          token.id = user.id || user.email || 'unknown' // Ensure id is always set with fallback
           token.email = user.email
           token.name = user.name
           token.image = user.image
