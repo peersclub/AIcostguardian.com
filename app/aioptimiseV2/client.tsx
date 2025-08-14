@@ -4,30 +4,35 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 import { toast } from 'sonner'
-import { 
-  Sparkles, Send, Paperclip, Mic, MicOff, Image, FileText, 
-  Code, Zap, Brain, TrendingUp, DollarSign, Users, Plus,
-  Settings, ChevronLeft, ChevronRight, X, Check, AlertCircle,
-  Loader2, Copy, ThumbsUp, ThumbsDown, RefreshCw, Share2,
-  Lock, Unlock, Eye, EyeOff, Download, Upload, Hash,
-  MessageSquare, History, Star, ArrowUp, ArrowDown, 
-  GitBranch, Target, Shield, Activity, BarChart3, Crown,
-  Layers, Command, Cpu, Database, Globe, Wand2, Bot,
-  PlusCircle, MinusCircle, ChevronDown, ChevronUp,
-  Volume2, VolumeX, Play, Pause, StopCircle, FastForward
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
+import {
+  Send, Paperclip, Mic, StopCircle, Zap, Plus, Search,
+  Settings, ChevronRight, ChevronLeft, Sparkles, Copy,
+  ThumbsUp, ThumbsDown, RefreshCw, Download, Share2,
+  Brain, Gauge, DollarSign, Timer, Cpu, Users, Archive,
+  Pin, Trash2, MoreVertical, Edit2, Tag, X, Check,
+  FileText, Image as ImageIcon, Code, Hash, MessageSquare,
+  TrendingUp, AlertCircle, Lightbulb, BookOpen, Menu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
@@ -36,52 +41,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { PromptAnalyzer, analyzePrompt } from './components/prompt-analyzer'
-import { CleanInput } from './components/clean-input'
-import { ParticipantManager } from './components/participant-manager'
-import { ModelSwitcher } from './components/model-switcher'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 import { ThreadManager } from './components/thread-manager'
+import { CleanInput } from './components/clean-input'
 import { InfoPanel } from './components/info-panel'
-import { getModeSettings, OptimizationMode } from './components/mode-selector'
-import { useWebSocket } from '@/lib/websocket'
+import { ModeSelector } from './components/mode-selector'
+import { useThreadManager } from './hooks/useThreadManager'
 
 // Types
-interface User {
-  id: string
-  name: string
-  email: string
-  image: string
-  organization: string | null
-  hasApiKeys: boolean
-  isEnterpriseUser: boolean
-}
-
-interface Limits {
-  dailyUsed: number
-  dailyLimit: number
-  monthlyUsed: number
-  monthlyLimit: number
-  tokensUsedToday: number
-}
-
-interface Thread {
-  id: string
-  title: string
-  preview: string
-  timestamp: string
-  messageCount: number
-  cost: number
-  status: 'active' | 'archived' | 'shared'
-  collaborators?: string[]
-  participants?: any[]
-  tags?: string[]
-  isPinned?: boolean
-}
-
 interface Message {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -91,146 +60,202 @@ interface Message {
   provider?: string
   cost?: number
   tokens?: {
-    prompt: number
-    completion: number
+    input: number
+    output: number
     total: number
   }
   latency?: number
-  status?: 'sending' | 'processing' | 'streaming' | 'complete' | 'error'
-  error?: string
-  feedback?: 'positive' | 'negative' | null
   attachments?: Attachment[]
-  metadata?: {
-    temperature?: number
-    maxTokens?: number
-    topP?: number
-  }
+  feedback?: 'positive' | 'negative'
+  status?: 'sending' | 'streaming' | 'complete' | 'error'
+  metadata?: any
 }
 
 interface Attachment {
   id: string
-  type: 'image' | 'document' | 'code'
+  type: 'image' | 'file' | 'code'
   name: string
   size: number
-  url: string
-  mimeType: string
+  url?: string
+  content?: string
+}
+
+interface Thread {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  messageCount: number
+  lastMessage?: string
+  isPinned?: boolean
+  isArchived?: boolean
+  sharedWith?: string[]
+  tags?: string[]
+  metadata?: any
 }
 
 interface ModelOption {
   id: string
   name: string
-  provider: string
-  contextWindow: number
+  provider: 'openai' | 'anthropic' | 'google' | 'x'
+  contextLength: number
   inputCost: number
   outputCost: number
   speed: 'fast' | 'medium' | 'slow'
   capabilities: string[]
-  icon: string
 }
 
-// Available models with real costs
+interface PromptAnalysis {
+  complexity: 'simple' | 'moderate' | 'complex' | 'expert'
+  category: string
+  suggestedModel: string
+  estimatedTokens: number
+  requiresContext: boolean
+  requiresWeb: boolean
+}
+
+interface AIOptimiseV2ClientProps {
+  user: {
+    id: string
+    email: string
+    name?: string
+    image?: string
+    hasApiKeys: boolean
+    subscription?: string
+  }
+  limits: {
+    dailyLimit: number
+    monthlyLimit: number
+    dailyUsed: number
+    monthlyUsed: number
+  }
+}
+
+// Constants
 const MODELS: ModelOption[] = [
   {
     id: 'gpt-4o',
-    name: 'GPT-4o',
-    provider: 'OpenAI',
-    contextWindow: 128000,
-    inputCost: 0.005,
-    outputCost: 0.015,
+    name: 'GPT-4 Turbo',
+    provider: 'openai',
+    contextLength: 128000,
+    inputCost: 0.01,
+    outputCost: 0.03,
     speed: 'medium',
-    capabilities: ['chat', 'vision', 'function-calling'],
-    icon: '🟢'
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative']
   },
   {
     id: 'claude-3-opus',
     name: 'Claude 3 Opus',
-    provider: 'Anthropic',
-    contextWindow: 200000,
+    provider: 'anthropic',
+    contextLength: 200000,
     inputCost: 0.015,
     outputCost: 0.075,
     speed: 'slow',
-    capabilities: ['chat', 'vision', 'analysis'],
-    icon: '🟣'
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision']
   },
   {
     id: 'claude-3-sonnet',
     name: 'Claude 3 Sonnet',
-    provider: 'Anthropic',
-    contextWindow: 200000,
+    provider: 'anthropic',
+    contextLength: 200000,
     inputCost: 0.003,
     outputCost: 0.015,
     speed: 'medium',
-    capabilities: ['chat', 'vision', 'analysis'],
-    icon: '🔵'
+    capabilities: ['reasoning', 'coding', 'analysis', 'vision']
   },
   {
     id: 'gemini-pro',
     name: 'Gemini Pro',
-    provider: 'Google',
-    contextWindow: 32000,
-    inputCost: 0.00125,
-    outputCost: 0.00375,
+    provider: 'google',
+    contextLength: 32000,
+    inputCost: 0.0005,
+    outputCost: 0.0015,
     speed: 'fast',
-    capabilities: ['chat', 'vision'],
-    icon: '🔶'
+    capabilities: ['reasoning', 'analysis', 'creative']
   },
   {
-    id: 'grok-beta',
-    name: 'Grok Beta',
-    provider: 'xAI',
-    contextWindow: 100000,
-    inputCost: 0.005,
-    outputCost: 0.015,
+    id: 'grok-1',
+    name: 'Grok',
+    provider: 'x',
+    contextLength: 8192,
+    inputCost: 0.001,
+    outputCost: 0.002,
     speed: 'fast',
-    capabilities: ['chat', 'realtime'],
-    icon: '⚡'
+    capabilities: ['reasoning', 'humor', 'real-time']
   }
 ]
 
-interface AIOptimiseV2ClientProps {
-  user: User
-  limits: Limits
+const MODES = [
+  { id: 'chat', label: 'Chat', icon: MessageSquare, description: 'General conversation' },
+  { id: 'coding', label: 'Code', icon: Code, description: 'Programming assistance' },
+  { id: 'analysis', label: 'Analysis', icon: Brain, description: 'Data & research' },
+  { id: 'creative', label: 'Creative', icon: Sparkles, description: 'Writing & ideation' },
+  { id: 'focus', label: 'Focus', icon: Zap, description: 'Quick, concise answers' }
+]
+
+// Helper functions
+const analyzePrompt = (prompt: string, mode: string): PromptAnalysis => {
+  const wordCount = prompt.split(' ').length
+  const hasCode = /```|function|class|const|let|var|import|export/.test(prompt)
+  const hasQuestion = /\?|how|what|why|when|where|who/.test(prompt.toLowerCase())
+  const hasAnalysis = /analyze|compare|evaluate|assess|review/.test(prompt.toLowerCase())
+  
+  let complexity: PromptAnalysis['complexity'] = 'simple'
+  if (wordCount > 100 || hasCode) complexity = 'moderate'
+  if (wordCount > 300 || (hasCode && hasAnalysis)) complexity = 'complex'
+  if (wordCount > 500 || prompt.includes('architecture') || prompt.includes('system design')) complexity = 'expert'
+  
+  return {
+    complexity,
+    category: hasCode ? 'technical' : hasAnalysis ? 'analytical' : 'conversational',
+    suggestedModel: complexity === 'simple' ? 'gemini-pro' : complexity === 'expert' ? 'claude-3-opus' : 'gpt-4o',
+    estimatedTokens: Math.ceil(wordCount * 1.3),
+    requiresContext: hasQuestion || hasAnalysis,
+    requiresWeb: prompt.includes('latest') || prompt.includes('current') || prompt.includes('news')
+  }
 }
 
 export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientProps) {
   // Core state
-  const [threads, setThreads] = useState<Thread[]>([])
-  const [currentThread, setCurrentThread] = useState<Thread | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
-  const [selectedMode, setSelectedMode] = useState<OptimizationMode>('focus')
-  const [promptAnalysis, setPromptAnalysis] = useState<any>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [threadParticipants, setThreadParticipants] = useState<any[]>([])
-  
-  // WebSocket integration
-  const {
-    isConnected: wsConnected,
-    participants: wsParticipants,
-    typingUsers: wsTypingUsers,
-    startTyping: wsStartTyping,
-    stopTyping: wsStopTyping,
-    updatePresence,
-    broadcastModelChange,
-    broadcastCostUpdate
-  } = useWebSocket(user.email, currentThread?.id)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [selectedModel, setSelectedModel] = useState<ModelOption>(MODELS[1]) // Default to Claude Sonnet
-  const [showModelSelector, setShowModelSelector] = useState(false)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [isRecording, setIsRecording] = useState(false)
-  
-  // Features state
+  const [selectedMode, setSelectedMode] = useState('chat')
+  const [selectedModel, setSelectedModel] = useState(MODELS[0])
   const [autoOptimize, setAutoOptimize] = useState(true)
   const [streamResponse, setStreamResponse] = useState(true)
-  const [saveHistory, setSaveHistory] = useState(true)
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false)
+  
+  // Thread management
+  const threadManager = useThreadManager()
+  const {
+    threads,
+    currentThread,
+    loading: threadsLoading,
+    createThread,
+    selectThread,
+    deleteThread,
+    pinThread,
+    archiveThread,
+    renameThread,
+    shareThread,
+    addCollaborator,
+    searchThreads
+  } = threadManager
+  
+  // Performance metrics
   const [currentCost, setCurrentCost] = useState(0)
   const [savedAmount, setSavedAmount] = useState(0)
+  const [promptAnalysis, setPromptAnalysis] = useState<PromptAnalysis | null>(null)
+  
+  // WebSocket state
+  const [wsConnected, setWsConnected] = useState(false)
+  const ws = useRef<WebSocket | null>(null)
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -240,276 +265,60 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   // Animation controls
   const controls = useAnimation()
   
-  // Calculate usage percentages
-  const dailyUsagePercent = (limits.dailyUsed / limits.dailyLimit) * 100
-  const monthlyUsagePercent = (limits.monthlyUsed / limits.monthlyLimit) * 100
+  // Session
+  const { data: session } = useSession()
   
-  // Auto-resize textarea
+  // Effects
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
-    }
-  }, [input])
+    // Load threads on mount
+    threadManager.loadThreads()
+  }, [])
   
-  // Analyze prompt when input changes
   useEffect(() => {
-    if (input.length > 5) {
-      setIsAnalyzing(true)
-      // Notify others that we're typing
-      if (wsConnected && currentThread) {
-        wsStartTyping()
-      }
+    // Auto-scroll to bottom
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+  
+  useEffect(() => {
+    // Analyze prompt as user types
+    if (input.length > 10) {
       const timer = setTimeout(() => {
         const analysis = analyzePrompt(input, selectedMode)
         setPromptAnalysis(analysis)
-        setIsAnalyzing(false)
-      }, 300) // Debounce analysis
-      return () => {
-        clearTimeout(timer)
-        // Stop typing notification
-        if (wsConnected && currentThread) {
-          wsStopTyping()
-        }
-      }
-    } else {
-      setPromptAnalysis(null)
-      if (wsConnected && currentThread) {
-        wsStopTyping()
-      }
+      }, 300)
+      return () => clearTimeout(timer)
     }
-  }, [input, selectedMode, wsConnected, currentThread, wsStartTyping, wsStopTyping])
+  }, [input, selectedMode])
   
-  // Load initial data
   useEffect(() => {
-    loadThreads()
-    checkApiKeys()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  
-  const loadThreads = async () => {
-    try {
-      const res = await fetch('/api/aioptimise/threads')
-      if (res.ok) {
-        const data = await res.json()
-        setThreads(data.threads || [])
-        if (data.threads?.length > 0 && !currentThread) {
-          selectThread(data.threads[0])
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load threads:', error)
-    }
-  }
-  
-  const checkApiKeys = async () => {
-    if (!user.hasApiKeys) {
-      toast.error('No API keys configured', {
-        description: 'Please add your API keys in Settings to use AIOptimise',
-        action: {
-          label: 'Go to Settings',
-          onClick: () => window.location.href = '/settings/api-keys'
-        }
-      })
-    }
-  }
-  
-  const selectThread = async (thread: Thread) => {
-    setCurrentThread(thread)
-    try {
-      const res = await fetch(`/api/aioptimise/threads/${thread.id}/messages`)
-      if (res.ok) {
-        const data = await res.json()
-        setMessages(data.messages || [])
+    // WebSocket connection
+    if (session?.user?.id) {
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000'
+      ws.current = new WebSocket(`${wsUrl}/ws?userId=${session.user.id}`)
+      
+      ws.current.onopen = () => {
+        setWsConnected(true)
+        console.log('WebSocket connected')
       }
       
-      // Mock participants for demo
-      setThreadParticipants([
-        {
-          id: user.email,
-          name: user.name,
-          email: user.email,
-          avatar: user.image,
-          role: 'owner',
-          status: 'online',
-          joinedAt: new Date().toISOString(),
-          permissions: {
-            canEdit: true,
-            canDelete: true,
-            canInvite: true,
-            canManageModels: true,
-            canViewCosts: true
-          }
-        }
-      ])
-    } catch (error) {
-      console.error('Failed to load messages:', error)
+      ws.current.onclose = () => {
+        setWsConnected(false)
+        console.log('WebSocket disconnected')
+      }
+      
+      ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
+      
+      return () => {
+        ws.current?.close()
+      }
     }
-  }
+  }, [session])
   
-  const createNewThread = async () => {
-    try {
-      const res = await fetch('/api/aioptimise/threads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'New Conversation',
-          mode: 'standard'
-        })
-      })
-      
-      if (res.ok) {
-        const thread = await res.json()
-        setThreads(prev => [thread, ...prev])
-        setCurrentThread(thread)
-        setMessages([])
-        toast.success('New conversation started')
-      }
-    } catch (error) {
-      toast.error('Failed to create new thread')
-    }
-  }
-  
-  const handleSendMessage = async (messageText: string, mode: string, modelOverride?: any) => {
-    if (!messageText.trim() || isLoading || !user.hasApiKeys) return
-    
-    // Apply mode settings
-    const modeSettings = getModeSettings(selectedMode)
-    
-    const userMessage: Message = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content: messageText,
-      timestamp: new Date().toISOString(),
-      attachments: [...attachments],
-      status: 'sending'
-    }
-    
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setAttachments([])
-    setIsLoading(true)
-    setIsStreaming(true)
-    
-    try {
-      const res = await fetch('/api/aioptimise/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          threadId: currentThread?.id,
-          message: messageText,
-          mode: mode,
-          modelOverride: modelOverride
-        })
-      })
-      
-      if (!res.ok) {
-        throw new Error('Failed to send message')
-      }
-      
-      // Handle SSE streaming
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      
-      const assistantMessage: Message = {
-        id: `msg-${Date.now()}-assistant`,
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-        status: 'streaming'
-      }
-      
-      setMessages(prev => [...prev, assistantMessage])
-      
-      let buffer = ''
-      let fullContent = ''
-      let analysisReceived = false
-      
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || ''
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6)
-              if (data === '[DONE]') {
-                setIsStreaming(false)
-                break
-              }
-              
-              try {
-                const parsed = JSON.parse(data)
-                
-                if (parsed.type === 'analysis' && !analysisReceived) {
-                  // Handle analysis data
-                  analysisReceived = true
-                  console.log('Analysis received:', parsed.analysis)
-                  // Update message with model info
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessage.id 
-                      ? { 
-                          ...msg, 
-                          model: parsed.analysis.selectedModel?.model,
-                          provider: parsed.analysis.selectedModel?.provider
-                        }
-                      : msg
-                  ))
-                } else if (parsed.type === 'token') {
-                  // Handle streaming tokens
-                  fullContent += parsed.content || ''
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessage.id 
-                      ? { ...msg, content: fullContent }
-                      : msg
-                  ))
-                } else if (parsed.type === 'error') {
-                  toast.error(parsed.error || 'An error occurred')
-                  setIsStreaming(false)
-                  break
-                } else if (parsed.type === 'done') {
-                  // Final message with metadata
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessage.id 
-                      ? { 
-                          ...msg, 
-                          status: 'complete',
-                          cost: parsed.cost,
-                          tokens: parsed.tokens
-                        }
-                      : msg
-                  ))
-                }
-              } catch (e) {
-                console.error('Error parsing SSE data:', e)
-              }
-            }
-          }
-        }
-      }
-      
-      // Mark message as complete
-      setMessages(prev => prev.map(msg => 
-        msg.id === assistantMessage.id 
-          ? { ...msg, status: 'complete' }
-          : msg
-      ))
-      
-    } catch (error) {
-      console.error('Error sending message:', error)
-      toast.error('Failed to send message')
-    } finally {
-      setIsLoading(false)
-      setIsStreaming(false)
-    }
-  }
-  
-  const sendMessage = async () => {
-    if (!input.trim() && attachments.length === 0) return
+  // Handlers
+  const handleSendMessage = async (text: string, mode: string, modelOverride?: ModelOption) => {
+    if (!text.trim() && attachments.length === 0) return
     if (!user.hasApiKeys) {
       toast.error('Please configure API keys first')
       return
@@ -518,7 +327,7 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
-      content: input,
+      content: text,
       timestamp: new Date().toISOString(),
       attachments: [...attachments],
       status: 'sending'
@@ -529,45 +338,28 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
     setAttachments([])
     setIsLoading(true)
     
-    // Animate cost prediction
-    const estimatedCost = calculateEstimatedCost(input, selectedModel)
-    setCurrentCost(prev => prev + estimatedCost)
-    
     try {
-      // If auto-optimize is on, select best model
-      const modelToUse = autoOptimize ? await selectOptimalModel(input) : selectedModel
-      
-      // Show optimization savings
-      if (autoOptimize && modelToUse.id !== selectedModel.id) {
-        const saved = (selectedModel.inputCost - modelToUse.inputCost) * input.length / 1000
-        setSavedAmount(prev => prev + saved)
-        toast.success(`Optimized! Saved $${saved.toFixed(4)} by using ${modelToUse.name}`)
-      }
-      
-      // Broadcast cost update via WebSocket
-      if (wsConnected && currentThread) {
-        const estimatedCost = calculateEstimatedCost(input, modelToUse)
-        broadcastCostUpdate(estimatedCost)
-      }
+      const modelToUse = modelOverride || (autoOptimize ? await selectOptimalModel(text) : selectedModel)
       
       const res = await fetch('/api/aioptimise/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           threadId: currentThread?.id,
-          message: input,
+          message: text,
           model: modelToUse.id,
           provider: modelToUse.provider,
-          attachments: attachments,
+          mode,
+          attachments,
           stream: streamResponse
         })
       })
       
       if (!res.ok) throw new Error('Failed to send message')
       
-      if (streamResponse) {
+      if (streamResponse && res.body) {
         setIsStreaming(true)
-        const reader = res.body?.getReader()
+        const reader = res.body.getReader()
         const decoder = new TextDecoder()
         
         const assistantMessage: Message = {
@@ -582,29 +374,26 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
         
         setMessages(prev => [...prev, assistantMessage])
         
-        if (reader) {
-          let fullContent = ''
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            
-            const chunk = decoder.decode(value)
-            fullContent += chunk
-            
-            setMessages(prev => prev.map(msg => 
-              msg.id === assistantMessage.id 
-                ? { ...msg, content: fullContent }
-                : msg
-            ))
-          }
+        let fullContent = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
           
-          // Update with final metadata
+          const chunk = decoder.decode(value)
+          fullContent += chunk
+          
           setMessages(prev => prev.map(msg => 
             msg.id === assistantMessage.id 
-              ? { ...msg, status: 'complete', content: fullContent }
+              ? { ...msg, content: fullContent }
               : msg
           ))
         }
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === assistantMessage.id 
+            ? { ...msg, status: 'complete', content: fullContent }
+            : msg
+        ))
         setIsStreaming(false)
       } else {
         const data = await res.json()
@@ -623,7 +412,6 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
         setMessages(prev => [...prev, assistantMessage])
         setCurrentCost(prev => prev + (data.cost || 0))
       }
-      
     } catch (error) {
       toast.error('Failed to send message')
       console.error(error)
@@ -632,16 +420,9 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
     }
   }
   
-  const calculateEstimatedCost = (text: string, model: ModelOption) => {
-    const tokens = text.length / 4 // Rough estimation
-    return (tokens / 1000) * model.inputCost
-  }
-  
   const selectOptimalModel = async (prompt: string): Promise<ModelOption> => {
-    // Use prompt analysis for smarter model selection
     const analysis = promptAnalysis || analyzePrompt(prompt, selectedMode)
     
-    // Mode-based model selection
     if (selectedMode === 'coding') {
       if (analysis.complexity === 'expert') {
         return MODELS.find(m => m.id === 'claude-3-opus') || selectedModel
@@ -660,64 +441,27 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
       return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
     }
     
-    // Focus mode - optimize for speed and cost
     if (selectedMode === 'focus') {
-      if (analysis.complexity === 'simple') {
-        return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
-      }
-      return MODELS.find(m => m.id === 'gpt-4o') || selectedModel
+      return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
     }
     
-    // Fallback to suggested model from analysis
     const suggestedModelId = analysis.suggestedModel.toLowerCase().replace(/ /g, '-')
     return MODELS.find(m => m.id.includes(suggestedModelId)) || selectedModel
   }
   
   const handleFileUpload = (files: FileList) => {
-    Array.from(files).forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const attachment: Attachment = {
-          id: `att-${Date.now()}-${Math.random()}`,
-          type: file.type.startsWith('image/') ? 'image' : 'document',
-          name: file.name,
-          size: file.size,
-          url: event.target?.result as string,
-          mimeType: file.type
-        }
-        setAttachments(prev => [...prev, attachment])
-      }
-      reader.readAsDataURL(file)
-    })
+    const newAttachments: Attachment[] = Array.from(files).map(file => ({
+      id: `att-${Date.now()}-${Math.random()}`,
+      type: file.type.startsWith('image/') ? 'image' : file.type.includes('code') ? 'code' : 'file',
+      name: file.name,
+      size: file.size,
+      url: URL.createObjectURL(file)
+    }))
+    setAttachments(prev => [...prev, ...newAttachments])
   }
   
   const removeAttachment = (id: string) => {
-    setAttachments(prev => prev.filter(a => a.id !== id))
-  }
-  
-  const toggleRecording = async () => {
-    if (!isRecording) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        // Start recording logic here
-        setIsRecording(true)
-        toast.success('Recording started')
-      } catch (error) {
-        toast.error('Microphone access denied')
-      }
-    } else {
-      setIsRecording(false)
-      toast.success('Recording stopped')
-      // Process and transcribe audio
-    }
-  }
-  
-  const regenerateMessage = async (messageId: string) => {
-    const message = messages.find(m => m.id === messageId)
-    if (!message || message.role !== 'assistant') return
-    
-    toast.info('Regenerating response...')
-    // Regeneration logic here
+    setAttachments(prev => prev.filter(att => att.id !== id))
   }
   
   const copyMessage = (content: string) => {
@@ -741,14 +485,14 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
       console.error('Failed to submit feedback:', error)
     }
   }
-
+  
+  // Render
   return (
     <div className="fixed inset-0 bg-gray-950 overflow-hidden">
-      {/* Simplified background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
-
+      
       <div className="relative z-10 h-full flex">
-        {/* Sidebar */}
+        {/* Thread Manager Sidebar */}
         <AnimatePresence>
           {sidebarOpen && (
             <motion.div
@@ -756,334 +500,63 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="w-72 flex flex-col"
+              className="w-72 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 flex flex-col"
             >
               <ThreadManager
-                threads={threads.map(t => ({
-                  ...t,
-                  pinned: t.isPinned || false,
-                  archived: false,
-                  tags: [],
-                  collaborators: t.sharedWith
-                }))}
+                threads={threads}
                 currentThreadId={currentThread?.id || null}
                 onSelectThread={selectThread}
-                onCreateThread={createNewThread}
+                onCreateThread={createThread}
                 onDeleteThread={deleteThread}
-                onArchiveThread={(id) => console.log('Archive', id)}
-                onPinThread={togglePin}
-                onShareThread={(id) => setShareThreadId(id)}
-                onRenameThread={(id, title) => {
-                  setThreads(prev => prev.map(t => 
-                    t.id === id ? { ...t, title } : t
-                  ))
-                }}
-                onInviteCollaborator={async (threadId, email) => {
-                  await shareThread(threadId, email)
-                }}
+                onArchiveThread={archiveThread}
+                onPinThread={pinThread}
+                onShareThread={shareThread}
+                onRenameThread={renameThread}
+                onInviteCollaborator={addCollaborator}
               />
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Main Content */}
-        <div className="flex-1 flex">
-          <div className="flex-1 flex flex-col">
-            {/* Header */}
-            <div className="h-14 bg-gray-900/50 border-b border-gray-800 flex items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                    </div>
-                    <div>
-                      <h2 className="font-bold text-white">AIOptimise V2</h2>
-                      <p className="text-xs text-gray-400">Next-gen AI Assistant</p>
-                    </div>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setSidebarOpen(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                {/* New Thread Button */}
-                <Button
-                  onClick={createNewThread}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Conversation
-                </Button>
-              </div>
-              
-              {/* Usage Stats */}
-              <div className="p-4 border-b border-gray-800">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400">Daily Usage</span>
-                      <span className="text-white">${limits.dailyUsed.toFixed(2)} / ${limits.dailyLimit}</span>
-                    </div>
-                    <Progress value={dailyUsagePercent} className="h-1.5 bg-gray-800">
-                      <div 
-                        className={cn(
-                          "h-full transition-all",
-                          dailyUsagePercent > 90 ? "bg-red-500" :
-                          dailyUsagePercent > 75 ? "bg-yellow-500" :
-                          "bg-gradient-to-r from-indigo-500 to-purple-500"
-                        )}
-                        style={{ width: `${Math.min(dailyUsagePercent, 100)}%` }}
-                      />
-                    </Progress>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400">Monthly Usage</span>
-                      <span className="text-white">${limits.monthlyUsed.toFixed(2)} / ${limits.monthlyLimit}</span>
-                    </div>
-                    <Progress value={monthlyUsagePercent} className="h-1.5 bg-gray-800">
-                      <div 
-                        className={cn(
-                          "h-full transition-all",
-                          monthlyUsagePercent > 90 ? "bg-red-500" :
-                          monthlyUsagePercent > 75 ? "bg-yellow-500" :
-                          "bg-gradient-to-r from-indigo-500 to-purple-500"
-                        )}
-                        style={{ width: `${Math.min(monthlyUsagePercent, 100)}%` }}
-                      />
-                    </Progress>
-                  </div>
-                  
-                  {savedAmount > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-green-500/10 rounded-lg border border-green-500/30">
-                      <span className="text-xs text-green-400">Saved Today</span>
-                      <span className="text-sm font-bold text-green-400">${savedAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <AnimatePresence>
-                  {messages.map((message, index) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={cn(
-                        "mb-4",
-                        message.role === 'user' ? "flex justify-end" : "flex justify-start"
-                      )}
-                    >
-                      <div className={cn(
-                        "max-w-[80%] rounded-xl p-4",
-                        message.role === 'user' 
-                          ? "bg-indigo-600/20 border border-indigo-500/30" 
-                          : "bg-gray-800/50 border border-gray-700"
-                      )}>
-                        <div className="text-sm text-white">
-                          {message.content}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs text-gray-500">
-                            {new Date(message.timestamp).toLocaleTimeString()}
-                          </span>
-                          {message.model && (
-                            <Badge variant="secondary" className="text-xs">
-                              {message.model}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Settings */}
-              <div className="p-4 border-t border-gray-800">
-                <div className="space-y-2">
-                  <label className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">Auto-Optimize</span>
-                    <button
-                      onClick={() => setAutoOptimize(!autoOptimize)}
-                      className={cn(
-                        "w-10 h-5 rounded-full transition-all",
-                        autoOptimize ? "bg-indigo-600" : "bg-gray-700"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-4 h-4 bg-white rounded-full transition-all",
-                        autoOptimize ? "translate-x-5" : "translate-x-0.5"
-                      )} />
-                    </button>
-                  </label>
-                  
-                  <label className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">Stream Responses</span>
-                    <button
-                      onClick={() => setStreamResponse(!streamResponse)}
-                      className={cn(
-                        "w-10 h-5 rounded-full transition-all",
-                        streamResponse ? "bg-indigo-600" : "bg-gray-700"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-4 h-4 bg-white rounded-full transition-all",
-                        streamResponse ? "translate-x-5" : "translate-x-0.5"
-                      )} />
-                    </button>
-                  </label>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
         
-        {/* Sidebar Toggle (when closed) */}
-        {!sidebarOpen && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={() => setSidebarOpen(true)}
-            className="absolute left-4 top-4 z-20 p-2 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-800 text-gray-400 hover:text-white"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </motion.button>
-        )}
-        
-        {/* Main Chat Area */}
+        {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <div className="h-16 bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              {currentThread && (
-                <>
-                  <h1 className="text-lg font-semibold text-white">{currentThread.title}</h1>
-                  {currentThread.collaborators && currentThread.collaborators.length > 0 && (
-                    <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
-                      <Users className="w-3 h-3 mr-1" />
-                      {currentThread.collaborators.length} collaborating
-                    </Badge>
-                  )}
-                </>
-              )}
+          <div className="h-14 bg-gray-900/50 backdrop-blur-sm border-b border-gray-800 flex items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="text-gray-400 hover:text-white"
+              >
+                {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+              <div>
+                <h1 className="text-lg font-semibold text-white">AIOptimise V2</h1>
+                <p className="text-xs text-gray-400">
+                  {currentThread ? currentThread.title : 'Select or create a conversation'}
+                </p>
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
-              {/* WebSocket Status */}
-              {wsConnected && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1" />
-                  Live
-                </Badge>
-              )}
-              
-              {/* Mode Selector */}
-              <div className="flex items-center bg-gray-800/50 rounded-lg border border-gray-700 p-1">
-                {[
-                  { id: 'focus', icon: Target, label: 'Focus', color: 'text-blue-400' },
-                  { id: 'coding', icon: Code, label: 'Coding', color: 'text-green-400' },
-                  { id: 'creative', icon: Sparkles, label: 'Creative', color: 'text-purple-400' },
-                  { id: 'analysis', icon: Brain, label: 'Analysis', color: 'text-orange-400' }
-                ].map((mode) => {
-                  const Icon = mode.icon
-                  return (
-                    <TooltipProvider key={mode.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => setSelectedMode(mode.id as any)}
-                            className={cn(
-                              "px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all",
-                              selectedMode === mode.id
-                                ? "bg-gray-700 text-white"
-                                : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                            )}
-                          >
-                            <Icon className={cn("w-4 h-4", selectedMode === mode.id && mode.color)} />
-                            <span className="text-xs font-medium">{mode.label}</span>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            {mode.id === 'focus' && 'Quick, efficient responses'}
-                            {mode.id === 'coding' && 'Optimized for code generation'}
-                            {mode.id === 'creative' && 'Enhanced creative writing'}
-                            {mode.id === 'analysis' && 'Deep analysis and reasoning'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )
-                })}
-              </div>
-              
-              {/* Model Selector */}
-              <ModelSwitcher
-                selectedModel={selectedModel}
-                onModelChange={(model) => {
-                  setSelectedModel(model)
-                  // Broadcast model change to other participants
-                  if (wsConnected && currentThread) {
-                    broadcastModelChange(model.name)
-                  }
-                }}
-                mode={selectedMode}
-                usage={{
-                  dailySpent: limits.dailyUsed,
-                  dailyLimit: limits.dailyLimit,
-                  tokensUsed: limits.tokensUsedToday
-                }}
-                isEnterprise={user.isEnterpriseUser}
-                onCompare={(models) => {
-                  console.log('Comparing models:', models)
-                  // Could open a comparison modal here
-                }}
+              <ModeSelector
+                modes={MODES}
+                selectedMode={selectedMode}
+                onModeChange={setSelectedMode}
               />
-              
-              {/* Current Session Cost */}
-              <div className="px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-medium text-white">${currentCost.toFixed(4)}</span>
-                </div>
-              </div>
-              
-              {/* Participant Manager */}
-              {currentThread && (
-                <ParticipantManager
-                  threadId={currentThread.id}
-                  currentUserId={user.email}
-                  participants={threadParticipants}
-                  onInvite={(email, role) => {
-                    console.log('Inviting:', email, role)
-                    toast.success(`Invitation sent to ${email}`)
-                  }}
-                  onRemove={(participantId) => {
-                    setThreadParticipants(prev => prev.filter(p => p.id !== participantId))
-                    toast.success('Participant removed')
-                  }}
-                  onUpdateRole={(participantId, role) => {
-                    setThreadParticipants(prev => prev.map(p => 
-                      p.id === participantId ? { ...p, role } : p
-                    ))
-                    toast.success('Role updated')
-                  }}
-                  onUpdatePermissions={(participantId, permissions) => {
-                    setThreadParticipants(prev => prev.map(p => 
-                      p.id === participantId ? { ...p, permissions } : p
-                    ))
-                  }}
-                  isCollaborationEnabled={user.isEnterpriseUser}
-                  maxParticipants={user.isEnterpriseUser ? 20 : 5}
-                />
-              )}
+              <Select value={selectedModel.id} onValueChange={(id) => setSelectedModel(MODELS.find(m => m.id === id) || MODELS[0])}>
+                <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODELS.map(model => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -1098,193 +571,121 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className={cn(
-                      "mb-6",
-                      message.role === 'user' ? "flex justify-end" : "flex justify-start"
+                      "mb-6 flex",
+                      message.role === 'user' ? "justify-end" : "justify-start"
                     )}
                   >
                     <div className={cn(
-                      "max-w-[80%] rounded-2xl p-4",
+                      "max-w-[80%] rounded-xl p-4",
                       message.role === 'user' 
-                        ? "bg-indigo-600/20 border border-indigo-500/30" 
-                        : "bg-gray-800/50 border border-gray-700"
+                        ? "bg-indigo-600 text-white" 
+                        : "bg-gray-800/50 text-gray-100 border border-gray-700"
                     )}>
                       {/* Message Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {message.role === 'assistant' && (
-                            <>
-                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                                <Bot className="w-3 h-3 text-white" />
-                              </div>
-                              {message.model && (
-                                <Badge className="bg-gray-700 text-gray-300 text-xs">
-                                  {message.model}
-                                </Badge>
-                              )}
-                            </>
-                          )}
-                          {message.role === 'user' && (
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={user.image} />
-                              <AvatarFallback>{user.name[0]}</AvatarFallback>
-                            </Avatar>
-                          )}
-                          <span className="text-xs text-gray-400">
-                            {new Date(message.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        
-                        {/* Message Actions */}
-                        {message.role === 'assistant' && message.status === 'complete' && (
-                          <div className="flex items-center gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="w-6 h-6"
-                                    onClick={() => copyMessage(message.content)}
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Copy</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className={cn(
-                                      "w-6 h-6",
-                                      message.feedback === 'positive' && "text-green-400"
-                                    )}
-                                    onClick={() => provideFeedback(message.id, 'positive')}
-                                  >
-                                    <ThumbsUp className="w-3 h-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Helpful</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className={cn(
-                                      "w-6 h-6",
-                                      message.feedback === 'negative' && "text-red-400"
-                                    )}
-                                    onClick={() => provideFeedback(message.id, 'negative')}
-                                  >
-                                    <ThumbsDown className="w-3 h-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Not Helpful</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="w-6 h-6"
-                                    onClick={() => regenerateMessage(message.id)}
-                                  >
-                                    <RefreshCw className="w-3 h-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Regenerate</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={message.role === 'user' ? user.image : '/ai-avatar.png'} />
+                          <AvatarFallback>{message.role === 'user' ? 'U' : 'AI'}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-medium">
+                          {message.role === 'user' ? 'You' : message.model || 'AI'}
+                        </span>
+                        {message.status === 'streaming' && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Sparkles className="h-3 w-3 mr-1 animate-pulse" />
+                            Generating...
+                          </Badge>
                         )}
                       </div>
                       
                       {/* Message Content */}
-                      <div className="text-sm text-white">
-                        {message.status === 'streaming' ? (
-                          <div className="space-y-2">
-                            <div className="prose prose-invert prose-sm max-w-none">
-                              <ReactMarkdown>
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
-                              <span className="text-xs text-indigo-400">Generating...</span>
-                            </div>
-                          </div>
+                      <div className="prose prose-invert prose-sm max-w-none">
+                        {message.role === 'assistant' ? (
+                          <ReactMarkdown
+                            components={{
+                              code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || '')
+                                return !inline && match ? (
+                                  <SyntaxHighlighter
+                                    style={oneDark}
+                                    language={match[1]}
+                                    PreTag="div"
+                                    {...props}
+                                  >
+                                    {String(children).replace(/\n$/, '')}
+                                  </SyntaxHighlighter>
+                                ) : (
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                )
+                              }
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
                         ) : (
-                          <div className="prose prose-invert prose-sm max-w-none">
-                            <ReactMarkdown 
-                              components={{
-                                code({node, className, children, ...props}: any) {
-                                  const match = /language-(\w+)/.exec(className || '')
-                                  const inline = !match
-                                  return !inline && match ? (
-                                    <SyntaxHighlighter
-                                      style={oneDark}
-                                      language={match[1]}
-                                      PreTag="div"
-                                      {...props}
-                                    >
-                                      {String(children).replace(/\n$/, '')}
-                                    </SyntaxHighlighter>
-                                  ) : (
-                                    <code className={className} {...props}>
-                                      {children}
-                                    </code>
-                                  )
-                                }
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
                         )}
                       </div>
                       
                       {/* Attachments */}
                       {message.attachments && message.attachments.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {message.attachments.map((attachment) => (
-                            <div
-                              key={attachment.id}
-                              className="p-2 bg-gray-700 rounded-lg flex items-center gap-2"
-                            >
+                          {message.attachments.map(attachment => (
+                            <div key={attachment.id} className="flex items-center gap-2 px-2 py-1 bg-gray-700/50 rounded">
                               {attachment.type === 'image' ? (
-                                <>
-                                  <Image className="w-4 h-4 text-blue-400" />
-                                  <span className="sr-only">Image attachment</span>
-                                </>
+                                <ImageIcon className="h-4 w-4" />
+                              ) : attachment.type === 'code' ? (
+                                <Code className="h-4 w-4" />
                               ) : (
-                                <FileText className="w-4 h-4 text-gray-400" />
+                                <FileText className="h-4 w-4" />
                               )}
-                              <span className="text-xs text-gray-300">{attachment.name}</span>
+                              <span className="text-xs">{attachment.name}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       
-                      {/* Message Metadata */}
-                      {message.role === 'assistant' && message.cost && (
-                        <div className="mt-3 pt-3 border-t border-gray-700 flex items-center gap-4 text-xs text-gray-400">
-                          <span>Cost: ${message.cost.toFixed(4)}</span>
-                          {message.tokens && (
-                            <span>Tokens: {message.tokens.total}</span>
-                          )}
-                          {message.latency && (
-                            <span>Latency: {message.latency}ms</span>
+                      {/* Message Footer */}
+                      {message.role === 'assistant' && message.status === 'complete' && (
+                        <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => copyMessage(message.content)}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => provideFeedback(message.id, 'positive')}
+                            >
+                              <ThumbsUp className={cn("h-3 w-3", message.feedback === 'positive' && "text-green-500")} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => provideFeedback(message.id, 'negative')}
+                            >
+                              <ThumbsDown className={cn("h-3 w-3", message.feedback === 'negative' && "text-red-500")} />
+                            </Button>
+                          </div>
+                          {message.cost && (
+                            <div className="flex items-center gap-4 text-xs text-gray-400">
+                              <span>Cost: ${message.cost.toFixed(4)}</span>
+                              {message.tokens && (
+                                <span>Tokens: {message.tokens.total}</span>
+                              )}
+                              {message.latency && (
+                                <span>Latency: {message.latency}ms</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
@@ -1293,20 +694,17 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                 ))}
               </AnimatePresence>
               
-              {/* Typing Indicator */}
-              {isLoading && !isStreaming && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-2 text-gray-400"
-                >
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+              {isStreaming && (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-pulse">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
                   </div>
                   <span className="text-sm">AI is thinking...</span>
-                </motion.div>
+                </div>
               )}
               
               <div ref={messagesEndRef} />
@@ -1314,58 +712,51 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
           </div>
           
           {/* Input Area */}
-          <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-xl p-4">
+          <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm p-4">
             <div className="max-w-4xl mx-auto">
-              {/* Clean Input */}
               <CleanInput
-                onSend={handleSendMessage}
-                isLoading={isLoading}
+                onSend={(text) => handleSendMessage(text, selectedMode)}
+                isLoading={isLoading || isStreaming}
                 currentMode={selectedMode}
-                onModeChange={(mode) => setSelectedMode(mode as 'focus' | 'coding' | 'creative' | 'analysis')}
-                onFileAttach={(files) => {
-                  const newAttachments: Attachment[] = files.map(file => ({
-                    id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    type: file.type.startsWith('image/') ? 'image' : 
-                          file.type.includes('code') || file.name.match(/\.(js|ts|py|java|cpp|c|h|css|html|jsx|tsx|json|xml|yaml|yml)$/i) ? 'code' : 
-                          'document',
-                    name: file.name,
-                    size: file.size,
-                    url: URL.createObjectURL(file),
-                    mimeType: file.type
-                  }))
-                  setAttachments(prev => [...prev, ...newAttachments])
-                }}
-                attachedFiles={attachments.map(a => new File([], a.name, { type: a.mimeType }))}
-                onRemoveFile={(index) => {
-                  const attachment = attachments[index]
-                  if (attachment) {
-                    removeAttachment(attachment.id)
-                  }
-                }}
+                onModeChange={setSelectedMode}
+                onFileAttach={handleFileUpload}
+                attachedFiles={attachments}
+                onRemoveFile={removeAttachment}
               />
               
-              {/* Tips */}
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>Tip: {autoOptimize ? 'Auto-optimizing for best model' : 'Using ' + selectedModel.name}</span>
+                  <span>Tip: {autoOptimize ? 'Auto-optimizing for best model' : `Using ${selectedModel.name}`}</span>
                   {savedAmount > 0 && (
                     <span className="text-green-400">Saved ${savedAmount.toFixed(2)} today!</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {user.isEnterpriseUser && (
-                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30">
-                      <Crown className="w-3 h-3 mr-1" />
-                      Enterprise
-                    </Badge>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAutoOptimize(!autoOptimize)}
+                    className={cn(autoOptimize && "text-indigo-400")}
+                  >
+                    <Zap className="h-4 w-4 mr-1" />
+                    Auto-Optimize
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setStreamResponse(!streamResponse)}
+                    className={cn(streamResponse && "text-indigo-400")}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    Stream
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Right Sidebar - Info Panel */}
+        {/* Info Panel */}
         <InfoPanel
           subscription={(user as any)?.subscription || 'FREE'}
           usage={{
@@ -1376,8 +767,8 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
           }}
           activeCollaborators={currentThread?.sharedWith?.length || 0}
           currentModel={selectedModel.name}
-          estimatedCost={0}
-          className="w-64"
+          estimatedCost={promptAnalysis ? (promptAnalysis.estimatedTokens / 1000) * selectedModel.inputCost : 0}
+          className="w-64 border-l border-gray-800"
         />
       </div>
     </div>
