@@ -1295,10 +1295,27 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                 onSend={handleSendMessage}
                 isLoading={isLoading}
                 currentMode={selectedMode}
-                onModeChange={setSelectedMode}
-                onFileAttach={(files) => setAttachments(files)}
-                attachedFiles={attachments}
-                onRemoveFile={removeAttachment}
+                onModeChange={(mode) => setSelectedMode(mode as 'focus' | 'coding' | 'creative' | 'analysis')}
+                onFileAttach={(files) => {
+                  const newAttachments: Attachment[] = files.map(file => ({
+                    id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    type: file.type.startsWith('image/') ? 'image' : 
+                          file.type.includes('code') || file.name.match(/\.(js|ts|py|java|cpp|c|h|css|html|jsx|tsx|json|xml|yaml|yml)$/i) ? 'code' : 
+                          'document',
+                    name: file.name,
+                    size: file.size,
+                    url: URL.createObjectURL(file),
+                    mimeType: file.type
+                  }))
+                  setAttachments(prev => [...prev, ...newAttachments])
+                }}
+                attachedFiles={attachments.map(a => new File([], a.name, { type: a.mimeType }))}
+                onRemoveFile={(index) => {
+                  const attachment = attachments[index]
+                  if (attachment) {
+                    removeAttachment(attachment.id)
+                  }
+                }}
               />
               
               {/* Tips */}

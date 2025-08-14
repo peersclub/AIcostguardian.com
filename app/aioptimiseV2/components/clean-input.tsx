@@ -33,10 +33,10 @@ interface CleanInputProps {
 }
 
 const modes = [
-  { id: 'balanced', name: 'Balanced', icon: Sparkles, color: 'text-blue-400', description: 'Optimal balance of quality and cost' },
-  { id: 'quality', name: 'Quality', icon: Brain, color: 'text-purple-400', description: 'Best possible output quality' },
-  { id: 'speed', name: 'Speed', icon: Zap, color: 'text-yellow-400', description: 'Fastest response time' },
-  { id: 'budget', name: 'Budget', icon: Search, color: 'text-green-400', description: 'Minimize costs' },
+  { id: 'focus', name: 'Focus', icon: Sparkles, color: 'text-blue-400', description: 'Optimal balance of quality and cost' },
+  { id: 'coding', name: 'Coding', icon: Code, color: 'text-purple-400', description: 'Best for code generation and debugging' },
+  { id: 'creative', name: 'Creative', icon: Palette, color: 'text-yellow-400', description: 'Enhanced creativity and ideation' },
+  { id: 'analysis', name: 'Analysis', icon: Brain, color: 'text-green-400', description: 'Deep analysis and reasoning' },
 ]
 
 const models = [
