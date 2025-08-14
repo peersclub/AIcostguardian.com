@@ -54,6 +54,7 @@ model User {
   threadPresences       ThreadPresence[]
   auditLogs             AuditLog[]
   roles                 Role[]       @relation("UserRoles")
+  alertRules            AlertRule[]
 }
 
 model Organization {
@@ -107,6 +108,8 @@ model Organization {
   memberLimits      MemberLimit[]
   roles             Role[]
   permissions       Permission[]
+  alertRules        AlertRule[]
+  activeAlerts      ActiveAlert[]
 }
 
 model ApiKey {
@@ -1286,4 +1289,66 @@ model Permission {
   
   @@unique([organizationId, resource, action])
   @@index([organizationId])
+}
+// Alert Rules and Active Alerts
+model AlertRule {
+  id             String       @id @default(cuid())
+  name           String
+  type           String       // cost, usage, anomaly, quota, security, compliance
+  severity       String       // low, medium, high, critical
+  status         String       @default("active") // active, paused, triggered
+  threshold      Float
+  condition      String       // exceeds, below, equals, change_percent
+  timeframe      String       // hourly, daily, weekly, monthly
+  description    String?
+  channels       String[]     @default(["email"]) // email, slack, webhook
+  triggerCount   Int          @default(0)
+  lastTriggered  DateTime?
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  
+  activeAlerts   ActiveAlert[]
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@index([organizationId])
+  @@index([createdById])
+}
+
+model ActiveAlert {
+  id             String       @id @default(cuid())
+  ruleId         String
+  rule           AlertRule    @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  type           String       // Same as rule type
+  severity       String       // Same as rule severity
+  message        String
+  currentValue   Float
+  threshold      Float
+  
+  acknowledged   Boolean      @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  
+  escalated      Boolean      @default(false)
+  escalatedAt    DateTime?
+  
+  resolved       Boolean      @default(false)
+  resolvedAt     DateTime?
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  triggeredAt    DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@index([organizationId])
+  @@index([ruleId])
+  @@index([resolved, acknowledged])
 }
