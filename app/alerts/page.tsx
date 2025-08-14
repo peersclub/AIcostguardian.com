@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, Bell, Settings, BarChart3, Shield, FileText, AlertCircle } from 'lucide-react'
+import { AlertTriangle, Bell, Settings, BarChart3, Shield, FileText, AlertCircle, TrendingUp, Activity } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from '@/components/ui/use-toast'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 interface AlertRule {
   id: string
@@ -39,53 +46,42 @@ interface ActiveAlert {
   escalated: boolean
 }
 
-export default function AlertsManagement() {
+export default function AlertsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('active')
   const [alertRules, setAlertRules] = useState<AlertRule[]>([])
   const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newAlert, setNewAlert] = useState({
-    name: '',
-    type: 'cost' as AlertRule['type'],
-    severity: 'medium' as AlertRule['severity'],
-    threshold: 0,
-    condition: 'exceeds' as AlertRule['condition'],
-    timeframe: 'daily' as AlertRule['timeframe'],
-    description: '',
-    channels: ['email']
-  })
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchAlertsData()
+    const tab = searchParams.get('tab')
+    if (tab && ['active', 'rules', 'history', 'settings'].includes(tab)) {
+      setActiveTab(tab)
     }
+  }, [searchParams])
+
+  useEffect(() => {
+    fetchAlertsData()
   }, [session])
 
   const fetchAlertsData = async () => {
     try {
-      setIsLoading(true)
-      
-      // Fetch alert rules
-      const rulesResponse = await fetch('/api/alerts/rules')
-      if (rulesResponse.ok) {
-        const rules = await rulesResponse.json()
-        setAlertRules(rules.map((rule: any) => ({
-          ...rule,
-          createdAt: new Date(rule.createdAt),
-          lastTriggered: rule.lastTriggered ? new Date(rule.lastTriggered) : undefined
-        })))
+      const [rulesRes, alertsRes] = await Promise.all([
+        fetch('/api/alerts/rules'),
+        fetch('/api/alerts/active')
+      ])
+
+      if (rulesRes.ok) {
+        const rules = await rulesRes.json()
+        setAlertRules(rules)
       }
 
-      // Fetch active alerts
-      const alertsResponse = await fetch('/api/alerts/active')
-      if (alertsResponse.ok) {
-        const alerts = await alertsResponse.json()
-        setActiveAlerts(alerts.map((alert: any) => ({
-          ...alert,
-          triggeredAt: new Date(alert.triggeredAt)
-        })))
+      if (alertsRes.ok) {
+        const alerts = await alertsRes.json()
+        setActiveAlerts(alerts)
       }
     } catch (error) {
       console.error('Failed to fetch alerts data:', error)
@@ -94,41 +90,9 @@ export default function AlertsManagement() {
     }
   }
 
-  const handleCreateAlert = async () => {
-    if (!newAlert.name.trim()) {
-      alert('Please enter an alert name')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/alerts/rules', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAlert)
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        await fetchAlertsData() // Refresh data
-        setNewAlert({
-          name: '',
-          type: 'cost',
-          severity: 'medium',
-          threshold: 0,
-          condition: 'exceeds',
-          timeframe: 'daily',
-          description: '',
-          channels: ['email']
-        })
-        setShowCreateModal(false)
-        alert('✅ Alert rule created successfully!')
-      } else {
-        alert(`❌ ${result.error || 'Failed to create alert rule'}`)
-      }
-    } catch (error) {
-      alert('❌ Failed to create alert rule')
-    }
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    router.push(`/alerts?tab=${value}`)
   }
 
   const handleAcknowledgeAlert = async (alertId: string) => {
@@ -140,97 +104,57 @@ export default function AlertsManagement() {
       })
 
       if (response.ok) {
-        await fetchAlertsData() // Refresh data
-        alert('Alert acknowledged')
-      } else {
-        alert('Failed to acknowledge alert')
+        await fetchAlertsData()
+        toast({
+          title: 'Success',
+          description: 'Alert acknowledged successfully'
+        })
       }
     } catch (error) {
-      alert('Failed to acknowledge alert')
-    }
-  }
-
-  const handleToggleAlertRule = async (ruleId: string) => {
-    try {
-      const rule = alertRules.find(r => r.id === ruleId)
-      if (!rule) return
-
-      const newStatus = rule.status === 'active' ? 'paused' : 'active'
-      
-      const response = await fetch('/api/alerts/rules', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ruleId, updates: { status: newStatus } })
+      toast({
+        title: 'Error',
+        description: 'Failed to acknowledge alert',
+        variant: 'destructive'
       })
-
-      if (response.ok) {
-        await fetchAlertsData() // Refresh data
-        alert(`Alert rule ${newStatus === 'active' ? 'activated' : 'paused'}`)
-      } else {
-        alert('Failed to update alert rule')
-      }
-    } catch (error) {
-      alert('Failed to update alert rule')
     }
   }
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-900/20 text-red-300 border-red-500/30'
-      case 'high': return 'bg-orange-900/20 text-orange-300 border-orange-500/30'
-      case 'medium': return 'bg-yellow-900/20 text-yellow-300 border-yellow-500/30'
-      case 'low': return 'bg-blue-900/20 text-blue-300 border-blue-500/30'
-      default: return 'bg-gray-900/20 text-gray-300 border-gray-500/30'
+      case 'critical': return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      case 'low': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      default: return 'bg-gray-700 text-gray-300'
     }
   }
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'cost': return <BarChart3 className="w-5 h-5" />
-      case 'usage': return <BarChart3 className="w-5 h-5" />
-      case 'anomaly': return <AlertTriangle className="w-5 h-5" />
-      case 'quota': return <FileText className="w-5 h-5" />
-      case 'security': return <Shield className="w-5 h-5" />
-      case 'compliance': return <FileText className="w-5 h-5" />
-      default: return <Bell className="w-5 h-5" />
+      case 'cost': return <BarChart3 className="w-4 h-4" />
+      case 'usage': return <Activity className="w-4 h-4" />
+      case 'anomaly': return <AlertTriangle className="w-4 h-4" />
+      case 'quota': return <TrendingUp className="w-4 h-4" />
+      case 'security': return <Shield className="w-4 h-4" />
+      case 'compliance': return <FileText className="w-4 h-4" />
+      default: return <Bell className="w-4 h-4" />
     }
   }
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }).format(date)
-  }
-
-  const alertRuleTypes = [
-    { value: 'cost', label: 'Cost Threshold', description: 'Monitor spending limits' },
-    { value: 'usage', label: 'Usage Volume', description: 'Track API call volumes' },
-    { value: 'anomaly', label: 'Anomaly Detection', description: 'Detect unusual patterns' },
-    { value: 'quota', label: 'Quota Management', description: 'Monitor API quotas' },
-    { value: 'security', label: 'Security Events', description: 'Security-related alerts' },
-    { value: 'compliance', label: 'Compliance', description: 'Regulatory compliance' }
-  ]
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black relative overflow-hidden">
-        {/* Animated background gradient - EXACTLY like main dashboard */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
-        
         <div className="relative z-10 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400 mx-auto mb-4"></div>
-                <p className="text-gray-400">Loading alerts management...</p>
+                <p className="text-gray-400">Loading alerts...</p>
               </div>
             </div>
           </div>
@@ -241,477 +165,341 @@ export default function AlertsManagement() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated background gradient - EXACTLY like main dashboard */}
+      {/* Background - EXACTLY like dashboard */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
-      
-      <div className="relative z-10 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div 
-          className="flex justify-between items-start"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-white">Alerts & Monitoring</h1>
-            <p className="text-gray-300 mt-2">
-              Enterprise-grade monitoring and alerting for your AI operations
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0"
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            Create Alert
-          </Button>
-        </motion.div>
 
-        {/* Alert Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <motion.div 
-            className="bg-gradient-to-br from-red-900/50 to-red-800/50 backdrop-blur-xl rounded-2xl border border-red-500/30 p-6"
+      <div className="relative z-10 min-h-screen py-6">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Header */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-sm font-medium text-gray-300">Active Alerts</p>
-                <p className="text-2xl font-bold text-red-300">{activeAlerts.filter(a => !a.acknowledged).length}</p>
-              </div>
-              <div className="p-3 bg-red-900/30 rounded-full">
-                <AlertCircle className="w-6 h-6 text-red-400" />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-300">Alert Rules</p>
-                <p className="text-2xl font-bold text-blue-300">{alertRules.length}</p>
-              </div>
-              <div className="p-3 bg-blue-900/30 rounded-full">
-                <FileText className="w-6 h-6 text-blue-400" />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-300">Critical Alerts</p>
-                <p className="text-2xl font-bold text-orange-300">
-                  {activeAlerts.filter(a => a.severity === 'critical').length}
-                </p>
-              </div>
-              <div className="p-3 bg-orange-900/30 rounded-full">
-                <AlertTriangle className="w-6 h-6 text-orange-400" />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-300">Escalated</p>
-                <p className="text-2xl font-bold text-purple-300">
-                  {activeAlerts.filter(a => a.escalated).length}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-900/30 rounded-full">
-                <BarChart3 className="w-6 h-6 text-purple-400" />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Tabs */}
-        <div className="border-b border-gray-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'active', name: 'Active Alerts', icon: AlertCircle },
-              { id: 'rules', name: 'Alert Rules', icon: FileText },
-              { id: 'history', name: 'History', icon: FileText },
-              { id: 'settings', name: 'Settings', icon: Settings }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-blue-400 text-blue-300'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors`}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'active' && (
-          <div className="space-y-4">
-            <motion.div 
-              className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white">Active Alerts ({activeAlerts.filter(a => !a.acknowledged).length})</h3>
-                <p className="text-gray-300 mt-1">
-                  Alerts requiring attention or acknowledgment
-                </p>
-              </div>
-              <div className="space-y-4">
-                {activeAlerts.map((alert) => (
-                  <motion.div
-                    key={alert.id}
-                    className={`p-4 rounded-lg border ${
-                      alert.acknowledged ? 'bg-gray-800/30 border-gray-600/50' : getSeverityColor(alert.severity)
-                    }`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
-                        <div className="text-gray-300">{getTypeIcon(alert.type)}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-semibold text-white">{alert.ruleName}</h3>
-                              <Badge className={getSeverityColor(alert.severity)}>
-                                {alert.severity.toUpperCase()}
-                              </Badge>
-                            {alert.escalated && (
-                              <Badge className="bg-purple-900/20 text-purple-300 border-purple-500/30">
-                                ESCALATED
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-300 mb-2">{alert.message}</p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-400">
-                            <span>Triggered: {formatDate(alert.triggeredAt)}</span>
-                            {alert.acknowledged && (
-                              <span>Acknowledged by: {alert.acknowledgedBy}</span>
-                            )}
-                          </div>
-                          </div>
-                        </div>
-                      <div className="flex items-center space-x-2">
-                        {!alert.acknowledged && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAcknowledgeAlert(alert.id)}
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          >
-                            Acknowledge
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {activeAlerts.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <AlertCircle className="w-8 h-8 text-green-400" />
-                    </div>
-                    <p className="text-gray-400">No active alerts. All systems are running normally.</p>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-red-500/20 rounded-lg">
+                    <AlertCircle className="w-6 h-6 text-red-400" />
                   </div>
-                )}
+                  <h1 className="text-3xl font-bold text-white">Alerts & Monitoring</h1>
+                </div>
+                <p className="text-gray-400">Monitor and respond to important events</p>
               </div>
-            </motion.div>
-          </div>
-        )}
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Create Alert Rule
+              </Button>
+            </div>
 
-        {activeTab === 'rules' && (
-          <div className="space-y-4">
-            <motion.div 
-              className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white">Alert Rules ({alertRules.length})</h3>
-                <p className="text-gray-300 mt-1">
-                  Configure and manage your alert rules
-                </p>
-              </div>
-              <div className="space-y-4">
-                {alertRules.map((rule) => (
-                  <motion.div 
-                    key={rule.id} 
-                    className="p-4 border border-gray-600 rounded-lg hover:bg-gray-800/30 transition-colors"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <div className="text-gray-300">{getTypeIcon(rule.type)}</div>
-                          <div>
-                            <h3 className="font-semibold text-white">{rule.name}</h3>
-                            <p className="text-sm text-gray-300">{rule.description}</p>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-400">Active Alerts</p>
+                      <p className="text-2xl font-bold text-red-400">
+                        {activeAlerts.filter(a => !a.acknowledged).length}
+                      </p>
+                    </div>
+                    <AlertCircle className="w-8 h-8 text-red-400/20" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-400">Alert Rules</p>
+                      <p className="text-2xl font-bold text-blue-400">{alertRules.length}</p>
+                    </div>
+                    <FileText className="w-8 h-8 text-blue-400/20" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-400">Critical</p>
+                      <p className="text-2xl font-bold text-orange-400">
+                        {activeAlerts.filter(a => a.severity === 'critical').length}
+                      </p>
+                    </div>
+                    <AlertTriangle className="w-8 h-8 text-orange-400/20" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-400">Escalated</p>
+                      <p className="text-2xl font-bold text-purple-400">
+                        {activeAlerts.filter(a => a.escalated).length}
+                      </p>
+                    </div>
+                    <TrendingUp className="w-8 h-8 text-purple-400/20" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+
+          {/* Tabs - URL-based like dashboard */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+            <TabsList className="bg-gray-900/50 border border-gray-700">
+              <TabsTrigger value="active" className="data-[state=active]:bg-indigo-600">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Active Alerts
+              </TabsTrigger>
+              <TabsTrigger value="rules" className="data-[state=active]:bg-indigo-600">
+                <FileText className="w-4 h-4 mr-2" />
+                Alert Rules
+              </TabsTrigger>
+              <TabsTrigger value="history" className="data-[state=active]:bg-indigo-600">
+                <Activity className="w-4 h-4 mr-2" />
+                History
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-indigo-600">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="active" className="space-y-4">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Active Alerts</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Alerts requiring your attention
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {activeAlerts.map((alert) => (
+                      <div
+                        key={alert.id}
+                        className={`p-4 rounded-lg border ${
+                          alert.acknowledged 
+                            ? 'bg-gray-800/30 border-gray-700' 
+                            : getSeverityColor(alert.severity)
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            {getTypeIcon(alert.type)}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-white">{alert.ruleName}</h3>
+                                <Badge className={getSeverityColor(alert.severity)}>
+                                  {alert.severity.toUpperCase()}
+                                </Badge>
+                                {alert.escalated && (
+                                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                                    ESCALATED
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-300">{alert.message}</p>
+                              <p className="text-xs text-gray-500 mt-2">
+                                Triggered: {new Date(alert.triggeredAt).toLocaleString()}
+                                {alert.acknowledged && ` • Acknowledged by: ${alert.acknowledgedBy}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!alert.acknowledged && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAcknowledgeAlert(alert.id)}
+                                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                              >
+                                Acknowledge
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                            >
+                              View Details
+                            </Button>
                           </div>
                         </div>
                       </div>
-                        
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="flex items-center space-x-2 mb-1">
+                    ))}
+
+                    {activeAlerts.length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <AlertCircle className="w-8 h-8 text-green-400" />
+                        </div>
+                        <p className="text-gray-400">No active alerts</p>
+                        <p className="text-sm text-gray-500 mt-1">All systems operating normally</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rules" className="space-y-4">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Alert Rules</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Configure when and how you receive alerts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {alertRules.map((rule) => (
+                      <div
+                        key={rule.id}
+                        className="p-4 bg-gray-800/50 rounded-lg border border-gray-700"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {getTypeIcon(rule.type)}
+                            <div>
+                              <h3 className="font-semibold text-white">{rule.name}</h3>
+                              <p className="text-sm text-gray-400">{rule.description}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Badge className={getSeverityColor(rule.severity)}>
                               {rule.severity.toUpperCase()}
                             </Badge>
-                            <Badge 
-                              className={rule.status === 'active' ? 'bg-green-900/20 text-green-300 border-green-500/30' : 'bg-gray-800/30 text-gray-400 border-gray-600/50'}
-                            >
+                            <Badge className={
+                              rule.status === 'active' 
+                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                : 'bg-gray-700 text-gray-400'
+                            }>
                               {rule.status.toUpperCase()}
                             </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                            >
+                              Edit
+                            </Button>
                           </div>
-                          <div className="text-xs text-gray-400">
-                            Triggered {rule.triggerCount} times
-                            {rule.lastTriggered && ` • Last: ${formatDate(rule.lastTriggered)}`}
-                          </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleAlertRule(rule.id)}
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          >
-                            {rule.status === 'active' ? 'Pause' : 'Activate'}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          >
-                            Edit
-                          </Button>
+                        <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between text-sm text-gray-500">
+                          <span>Triggered {rule.triggerCount} times</span>
+                          {rule.lastTriggered && (
+                            <span>Last: {new Date(rule.lastTriggered).toLocaleString()}</span>
+                          )}
                         </div>
                       </div>
-                      </div>
-                      
-                    <div className="mt-3 pt-3 border-t border-gray-600">
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <div>
-                          <strong className="text-gray-300">Condition:</strong> {rule.condition} {rule.threshold} ({rule.timeframe})
+                    ))}
+
+                    {alertRules.length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <FileText className="w-8 h-8 text-gray-600" />
                         </div>
-                        <div>
-                          <strong className="text-gray-300">Channels:</strong> {rule.channels.join(', ')}
-                        </div>
+                        <p className="text-gray-400">No alert rules configured</p>
+                        <p className="text-sm text-gray-500 mt-1">Create your first alert rule to get started</p>
                       </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-4">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Alert History</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    View past alerts and resolutions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-8 h-8 text-gray-600" />
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
+                    <p className="text-gray-400">No alert history available</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Create Alert Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <motion.div 
-              className="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h2 className="text-xl font-bold text-white mb-6">Create New Alert Rule</h2>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Alert Name
-                    </label>
-                    <Input
-                      placeholder="e.g., Monthly Cost Threshold"
-                      value={newAlert.name}
-                      onChange={(e) => setNewAlert({ ...newAlert, name: e.target.value })}
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Alert Type
-                    </label>
-                    <select
-                      value={newAlert.type}
-                      onChange={(e) => setNewAlert({ ...newAlert, type: e.target.value as AlertRule['type'] })}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      {alertRuleTypes.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label} - {type.description}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Severity
-                    </label>
-                    <select
-                      value={newAlert.severity}
-                      onChange={(e) => setNewAlert({ ...newAlert, severity: e.target.value as AlertRule['severity'] })}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Condition
-                    </label>
-                    <select
-                      value={newAlert.condition}
-                      onChange={(e) => setNewAlert({ ...newAlert, condition: e.target.value as AlertRule['condition'] })}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="exceeds">Exceeds</option>
-                      <option value="below">Below</option>
-                      <option value="equals">Equals</option>
-                      <option value="change_percent">% Change</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Threshold
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="100"
-                      value={newAlert.threshold}
-                      onChange={(e) => setNewAlert({ ...newAlert, threshold: parseFloat(e.target.value) || 0 })}
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Time Frame
-                    </label>
-                    <select
-                      value={newAlert.timeframe}
-                      onChange={(e) => setNewAlert({ ...newAlert, timeframe: e.target.value as AlertRule['timeframe'] })}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="hourly">Hourly</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Notification Channels
-                    </label>
-                    <div className="space-y-2">
-                      {['email', 'slack', 'webhook'].map(channel => (
-                        <label key={channel} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={newAlert.channels.includes(channel)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewAlert({ ...newAlert, channels: [...newAlert.channels, channel] })
-                              } else {
-                                setNewAlert({ ...newAlert, channels: newAlert.channels.filter(c => c !== channel) })
-                              }
-                            }}
-                            className="mr-2 accent-blue-500"
-                          />
-                          <span className="capitalize text-gray-300">{channel}</span>
+            <TabsContent value="settings" className="space-y-4">
+              <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Alert Settings</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Configure global alert preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-gray-300">Notification Channels</Label>
+                      <p className="text-sm text-gray-500 mb-3">Choose how you want to receive alerts</p>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded" defaultChecked />
+                          <span className="text-gray-300">Email notifications</span>
                         </label>
-                      ))}
+                        <label className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded" defaultChecked />
+                          <span className="text-gray-300">In-app notifications</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded" />
+                          <span className="text-gray-300">SMS notifications</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded" />
+                          <span className="text-gray-300">Slack notifications</span>
+                        </label>
+                      </div>
                     </div>
+
+                    <div>
+                      <Label className="text-gray-300">Alert Grouping</Label>
+                      <p className="text-sm text-gray-500 mb-3">Group similar alerts to reduce noise</p>
+                      <Select defaultValue="5min">
+                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1min">1 minute</SelectItem>
+                          <SelectItem value="5min">5 minutes</SelectItem>
+                          <SelectItem value="15min">15 minutes</SelectItem>
+                          <SelectItem value="30min">30 minutes</SelectItem>
+                          <SelectItem value="1hour">1 hour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      Save Settings
+                    </Button>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    placeholder="Describe when this alert should trigger..."
-                    value={newAlert.description}
-                    onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCreateModal(false)}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateAlert}
-                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0"
-                >
-                  Create Alert Rule
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   )

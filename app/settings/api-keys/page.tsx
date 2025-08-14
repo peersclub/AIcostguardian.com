@@ -46,6 +46,7 @@ import { apiKeyManager, KeyType, ApiKey } from '@/lib/api-key-manager'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface KeyDetailsModalProps {
   apiKey: ApiKey | null
@@ -330,15 +331,30 @@ const ApiKeyList = ({
 
 export default function ApiKeysSettings() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('all')
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['all', 'openai', 'anthropic', 'google'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     loadKeys()
   }, [session])
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    router.push(`/settings/api-keys?tab=${value}`)
+  }
 
   const loadKeys = async () => {
     setLoading(true)
@@ -519,7 +535,7 @@ export default function ApiKeysSettings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Tabs defaultValue="all" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="bg-gray-800/30 p-1 rounded-lg grid w-full grid-cols-4">
               <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-400">
                 <Key className="h-4 w-4 mr-2" />

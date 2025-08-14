@@ -607,7 +607,8 @@ function DashboardV2Content() {
                 </div>
 
                 <div className="space-y-4">
-                  {performanceMetrics.providers.map((provider: any) => (
+                  {performanceMetrics.providers && performanceMetrics.providers.length > 0 ? (
+                    performanceMetrics.providers.map((provider: any) => (
                     <div key={provider.id} className="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -653,7 +654,16 @@ function DashboardV2Content() {
                         <p className="text-blue-200 text-sm">{provider.recommendation}</p>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Globe className="w-8 h-8 text-gray-600" />
+                      </div>
+                      <p className="text-gray-400 text-lg font-medium mb-2">No Provider Data Available</p>
+                      <p className="text-gray-500 text-sm">Start using AI providers to see performance metrics here</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
-// Force dynamic rendering
+// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -14,74 +14,98 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user and their organization
+    // Get user's organization
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { organization: true }
     })
 
-    if (!user?.organization) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    if (!user?.organizationId) {
+      // Return default stats if no organization
+      return NextResponse.json({
+        totalMembers: 1,
+        activeMembers: 1,
+        totalSpend: 0,
+        monthlyBudget: 10000,
+        apiKeys: 0,
+        providers: 0
+      })
     }
 
-    // Get organization statistics
+    // Get organization stats
     const [
       totalMembers,
       activeMembers,
-      pendingInvites,
-      usageLogs
+      apiKeys,
+      usageData,
+      organization
     ] = await Promise.all([
       // Total members
       prisma.user.count({
-        where: { organizationId: user.organizationId! }
+        where: { organizationId: user.organizationId }
       }),
-      // Active members (logged in within last 30 days)
+      
+      // Active members (for now, all members are considered active)
+      // TODO: Add lastLogin field to User model or track activity differently
       prisma.user.count({
         where: {
-          organizationId: user.organizationId!,
-          lastActiveAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          organizationId: user.organizationId
+        }
+      }),
+      
+      // API keys count
+      prisma.apiKey.count({
+        where: {
+          user: {
+            organizationId: user.organizationId
           }
         }
       }),
-      // Pending invitations
-      prisma.invitation.count({
+      
+      // Usage data for spend calculation
+      prisma.usage.aggregate({
         where: {
-          organizationId: user.organizationId!,
-          acceptedAt: null,
-          expiresAt: {
-            gt: new Date()
-          }
-        }
-      }),
-      // Usage logs for spend calculation
-      prisma.usageLog.findMany({
-        where: {
-          organizationId: user.organizationId!,
+          user: {
+            organizationId: user.organizationId
+          },
           timestamp: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) // Start of current month
           }
         },
-        select: {
+        _sum: {
           cost: true
         }
+      }),
+      
+      // Organization details
+      prisma.organization.findUnique({
+        where: { id: user.organizationId }
       })
     ])
 
-    // Calculate total spend
-    const totalSpend = usageLogs.reduce((sum, log) => sum + log.cost, 0)
-    const avgSpendPerUser = totalMembers > 0 ? totalSpend / totalMembers : 0
+    // Count unique providers from API keys
+    const providerKeys = await prisma.apiKey.findMany({
+      where: {
+        user: {
+          organizationId: user.organizationId
+        }
+      },
+      select: {
+        provider: true
+      },
+      distinct: ['provider']
+    })
 
     return NextResponse.json({
       totalMembers,
       activeMembers,
-      pendingInvites,
-      totalSpend,
-      avgSpendPerUser,
-      memberLimit: user.organization.maxUsers
+      totalSpend: usageData._sum.cost || 0,
+      monthlyBudget: 10000, // Default budget - TODO: Add to Organization model
+      apiKeys,
+      providers: providerKeys.length
     })
   } catch (error) {
-    console.error('Failed to fetch organization stats:', error)
+    console.error('Error fetching organization stats:', error)
     return NextResponse.json(
       { error: 'Failed to fetch organization stats' },
       { status: 500 }

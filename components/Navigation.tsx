@@ -95,6 +95,9 @@ export default function Navigation() {
     }
   ]
 
+  // Check if user is admin (you can customize this logic based on your auth setup)
+  const isAdmin = session?.user?.email?.includes('@aicostguardian') || (session?.user as any)?.role === 'admin'
+
   const authenticatedNavItems: NavItem[] = [
     {
       label: 'Dashboard',
@@ -117,6 +120,19 @@ export default function Navigation() {
       badge: 'Pro',
       visibility: 'auth'
     },
+    // Add Organization link for admins
+    ...(isAdmin ? [{
+      label: 'Organization',
+      href: '/organization',
+      icon: Building2,
+      visibility: 'auth' as const,
+      children: [
+        { label: 'Overview', href: '/organization', icon: Building2, visibility: 'auth' as const },
+        { label: 'Team Members', href: '/organization/members', icon: Users, visibility: 'auth' as const },
+        { label: 'Permissions', href: '/organization/permissions', icon: Shield, visibility: 'auth' as const },
+        { label: 'Usage Limits', href: '/organization/usage-limits', icon: Activity, visibility: 'auth' as const }
+      ]
+    }] : []),
     {
       label: 'Settings',
       href: '/settings',
