@@ -80,23 +80,28 @@ interface UsageStats {
 }
 
 export default function UsageClient() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
   const [selectedProvider, setSelectedProvider] = useState('all')
   const [activeTab, setActiveTab] = useState('overview')
   const [isLoading, setIsLoading] = useState(true)
   const [usageData, setUsageData] = useState<UsageStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (session?.user) {
+    if (status === 'authenticated' && session?.user) {
       fetchUsageData()
+    } else if (status === 'unauthenticated') {
+      setIsLoading(false)
+      setError('Please sign in to view usage analytics')
     }
-  }, [session, selectedTimeframe, selectedProvider])
+  }, [status, session, selectedTimeframe, selectedProvider])
 
   const fetchUsageData = async () => {
     try {
       setIsLoading(true)
+      setError(null)
       
       // Fetch usage stats
       const statsResponse = await fetch(
@@ -105,20 +110,22 @@ export default function UsageClient() {
         }`
       )
       
-      if (statsResponse.ok) {
-        const data = await statsResponse.json()
-        setUsageData({
-          totalCost: data.totalCost || 0,
-          totalTokens: data.totalTokens || 0,
-          totalRequests: data.totalRequests || 0,
-          byProvider: data.byProvider || {},
-          byModel: data.byModel || {},
-          dailyUsage: data.dailyUsage || [],
-          budgetUtilization: data.budgetUtilization || 0,
-          monthlyTrend: data.monthlyTrend || 0,
-          avgCostPerRequest: data.avgCostPerRequest || 0
-        })
+      if (!statsResponse.ok) {
+        throw new Error(`Failed to fetch stats: ${statsResponse.status}`)
       }
+      
+      const data = await statsResponse.json()
+      setUsageData({
+        totalCost: data.totalCost || 0,
+        totalTokens: data.totalTokens || 0,
+        totalRequests: data.totalRequests || 0,
+        byProvider: data.byProvider || {},
+        byModel: data.byModel || {},
+        dailyUsage: data.dailyUsage || [],
+        budgetUtilization: data.budgetUtilization || 0,
+        monthlyTrend: data.monthlyTrend || 0,
+        avgCostPerRequest: data.avgCostPerRequest || 0
+      })
 
       // Fetch recent activity
       const recentResponse = await fetch('/api/usage/recent?limit=10')
@@ -128,6 +135,7 @@ export default function UsageClient() {
       }
     } catch (error) {
       console.error('Failed to fetch usage data:', error)
+      setError('Failed to load usage data. Please try again.')
       toast({
         title: 'Error',
         description: 'Failed to load usage data',
@@ -154,7 +162,7 @@ export default function UsageClient() {
   }
 
   // Calculate provider data for charts
-  const providerChartData = usageData ? Object.entries(usageData.byProvider).map(([provider, data]: [string, any]) => ({
+  const providerChartData = usageData?.byProvider ? Object.entries(usageData.byProvider).map(([provider, data]: [string, any]) => ({
     name: provider,
     cost: data.cost || 0,
     requests: data.requests || 0,
@@ -170,6 +178,23 @@ export default function UsageClient() {
   })) || []
 
   const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899']
+
+  // Show error state if there's an error and not loading
+  if (error && !isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Unable to Load Usage Data</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
