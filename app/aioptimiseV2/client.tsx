@@ -1,0 +1,1141 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
+import { motion, AnimatePresence, useAnimation } from 'framer-motion'
+import { toast } from 'sonner'
+import { 
+  Sparkles, Send, Paperclip, Mic, MicOff, Image, FileText, 
+  Code, Zap, Brain, TrendingUp, DollarSign, Users, Plus,
+  Settings, ChevronLeft, ChevronRight, X, Check, AlertCircle,
+  Loader2, Copy, ThumbsUp, ThumbsDown, RefreshCw, Share2,
+  Lock, Unlock, Eye, EyeOff, Download, Upload, Hash,
+  MessageSquare, History, Star, ArrowUp, ArrowDown, 
+  GitBranch, Target, Shield, Activity, BarChart3, Crown,
+  Layers, Command, Cpu, Database, Globe, Wand2, Bot,
+  PlusCircle, MinusCircle, ChevronDown, ChevronUp,
+  Volume2, VolumeX, Play, Pause, StopCircle, FastForward
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
+// Types
+interface User {
+  id: string
+  name: string
+  email: string
+  image: string
+  organization: string | null
+  hasApiKeys: boolean
+  isEnterpriseUser: boolean
+}
+
+interface Limits {
+  dailyUsed: number
+  dailyLimit: number
+  monthlyUsed: number
+  monthlyLimit: number
+  tokensUsedToday: number
+}
+
+interface Thread {
+  id: string
+  title: string
+  preview: string
+  timestamp: string
+  messageCount: number
+  cost: number
+  status: 'active' | 'archived' | 'shared'
+  collaborators?: string[]
+  tags?: string[]
+  isPinned?: boolean
+}
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: string
+  model?: string
+  provider?: string
+  cost?: number
+  tokens?: {
+    prompt: number
+    completion: number
+    total: number
+  }
+  latency?: number
+  status?: 'sending' | 'processing' | 'streaming' | 'complete' | 'error'
+  error?: string
+  feedback?: 'positive' | 'negative' | null
+  attachments?: Attachment[]
+  metadata?: {
+    temperature?: number
+    maxTokens?: number
+    topP?: number
+  }
+}
+
+interface Attachment {
+  id: string
+  type: 'image' | 'document' | 'code'
+  name: string
+  size: number
+  url: string
+  mimeType: string
+}
+
+interface ModelOption {
+  id: string
+  name: string
+  provider: string
+  contextWindow: number
+  inputCost: number
+  outputCost: number
+  speed: 'fast' | 'medium' | 'slow'
+  capabilities: string[]
+  icon: string
+}
+
+// Available models with real costs
+const MODELS: ModelOption[] = [
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    provider: 'OpenAI',
+    contextWindow: 128000,
+    inputCost: 0.005,
+    outputCost: 0.015,
+    speed: 'medium',
+    capabilities: ['chat', 'vision', 'function-calling'],
+    icon: '🟢'
+  },
+  {
+    id: 'claude-3-opus',
+    name: 'Claude 3 Opus',
+    provider: 'Anthropic',
+    contextWindow: 200000,
+    inputCost: 0.015,
+    outputCost: 0.075,
+    speed: 'slow',
+    capabilities: ['chat', 'vision', 'analysis'],
+    icon: '🟣'
+  },
+  {
+    id: 'claude-3-sonnet',
+    name: 'Claude 3 Sonnet',
+    provider: 'Anthropic',
+    contextWindow: 200000,
+    inputCost: 0.003,
+    outputCost: 0.015,
+    speed: 'medium',
+    capabilities: ['chat', 'vision', 'analysis'],
+    icon: '🔵'
+  },
+  {
+    id: 'gemini-pro',
+    name: 'Gemini Pro',
+    provider: 'Google',
+    contextWindow: 32000,
+    inputCost: 0.00125,
+    outputCost: 0.00375,
+    speed: 'fast',
+    capabilities: ['chat', 'vision'],
+    icon: '🔶'
+  },
+  {
+    id: 'grok-beta',
+    name: 'Grok Beta',
+    provider: 'xAI',
+    contextWindow: 100000,
+    inputCost: 0.005,
+    outputCost: 0.015,
+    speed: 'fast',
+    capabilities: ['chat', 'realtime'],
+    icon: '⚡'
+  }
+]
+
+interface AIOptimiseV2ClientProps {
+  user: User
+  limits: Limits
+}
+
+export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientProps) {
+  // Core state
+  const [threads, setThreads] = useState<Thread[]>([])
+  const [currentThread, setCurrentThread] = useState<Thread | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
+  
+  // UI state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<ModelOption>(MODELS[1]) // Default to Claude Sonnet
+  const [showModelSelector, setShowModelSelector] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [isRecording, setIsRecording] = useState(false)
+  
+  // Features state
+  const [autoOptimize, setAutoOptimize] = useState(true)
+  const [streamResponse, setStreamResponse] = useState(true)
+  const [saveHistory, setSaveHistory] = useState(true)
+  const [currentCost, setCurrentCost] = useState(0)
+  const [savedAmount, setSavedAmount] = useState(0)
+  
+  // Refs
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Animation controls
+  const controls = useAnimation()
+  
+  // Calculate usage percentages
+  const dailyUsagePercent = (limits.dailyUsed / limits.dailyLimit) * 100
+  const monthlyUsagePercent = (limits.monthlyUsed / limits.monthlyLimit) * 100
+  
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
+    }
+  }, [input])
+  
+  // Load initial data
+  useEffect(() => {
+    loadThreads()
+    checkApiKeys()
+  }, [])
+  
+  const loadThreads = async () => {
+    try {
+      const res = await fetch('/api/aioptimise/threads')
+      if (res.ok) {
+        const data = await res.json()
+        setThreads(data.threads || [])
+        if (data.threads?.length > 0 && !currentThread) {
+          selectThread(data.threads[0])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load threads:', error)
+    }
+  }
+  
+  const checkApiKeys = async () => {
+    if (!user.hasApiKeys) {
+      toast.error('No API keys configured', {
+        description: 'Please add your API keys in Settings to use AIOptimise',
+        action: {
+          label: 'Go to Settings',
+          onClick: () => window.location.href = '/settings/api-keys'
+        }
+      })
+    }
+  }
+  
+  const selectThread = async (thread: Thread) => {
+    setCurrentThread(thread)
+    try {
+      const res = await fetch(`/api/aioptimise/threads/${thread.id}/messages`)
+      if (res.ok) {
+        const data = await res.json()
+        setMessages(data.messages || [])
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error)
+    }
+  }
+  
+  const createNewThread = async () => {
+    try {
+      const res = await fetch('/api/aioptimise/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'New Conversation',
+          mode: 'standard'
+        })
+      })
+      
+      if (res.ok) {
+        const thread = await res.json()
+        setThreads(prev => [thread, ...prev])
+        setCurrentThread(thread)
+        setMessages([])
+        toast.success('New conversation started')
+      }
+    } catch (error) {
+      toast.error('Failed to create new thread')
+    }
+  }
+  
+  const sendMessage = async () => {
+    if (!input.trim() && attachments.length === 0) return
+    if (!user.hasApiKeys) {
+      toast.error('Please configure API keys first')
+      return
+    }
+    
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content: input,
+      timestamp: new Date().toISOString(),
+      attachments: [...attachments],
+      status: 'sending'
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setAttachments([])
+    setIsLoading(true)
+    
+    // Animate cost prediction
+    const estimatedCost = calculateEstimatedCost(input, selectedModel)
+    setCurrentCost(prev => prev + estimatedCost)
+    
+    try {
+      // If auto-optimize is on, select best model
+      const modelToUse = autoOptimize ? await selectOptimalModel(input) : selectedModel
+      
+      // Show optimization savings
+      if (autoOptimize && modelToUse.id !== selectedModel.id) {
+        const saved = (selectedModel.inputCost - modelToUse.inputCost) * input.length / 1000
+        setSavedAmount(prev => prev + saved)
+        toast.success(`Optimized! Saved $${saved.toFixed(4)} by using ${modelToUse.name}`)
+      }
+      
+      const res = await fetch('/api/aioptimise/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: currentThread?.id,
+          message: input,
+          model: modelToUse.id,
+          provider: modelToUse.provider,
+          attachments: attachments,
+          stream: streamResponse
+        })
+      })
+      
+      if (!res.ok) throw new Error('Failed to send message')
+      
+      if (streamResponse) {
+        setIsStreaming(true)
+        const reader = res.body?.getReader()
+        const decoder = new TextDecoder()
+        
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}-assistant`,
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toISOString(),
+          model: modelToUse.name,
+          provider: modelToUse.provider,
+          status: 'streaming'
+        }
+        
+        setMessages(prev => [...prev, assistantMessage])
+        
+        if (reader) {
+          let fullContent = ''
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            
+            const chunk = decoder.decode(value)
+            fullContent += chunk
+            
+            setMessages(prev => prev.map(msg => 
+              msg.id === assistantMessage.id 
+                ? { ...msg, content: fullContent }
+                : msg
+            ))
+          }
+          
+          // Update with final metadata
+          setMessages(prev => prev.map(msg => 
+            msg.id === assistantMessage.id 
+              ? { ...msg, status: 'complete', content: fullContent }
+              : msg
+          ))
+        }
+        setIsStreaming(false)
+      } else {
+        const data = await res.json()
+        const assistantMessage: Message = {
+          id: data.id,
+          role: 'assistant',
+          content: data.content,
+          timestamp: new Date().toISOString(),
+          model: modelToUse.name,
+          provider: modelToUse.provider,
+          cost: data.cost,
+          tokens: data.tokens,
+          latency: data.latency,
+          status: 'complete'
+        }
+        setMessages(prev => [...prev, assistantMessage])
+        setCurrentCost(prev => prev + (data.cost || 0))
+      }
+      
+    } catch (error) {
+      toast.error('Failed to send message')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  const calculateEstimatedCost = (text: string, model: ModelOption) => {
+    const tokens = text.length / 4 // Rough estimation
+    return (tokens / 1000) * model.inputCost
+  }
+  
+  const selectOptimalModel = async (prompt: string): Promise<ModelOption> => {
+    // AI-powered model selection based on prompt analysis
+    const promptLength = prompt.length
+    const hasCode = /```|function|const|let|var|import/.test(prompt)
+    const hasAnalysis = /analyze|explain|summarize|compare/.test(prompt.toLowerCase())
+    const needsSpeed = /quick|fast|brief|short/.test(prompt.toLowerCase())
+    
+    if (needsSpeed && promptLength < 500) {
+      return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
+    }
+    
+    if (hasCode || hasAnalysis) {
+      return MODELS.find(m => m.id === 'claude-3-sonnet') || selectedModel
+    }
+    
+    if (promptLength > 10000) {
+      return MODELS.find(m => m.id === 'claude-3-opus') || selectedModel
+    }
+    
+    return MODELS.find(m => m.id === 'gpt-4o') || selectedModel
+  }
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const attachment: Attachment = {
+          id: `att-${Date.now()}-${Math.random()}`,
+          type: file.type.startsWith('image/') ? 'image' : 'document',
+          name: file.name,
+          size: file.size,
+          url: event.target?.result as string,
+          mimeType: file.type
+        }
+        setAttachments(prev => [...prev, attachment])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+  
+  const toggleRecording = async () => {
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // Start recording logic here
+        setIsRecording(true)
+        toast.success('Recording started')
+      } catch (error) {
+        toast.error('Microphone access denied')
+      }
+    } else {
+      setIsRecording(false)
+      toast.success('Recording stopped')
+      // Process and transcribe audio
+    }
+  }
+  
+  const regenerateMessage = async (messageId: string) => {
+    const message = messages.find(m => m.id === messageId)
+    if (!message || message.role !== 'assistant') return
+    
+    toast.info('Regenerating response...')
+    // Regeneration logic here
+  }
+  
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content)
+    toast.success('Copied to clipboard')
+  }
+  
+  const provideFeedback = async (messageId: string, type: 'positive' | 'negative') => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, feedback: type } : msg
+    ))
+    
+    try {
+      await fetch('/api/aioptimise/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, type })
+      })
+      toast.success('Feedback recorded')
+    } catch (error) {
+      console.error('Failed to submit feedback:', error)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black overflow-hidden">
+      {/* Background - matching dashboard */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="relative z-10 h-full flex">
+        {/* Sidebar */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ x: -320 }}
+              animate={{ x: 0 }}
+              exit={{ x: -320 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="w-80 bg-gray-900/50 backdrop-blur-xl border-r border-gray-800 flex flex-col"
+            >
+              {/* Sidebar Header */}
+              <div className="p-4 border-b border-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-white">AIOptimise V2</h2>
+                      <p className="text-xs text-gray-400">Next-gen AI Assistant</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setSidebarOpen(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {/* New Thread Button */}
+                <Button
+                  onClick={createNewThread}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Conversation
+                </Button>
+              </div>
+              
+              {/* Usage Stats */}
+              <div className="p-4 border-b border-gray-800">
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400">Daily Usage</span>
+                      <span className="text-white">${limits.dailyUsed.toFixed(2)} / ${limits.dailyLimit}</span>
+                    </div>
+                    <Progress value={dailyUsagePercent} className="h-1.5 bg-gray-800">
+                      <div 
+                        className={cn(
+                          "h-full transition-all",
+                          dailyUsagePercent > 90 ? "bg-red-500" :
+                          dailyUsagePercent > 75 ? "bg-yellow-500" :
+                          "bg-gradient-to-r from-indigo-500 to-purple-500"
+                        )}
+                        style={{ width: `${Math.min(dailyUsagePercent, 100)}%` }}
+                      />
+                    </Progress>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400">Monthly Usage</span>
+                      <span className="text-white">${limits.monthlyUsed.toFixed(2)} / ${limits.monthlyLimit}</span>
+                    </div>
+                    <Progress value={monthlyUsagePercent} className="h-1.5 bg-gray-800">
+                      <div 
+                        className={cn(
+                          "h-full transition-all",
+                          monthlyUsagePercent > 90 ? "bg-red-500" :
+                          monthlyUsagePercent > 75 ? "bg-yellow-500" :
+                          "bg-gradient-to-r from-indigo-500 to-purple-500"
+                        )}
+                        style={{ width: `${Math.min(monthlyUsagePercent, 100)}%` }}
+                      />
+                    </Progress>
+                  </div>
+                  
+                  {savedAmount > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-green-500/10 rounded-lg border border-green-500/30">
+                      <span className="text-xs text-green-400">Saved Today</span>
+                      <span className="text-sm font-bold text-green-400">${savedAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Threads List */}
+              <div className="flex-1 overflow-y-auto p-2">
+                <div className="space-y-1">
+                  {threads.map((thread) => (
+                    <motion.button
+                      key={thread.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => selectThread(thread)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-lg transition-all",
+                        currentThread?.id === thread.id
+                          ? "bg-indigo-600/20 border border-indigo-500/30"
+                          : "hover:bg-gray-800/50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {thread.isPinned && <Star className="w-3 h-3 text-yellow-400" />}
+                            <h3 className="text-sm font-medium text-white truncate">{thread.title}</h3>
+                          </div>
+                          <p className="text-xs text-gray-400 truncate">{thread.preview}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-500">{thread.messageCount} messages</span>
+                            {thread.cost > 0 && (
+                              <span className="text-xs text-green-400">${thread.cost.toFixed(3)}</span>
+                            )}
+                          </div>
+                        </div>
+                        {thread.collaborators && thread.collaborators.length > 0 && (
+                          <div className="flex -space-x-1">
+                            {thread.collaborators.slice(0, 3).map((_, i) => (
+                              <div key={i} className="w-5 h-5 rounded-full bg-gray-700 border border-gray-600" />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Settings */}
+              <div className="p-4 border-t border-gray-800">
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Auto-Optimize</span>
+                    <button
+                      onClick={() => setAutoOptimize(!autoOptimize)}
+                      className={cn(
+                        "w-10 h-5 rounded-full transition-all",
+                        autoOptimize ? "bg-indigo-600" : "bg-gray-700"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 bg-white rounded-full transition-all",
+                        autoOptimize ? "translate-x-5" : "translate-x-0.5"
+                      )} />
+                    </button>
+                  </label>
+                  
+                  <label className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Stream Responses</span>
+                    <button
+                      onClick={() => setStreamResponse(!streamResponse)}
+                      className={cn(
+                        "w-10 h-5 rounded-full transition-all",
+                        streamResponse ? "bg-indigo-600" : "bg-gray-700"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 bg-white rounded-full transition-all",
+                        streamResponse ? "translate-x-5" : "translate-x-0.5"
+                      )} />
+                    </button>
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Sidebar Toggle (when closed) */}
+        {!sidebarOpen && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => setSidebarOpen(true)}
+            className="absolute left-4 top-4 z-20 p-2 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-800 text-gray-400 hover:text-white"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </motion.button>
+        )}
+        
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="h-16 bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 flex items-center justify-between px-6">
+            <div className="flex items-center gap-4">
+              {currentThread && (
+                <>
+                  <h1 className="text-lg font-semibold text-white">{currentThread.title}</h1>
+                  {currentThread.collaborators && currentThread.collaborators.length > 0 && (
+                    <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
+                      <Users className="w-3 h-3 mr-1" />
+                      {currentThread.collaborators.length} collaborating
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Model Selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="border-gray-700 bg-gray-800/50 text-white">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{selectedModel.icon}</span>
+                      <span className="text-sm">{selectedModel.name}</span>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 bg-gray-900 border-gray-700">
+                  {MODELS.map((model) => (
+                    <DropdownMenuItem
+                      key={model.id}
+                      onClick={() => setSelectedModel(model)}
+                      className="hover:bg-gray-800"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{model.icon}</span>
+                          <div>
+                            <p className="text-sm font-medium text-white">{model.name}</p>
+                            <p className="text-xs text-gray-400">{model.provider}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-green-400">${model.inputCost}/1K</p>
+                          <p className="text-xs text-gray-500">{model.speed}</p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Current Session Cost */}
+              <div className="px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-medium text-white">${currentCost.toFixed(4)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <AnimatePresence>
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={cn(
+                      "mb-6",
+                      message.role === 'user' ? "flex justify-end" : "flex justify-start"
+                    )}
+                  >
+                    <div className={cn(
+                      "max-w-[80%] rounded-2xl p-4",
+                      message.role === 'user' 
+                        ? "bg-indigo-600/20 border border-indigo-500/30" 
+                        : "bg-gray-800/50 border border-gray-700"
+                    )}>
+                      {/* Message Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {message.role === 'assistant' && (
+                            <>
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                <Bot className="w-3 h-3 text-white" />
+                              </div>
+                              {message.model && (
+                                <Badge className="bg-gray-700 text-gray-300 text-xs">
+                                  {message.model}
+                                </Badge>
+                              )}
+                            </>
+                          )}
+                          {message.role === 'user' && (
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={user.image} />
+                              <AvatarFallback>{user.name[0]}</AvatarFallback>
+                            </Avatar>
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        
+                        {/* Message Actions */}
+                        {message.role === 'assistant' && message.status === 'complete' && (
+                          <div className="flex items-center gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="w-6 h-6"
+                                    onClick={() => copyMessage(message.content)}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Copy</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className={cn(
+                                      "w-6 h-6",
+                                      message.feedback === 'positive' && "text-green-400"
+                                    )}
+                                    onClick={() => provideFeedback(message.id, 'positive')}
+                                  >
+                                    <ThumbsUp className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Helpful</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className={cn(
+                                      "w-6 h-6",
+                                      message.feedback === 'negative' && "text-red-400"
+                                    )}
+                                    onClick={() => provideFeedback(message.id, 'negative')}
+                                  >
+                                    <ThumbsDown className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Not Helpful</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="w-6 h-6"
+                                    onClick={() => regenerateMessage(message.id)}
+                                  >
+                                    <RefreshCw className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Regenerate</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Message Content */}
+                      <div className="text-sm text-white">
+                        {message.status === 'streaming' ? (
+                          <div className="space-y-2">
+                            <div className="prose prose-invert prose-sm max-w-none">
+                              <ReactMarkdown>
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
+                              <span className="text-xs text-indigo-400">Generating...</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="prose prose-invert prose-sm max-w-none">
+                            <ReactMarkdown 
+                              components={{
+                                code({node, className, children, ...props}: any) {
+                                  const match = /language-(\w+)/.exec(className || '')
+                                  const inline = !match
+                                  return !inline && match ? (
+                                    <SyntaxHighlighter
+                                      style={oneDark}
+                                      language={match[1]}
+                                      PreTag="div"
+                                      {...props}
+                                    >
+                                      {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                  ) : (
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  )
+                                }
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Attachments */}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {message.attachments.map((attachment) => (
+                            <div
+                              key={attachment.id}
+                              className="p-2 bg-gray-700 rounded-lg flex items-center gap-2"
+                            >
+                              {attachment.type === 'image' ? (
+                                <Image className="w-4 h-4 text-blue-400" />
+                              ) : (
+                                <FileText className="w-4 h-4 text-gray-400" />
+                              )}
+                              <span className="text-xs text-gray-300">{attachment.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Message Metadata */}
+                      {message.role === 'assistant' && message.cost && (
+                        <div className="mt-3 pt-3 border-t border-gray-700 flex items-center gap-4 text-xs text-gray-400">
+                          <span>Cost: ${message.cost.toFixed(4)}</span>
+                          {message.tokens && (
+                            <span>Tokens: {message.tokens.total}</span>
+                          )}
+                          {message.latency && (
+                            <span>Latency: {message.latency}ms</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {/* Typing Indicator */}
+              {isLoading && !isStreaming && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center gap-2 text-gray-400"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                  </div>
+                  <span className="text-sm">AI is thinking...</span>
+                </motion.div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+          
+          {/* Input Area */}
+          <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-xl p-4">
+            <div className="max-w-4xl mx-auto">
+              {/* Attachments Preview */}
+              {attachments.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {attachments.map((attachment) => (
+                    <motion.div
+                      key={attachment.id}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="relative group"
+                    >
+                      <div className="p-2 bg-gray-800 rounded-lg border border-gray-700 flex items-center gap-2">
+                        {attachment.type === 'image' ? (
+                          <Image className="w-4 h-4 text-blue-400" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span className="text-xs text-gray-300">{attachment.name}</span>
+                        <button
+                          onClick={() => setAttachments(prev => prev.filter(a => a.id !== attachment.id))}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3 text-gray-400 hover:text-white" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Input Controls */}
+              <div className="flex items-end gap-2">
+                <div className="flex-1 relative">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        sendMessage()
+                      }
+                    }}
+                    placeholder={
+                      !user.hasApiKeys 
+                        ? "Please configure API keys to start chatting..." 
+                        : "Type your message... (Shift+Enter for new line)"
+                    }
+                    disabled={!user.hasApiKeys || isLoading}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
+                    rows={1}
+                  />
+                  
+                  {/* Character Count */}
+                  {input.length > 0 && (
+                    <div className="absolute bottom-2 right-2 text-xs text-gray-500">
+                      {input.length} / {selectedModel.contextWindow}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept="image/*,.pdf,.txt,.md,.doc,.docx"
+                  />
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Attach files</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          onClick={toggleRecording}
+                          className={cn(
+                            "border-gray-700 bg-gray-800 hover:bg-gray-700",
+                            isRecording ? "text-red-400" : "text-gray-400 hover:text-white"
+                          )}
+                        >
+                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{isRecording ? 'Stop recording' : 'Start voice input'}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <Button
+                    onClick={sendMessage}
+                    disabled={(!input.trim() && attachments.length === 0) || isLoading || !user.hasApiKeys}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Tips */}
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>Tip: {autoOptimize ? 'Auto-optimizing for best model' : 'Using ' + selectedModel.name}</span>
+                  {savedAmount > 0 && (
+                    <span className="text-green-400">Saved ${savedAmount.toFixed(2)} today!</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {user.isEnterpriseUser && (
+                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Enterprise
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
