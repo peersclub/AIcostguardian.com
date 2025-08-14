@@ -123,7 +123,47 @@ class ApiKeyService {
   }
 
   /**
-   * Get a specific API key
+   * Get API key by ID with metadata
+   */
+  async getApiKeyById(keyId: string, userId: string): Promise<{ key: string; provider: string } | null> {
+    try {
+      // First verify the key belongs to the user
+      const apiKey = await prisma.apiKey.findFirst({
+        where: { id: keyId, userId }
+      })
+      
+      if (!apiKey) {
+        return null
+      }
+
+      const decryptedKey = this.decrypt(apiKey.encryptedKey)
+      
+      return {
+        key: decryptedKey,
+        provider: apiKey.provider
+      }
+    } catch (error) {
+      console.error('Error getting API key by ID:', error)
+      return null
+    }
+  }
+
+  /**
+   * Update last tested timestamp for an API key
+   */
+  async updateLastTested(keyId: string): Promise<void> {
+    try {
+      await prisma.apiKey.update({
+        where: { id: keyId },
+        data: { lastTested: new Date() }
+      })
+    } catch (error) {
+      console.error('Error updating last tested timestamp:', error)
+    }
+  }
+
+  /**
+   * Get a specific API key by provider
    */
   async getApiKey(userId: string, provider: Provider, organizationId?: string): Promise<string | null> {
     try {
@@ -237,7 +277,7 @@ class ApiKeyService {
   }
 
   /**
-   * Delete an API key
+   * Delete an API key by provider (backward compatibility)
    */
   async deleteApiKey(userId: string, provider: Provider, organizationId?: string): Promise<boolean> {
     const where = organizationId
@@ -259,6 +299,35 @@ class ApiKeyService {
     this.cache.delete(cacheKey)
 
     return true
+  }
+
+  /**
+   * Delete an API key by ID (preferred method)
+   */
+  async deleteApiKeyById(keyId: string, userId: string): Promise<boolean> {
+    try {
+      // First verify the key belongs to the user
+      const apiKey = await prisma.apiKey.findFirst({
+        where: { id: keyId, userId }
+      })
+      
+      if (!apiKey) {
+        return false
+      }
+
+      await prisma.apiKey.delete({
+        where: { id: keyId }
+      })
+
+      // Clear cache
+      const cacheKey = `${userId}-${apiKey.provider}-${apiKey.organizationId || 'personal'}`
+      this.cache.delete(cacheKey)
+
+      return true
+    } catch (error) {
+      console.error('Error deleting API key by ID:', error)
+      return false
+    }
   }
 
   /**

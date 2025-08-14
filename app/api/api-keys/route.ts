@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE /api/api-keys - Delete an API key
+ * DELETE /api/api-keys - Delete an API key by ID
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -130,31 +130,40 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const provider = searchParams.get('provider')
+    const id = searchParams.get('id')
+    const provider = searchParams.get('provider') // Keep backward compatibility
 
-    if (!provider) {
+    if (!id && !provider) {
       return NextResponse.json(
-        { error: 'Provider is required' },
+        { error: 'Either id or provider is required' },
         { status: 400 }
       )
     }
 
-    // Ensure user exists
-    const user = await userService.getUserByEmail(session.user.email)
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    // Ensure user exists with organization
+    const user = await userService.ensureUser({
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image
+    })
 
-    // Delete the API key
-    const deleted = await apiKeyService.deleteApiKey(
-      user.id,
-      provider as Provider,
-      user.organizationId || undefined
-    )
+    let deleted: boolean = false
+
+    if (id) {
+      // Delete by ID (new preferred method)
+      deleted = await apiKeyService.deleteApiKeyById(id, user.id)
+    } else if (provider) {
+      // Delete by provider (backward compatibility)
+      deleted = await apiKeyService.deleteApiKey(
+        user.id,
+        provider as Provider,
+        user.organizationId || undefined
+      )
+    }
 
     if (!deleted) {
       return NextResponse.json(
-        { error: 'API key not found' },
+        { error: 'API key not found or not authorized' },
         { status: 404 }
       )
     }
@@ -184,27 +193,44 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { provider } = body
+    const { provider, id } = body
 
-    if (!provider) {
+    if (!provider && !id) {
       return NextResponse.json(
-        { error: 'Provider is required' },
+        { error: 'Either provider or id is required' },
         { status: 400 }
       )
     }
 
-    // Ensure user exists
-    const user = await userService.getUserByEmail(session.user.email)
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    // Ensure user exists with organization
+    const user = await userService.ensureUser({
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image
+    })
 
-    // Get the API key
-    const apiKey = await apiKeyService.getApiKey(
-      user.id,
-      provider as Provider,
-      user.organizationId || undefined
-    )
+    let apiKey: string | null = null
+    let actualProvider: string = provider
+
+    if (id) {
+      // Get API key by ID and retrieve the provider
+      const keyData = await apiKeyService.getApiKeyById(id, user.id)
+      if (!keyData) {
+        return NextResponse.json(
+          { error: 'API key not found' },
+          { status: 404 }
+        )
+      }
+      apiKey = keyData.key
+      actualProvider = keyData.provider
+    } else {
+      // Get API key by provider (backward compatibility)
+      apiKey = await apiKeyService.getApiKey(
+        user.id,
+        provider as Provider,
+        user.organizationId || undefined
+      )
+    }
 
     if (!apiKey) {
       return NextResponse.json(
@@ -214,12 +240,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Test the API key
-    const validation = await apiKeyService.validateApiKey(provider as Provider, apiKey)
+    const validation = await apiKeyService.validateApiKey(actualProvider as Provider, apiKey)
+    
+    // Update last tested timestamp
+    if (id) {
+      await apiKeyService.updateLastTested(id)
+    }
 
     return NextResponse.json({
+      success: validation.isValid,
       isValid: validation.isValid,
       error: validation.error,
-      model: validation.model
+      model: validation.model,
+      provider: actualProvider
     })
   } catch (error: any) {
     console.error('Error testing API key:', error)

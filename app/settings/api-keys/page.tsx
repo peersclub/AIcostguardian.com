@@ -63,15 +63,36 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
   const handleTest = async () => {
     setTesting(true)
     try {
-      const result = await apiKeyManager.testKey(apiKey.provider.toLowerCase(), apiKey.encryptedKey)
+      // Use dedicated test endpoint
+      const response = await fetch('/api/api-keys/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: apiKey.id,
+          provider: apiKey.provider.toLowerCase()
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || 'Failed to test API key')
+      }
+
+      const result = await response.json()
       setTestResult(result)
+      
       if (result.success) {
         toast.success('Key test successful!')
       } else {
-        toast.error(`Test failed: ${result.error}`)
+        toast.error(`Test failed: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
-      toast.error('Failed to test key')
+      console.error('API key test error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to test key'
+      toast.error(errorMessage)
+      setTestResult({ success: false, error: errorMessage })
     } finally {
       setTesting(false)
     }
@@ -185,16 +206,15 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
                 {testResult.success ? (
                   <div className="space-y-1">
                     <p>✓ Key is working correctly</p>
-                    <p className="text-sm">Response: {testResult.response}</p>
-                    <p className="text-sm">Latency: {testResult.latency}ms</p>
-                    {testResult.modelAccess && (
-                      <p className="text-sm">
-                        Models: {testResult.modelAccess.join(', ')}
-                      </p>
+                    {testResult.model && (
+                      <p className="text-sm">Model Access: {testResult.model}</p>
+                    )}
+                    {testResult.provider && (
+                      <p className="text-sm">Provider: {testResult.provider}</p>
                     )}
                   </div>
                 ) : (
-                  <p>✗ {testResult.error}</p>
+                  <p>✗ {testResult.error || 'Test failed'}</p>
                 )}
               </AlertDescription>
             </Alert>
@@ -306,7 +326,35 @@ const ApiKeyList = ({
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => apiKeyManager.testKey(key.provider.toLowerCase(), key.encryptedKey)} className="text-gray-300 hover:bg-gray-800">
+                      <DropdownMenuItem 
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/api-keys/test', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                id: key.id,
+                                provider: key.provider.toLowerCase()
+                              })
+                            })
+                            
+                            if (response.ok) {
+                              const result = await response.json()
+                              if (result.success) {
+                                toast.success(`${key.provider} key test successful!`)
+                              } else {
+                                toast.error(`${key.provider} test failed: ${result.error}`)
+                              }
+                            } else {
+                              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+                              toast.error(`Failed to test key: ${errorData.error}`)
+                            }
+                          } catch (error) {
+                            toast.error('Failed to test key')
+                          }
+                        }} 
+                        className="text-gray-300 hover:bg-gray-800"
+                      >
                         <TestTube className="h-4 w-4 mr-2" />
                         Test Key
                       </DropdownMenuItem>
