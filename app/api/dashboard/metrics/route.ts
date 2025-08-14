@@ -24,8 +24,29 @@ export async function GET(request: NextRequest) {
       include: { organization: true }
     })
 
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // If user doesn't have an organization, create one
+    let organizationId = user.organizationId
+    if (!organizationId) {
+      console.log('Creating default organization for user:', user.email)
+      const newOrg = await prisma.organization.create({
+        data: {
+          name: `${user.name || user.email}'s Organization`,
+          users: {
+            connect: { id: user.id }
+          }
+        }
+      })
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { organizationId: newOrg.id }
+      })
+      
+      organizationId = newOrg.id
     }
 
     // Calculate date range
@@ -52,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Get usage data
     const usageLogs = await prisma.usageLog.findMany({
       where: {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         timestamp: {
           gte: startDate
         }
@@ -62,14 +83,14 @@ export async function GET(request: NextRequest) {
     // Get budget data
     const budgets = await prisma.budget.findMany({
       where: {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         isActive: true
       }
     })
 
     // Get organization data
     const organization = await prisma.organization.findUnique({
-      where: { id: user.organizationId },
+      where: { id: organizationId },
       include: {
         users: true,
         apiKeys: true
@@ -105,7 +126,7 @@ export async function GET(request: NextRequest) {
     // Calculate team metrics
     const activeUsers = await prisma.user.count({
       where: {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         usage: {
           some: {
             timestamp: {
@@ -125,7 +146,7 @@ export async function GET(request: NextRequest) {
 
     const previousUsageLogs = await prisma.usageLog.findMany({
       where: {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         timestamp: {
           gte: previousStartDate,
           lt: startDate

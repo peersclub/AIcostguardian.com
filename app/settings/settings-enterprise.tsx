@@ -415,80 +415,25 @@ export default function EnterpriseSettings() {
         )
         
       case 'api-keys':
+        // Redirect to the centralized API keys page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/settings/api-keys'
+        }
         return (
           <div className="space-y-6">
-            {/* API Keys Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">API Keys</h3>
-                <p className="text-sm text-gray-400">Connect your AI provider accounts</p>
-              </div>
-              <Button
-                onClick={() => setShowAddKeyDialog(true)}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add API Key
-              </Button>
-            </div>
-            
-            {/* API Keys List */}
-            <div className="space-y-3">
-              {apiKeys.map((key) => (
-                <Card key={key.id} className="bg-gray-900/50 border-gray-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {getAIProviderLogo(key.provider)}
-                        <div>
-                          <p className="text-sm font-medium text-white">{key.name || key.provider}</p>
-                          <p className="text-xs text-gray-400">
-                            {key.maskedKey || '••••••••••••' + key.key.slice(-4)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {key.isActive ? (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-                            Inactive
-                          </Badge>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => deleteApiKey(key.id)}
-                          className="text-gray-400 hover:text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {apiKeys.length === 0 && (
-                <Card className="bg-gray-900/50 border-gray-800">
-                  <CardContent className="p-12 text-center">
-                    <Key className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-white mb-2">No API Keys</h3>
-                    <p className="text-gray-400 mb-4">Add your first API key to start using AI features</p>
-                    <Button
-                      onClick={() => setShowAddKeyDialog(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Your First Key
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800">
+              <CardContent className="p-12 text-center">
+                <Key className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">Redirecting to API Keys...</h3>
+                <p className="text-gray-400 mb-4">Taking you to the API keys management page</p>
+                <Button
+                  onClick={() => window.location.href = '/settings/api-keys'}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                >
+                  Go to API Keys
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )
         
