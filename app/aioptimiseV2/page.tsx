@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
-import AIOptimiseV2Client from './client'
+import AIOptimiseV2Client from './client-enhanced'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
