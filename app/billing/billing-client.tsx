@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   CreditCard,
@@ -62,6 +63,8 @@ interface BillingPlan {
 
 export default function BillingClient() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('overview')
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly')
   const [isLoading, setIsLoading] = useState(true)
@@ -72,6 +75,14 @@ export default function BillingClient() {
   const [billingHistory, setBillingHistory] = useState<any[]>([])
   const [currentBilling, setCurrentBilling] = useState<any>(null)
   const [usageBreakdown, setUsageBreakdown] = useState<any[]>([])
+
+  // Handle URL-based tab navigation
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'plans', 'history', 'usage'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (session?.user) {
@@ -254,7 +265,14 @@ export default function BillingClient() {
             )}
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={(value) => {
+                setActiveTab(value)
+                router.push(`/billing?tab=${value}`)
+              }} 
+              className="w-full"
+            >
               <TabsList className="bg-gray-900/50 border border-gray-700 p-1">
                 <TabsTrigger 
                   value="overview" 

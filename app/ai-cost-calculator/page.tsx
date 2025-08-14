@@ -160,9 +160,9 @@ export default function AICostCalculator() {
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto px-6 py-4">
               {/* Main content area with left-right split */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex flex-col lg:flex-row gap-4 mb-6">
               {/* Left Panel - All Selections */}
-              <div className="w-1/2 flex flex-col gap-2">
+              <div className="w-full lg:w-1/2 flex flex-col gap-2">
                 {/* AI Providers - Dark theme Card */}
                 <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800">
                   <CardHeader className="py-2 px-4">
@@ -172,7 +172,7 @@ export default function AICostCalculator() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {AI_PROVIDERS.slice(0, 8).map((provider) => (
                         <button
                           key={provider.id}
@@ -307,7 +307,7 @@ export default function AICostCalculator() {
               </div>
 
               {/* Right Panel - Pricing Details */}
-              <div className="w-1/2">
+              <div className="w-full lg:w-1/2">
                 {/* Main Cost Display */}
                 <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-800 h-full flex flex-col">
                   <CardHeader className="px-6 py-4">

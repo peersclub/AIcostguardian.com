@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Monitor, DollarSign, Zap, AlertTriangle, BarChart3, Settings, Download, Bell, Eye, Users, Shield } from 'lucide-react'
+import { Monitor, DollarSign, Zap, AlertTriangle, BarChart3, Settings, Download, Bell, Eye, Users, Shield, RefreshCw, TrendingUp, Activity } from 'lucide-react'
 // import { ProviderCard } from '@/components/shared/ProviderCard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -285,7 +285,7 @@ export default function MonitoringDashboard() {
         <EmptyStateDisplay
           title="Authentication Required"
           message="Please sign in to access the monitoring dashboard"
-          icon={Shield}
+          icon="🔒"
           actionText="Sign In"
           onAction={() => window.location.href = '/auth/signin'}
         />
@@ -487,7 +487,7 @@ export default function MonitoringDashboard() {
                   <EmptyStateDisplay
                     title="No Usage Data"
                     message="No usage data available for the selected period"
-                    icon={BarChart3}
+                    icon="📊"
                     actionText="Refresh Data"
                     onAction={fetchUsageData}
                   />
@@ -783,7 +783,7 @@ export default function MonitoringDashboard() {
                 <EmptyStateDisplay
                   title="No Alerts Configured"
                   message="Create alerts to monitor your AI spending and get notified when costs exceed thresholds."
-                  icon={Bell}
+                  icon="🔔"
                   actionText="Create Alert"
                   onAction={() => {/* Focus on alert creation form */}}
                 />

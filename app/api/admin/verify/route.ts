@@ -21,6 +21,28 @@ export async function GET() {
     }
 
     // Check if user is admin
+    // Special case for victor@aicostguardian.ai - always admin
+    const SUPER_ADMIN_EMAILS = ['victor@aicostguardian.ai', 'victor@aicostguardian.com']
+    
+    if (SUPER_ADMIN_EMAILS.includes(session.user.email)) {
+      // Create or update user as admin if needed
+      const user = await prisma.user.upsert({
+        where: { email: session.user.email },
+        update: { role: 'ADMIN' },
+        create: {
+          email: session.user.email,
+          name: session.user.name || 'Victor',
+          role: 'ADMIN'
+        }
+      })
+      
+      return NextResponse.json({ 
+        isAdmin: true,
+        userId: user.id,
+        email: user.email
+      })
+    }
+    
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
