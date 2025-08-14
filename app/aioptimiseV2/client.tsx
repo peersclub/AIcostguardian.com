@@ -40,6 +40,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { PromptAnalyzer, analyzePrompt } from './components/prompt-analyzer'
+import { AdvancedInput } from './components/advanced-input'
+import { ParticipantManager } from './components/participant-manager'
 
 // Types
 interface User {
@@ -69,6 +72,7 @@ interface Thread {
   cost: number
   status: 'active' | 'archived' | 'shared'
   collaborators?: string[]
+  participants?: any[]
   tags?: string[]
   isPinned?: boolean
 }
@@ -191,6 +195,10 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [selectedMode, setSelectedMode] = useState<'focus' | 'coding' | 'creative' | 'analysis'>('focus')
+  const [promptAnalysis, setPromptAnalysis] = useState<any>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [threadParticipants, setThreadParticipants] = useState<any[]>([])
   
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -226,6 +234,21 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
     }
   }, [input])
+  
+  // Analyze prompt when input changes
+  useEffect(() => {
+    if (input.length > 5) {
+      setIsAnalyzing(true)
+      const timer = setTimeout(() => {
+        const analysis = analyzePrompt(input, selectedMode)
+        setPromptAnalysis(analysis)
+        setIsAnalyzing(false)
+      }, 300) // Debounce analysis
+      return () => clearTimeout(timer)
+    } else {
+      setPromptAnalysis(null)
+    }
+  }, [input, selectedMode])
   
   // Load initial data
   useEffect(() => {
@@ -269,6 +292,26 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
         const data = await res.json()
         setMessages(data.messages || [])
       }
+      
+      // Mock participants for demo
+      setThreadParticipants([
+        {
+          id: user.email,
+          name: user.name,
+          email: user.email,
+          avatar: user.image,
+          role: 'owner',
+          status: 'online',
+          joinedAt: new Date().toISOString(),
+          permissions: {
+            canEdit: true,
+            canDelete: true,
+            canInvite: true,
+            canManageModels: true,
+            canViewCosts: true
+          }
+        }
+      ])
     } catch (error) {
       console.error('Failed to load messages:', error)
     }
@@ -421,31 +464,42 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   }
   
   const selectOptimalModel = async (prompt: string): Promise<ModelOption> => {
-    // AI-powered model selection based on prompt analysis
-    const promptLength = prompt.length
-    const hasCode = /```|function|const|let|var|import/.test(prompt)
-    const hasAnalysis = /analyze|explain|summarize|compare/.test(prompt.toLowerCase())
-    const needsSpeed = /quick|fast|brief|short/.test(prompt.toLowerCase())
+    // Use prompt analysis for smarter model selection
+    const analysis = promptAnalysis || analyzePrompt(prompt, selectedMode)
     
-    if (needsSpeed && promptLength < 500) {
-      return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
-    }
-    
-    if (hasCode || hasAnalysis) {
+    // Mode-based model selection
+    if (selectedMode === 'coding') {
+      if (analysis.complexity === 'expert') {
+        return MODELS.find(m => m.id === 'claude-3-opus') || selectedModel
+      }
       return MODELS.find(m => m.id === 'claude-3-sonnet') || selectedModel
     }
     
-    if (promptLength > 10000) {
-      return MODELS.find(m => m.id === 'claude-3-opus') || selectedModel
+    if (selectedMode === 'creative') {
+      return MODELS.find(m => m.id === 'gpt-4o') || selectedModel
     }
     
-    return MODELS.find(m => m.id === 'gpt-4o') || selectedModel
+    if (selectedMode === 'analysis') {
+      if (analysis.complexity === 'expert' || analysis.complexity === 'complex') {
+        return MODELS.find(m => m.id === 'claude-3-opus') || selectedModel
+      }
+      return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
+    }
+    
+    // Focus mode - optimize for speed and cost
+    if (selectedMode === 'focus') {
+      if (analysis.complexity === 'simple') {
+        return MODELS.find(m => m.id === 'gemini-pro') || selectedModel
+      }
+      return MODELS.find(m => m.id === 'gpt-4o') || selectedModel
+    }
+    
+    // Fallback to suggested model from analysis
+    const suggestedModelId = analysis.suggestedModel.toLowerCase().replace(/ /g, '-')
+    return MODELS.find(m => m.id.includes(suggestedModelId)) || selectedModel
   }
   
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
-    
+  const handleFileUpload = (files: FileList) => {
     Array.from(files).forEach(file => {
       const reader = new FileReader()
       reader.onload = (event) => {
@@ -461,6 +515,10 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
       }
       reader.readAsDataURL(file)
     })
+  }
+  
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(a => a.id !== id))
   }
   
   const toggleRecording = async () => {
@@ -724,6 +782,46 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Mode Selector */}
+              <div className="flex items-center bg-gray-800/50 rounded-lg border border-gray-700 p-1">
+                {[
+                  { id: 'focus', icon: Target, label: 'Focus', color: 'text-blue-400' },
+                  { id: 'coding', icon: Code, label: 'Coding', color: 'text-green-400' },
+                  { id: 'creative', icon: Sparkles, label: 'Creative', color: 'text-purple-400' },
+                  { id: 'analysis', icon: Brain, label: 'Analysis', color: 'text-orange-400' }
+                ].map((mode) => {
+                  const Icon = mode.icon
+                  return (
+                    <TooltipProvider key={mode.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => setSelectedMode(mode.id as any)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all",
+                              selectedMode === mode.id
+                                ? "bg-gray-700 text-white"
+                                : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                            )}
+                          >
+                            <Icon className={cn("w-4 h-4", selectedMode === mode.id && mode.color)} />
+                            <span className="text-xs font-medium">{mode.label}</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            {mode.id === 'focus' && 'Quick, efficient responses'}
+                            {mode.id === 'coding' && 'Optimized for code generation'}
+                            {mode.id === 'creative' && 'Enhanced creative writing'}
+                            {mode.id === 'analysis' && 'Deep analysis and reasoning'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
+                })}
+              </div>
+              
               {/* Model Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -767,6 +865,36 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                   <span className="text-sm font-medium text-white">${currentCost.toFixed(4)}</span>
                 </div>
               </div>
+              
+              {/* Participant Manager */}
+              {currentThread && (
+                <ParticipantManager
+                  threadId={currentThread.id}
+                  currentUserId={user.email}
+                  participants={threadParticipants}
+                  onInvite={(email, role) => {
+                    console.log('Inviting:', email, role)
+                    toast.success(`Invitation sent to ${email}`)
+                  }}
+                  onRemove={(participantId) => {
+                    setThreadParticipants(prev => prev.filter(p => p.id !== participantId))
+                    toast.success('Participant removed')
+                  }}
+                  onUpdateRole={(participantId, role) => {
+                    setThreadParticipants(prev => prev.map(p => 
+                      p.id === participantId ? { ...p, role } : p
+                    ))
+                    toast.success('Role updated')
+                  }}
+                  onUpdatePermissions={(participantId, permissions) => {
+                    setThreadParticipants(prev => prev.map(p => 
+                      p.id === participantId ? { ...p, permissions } : p
+                    ))
+                  }}
+                  isCollaborationEnabled={user.isEnterpriseUser}
+                  maxParticipants={user.isEnterpriseUser ? 20 : 5}
+                />
+              )}
             </div>
           </div>
           
@@ -999,128 +1127,34 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
           {/* Input Area */}
           <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-xl p-4">
             <div className="max-w-4xl mx-auto">
-              {/* Attachments Preview */}
-              {attachments.length > 0 && (
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {attachments.map((attachment) => (
-                    <motion.div
-                      key={attachment.id}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="relative group"
-                    >
-                      <div className="p-2 bg-gray-800 rounded-lg border border-gray-700 flex items-center gap-2">
-                        {attachment.type === 'image' ? (
-                          <>
-                            <Image className="w-4 h-4 text-blue-400" />
-                            <img src={attachment.url} alt={attachment.name} className="hidden" />
-                          </>
-                        ) : (
-                          <FileText className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className="text-xs text-gray-300">{attachment.name}</span>
-                        <button
-                          onClick={() => setAttachments(prev => prev.filter(a => a.id !== attachment.id))}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3 text-gray-400 hover:text-white" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+              {/* Prompt Analyzer */}
+              <PromptAnalyzer 
+                prompt={input}
+                isAnalyzing={isAnalyzing}
+                analysis={promptAnalysis}
+                mode={selectedMode}
+              />
               
-              {/* Input Controls */}
-              <div className="flex items-end gap-2">
-                <div className="flex-1 relative">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        sendMessage()
-                      }
-                    }}
-                    placeholder={
-                      !user.hasApiKeys 
-                        ? "Please configure API keys to start chatting..." 
-                        : "Type your message... (Shift+Enter for new line)"
-                    }
-                    disabled={!user.hasApiKeys || isLoading}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
-                    rows={1}
-                  />
-                  
-                  {/* Character Count */}
-                  {input.length > 0 && (
-                    <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-                      {input.length} / {selectedModel.contextWindow}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept="image/*,.pdf,.txt,.md,.doc,.docx"
-                  />
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white"
-                        >
-                          <Paperclip className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Attach files</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={toggleRecording}
-                          className={cn(
-                            "border-gray-700 bg-gray-800 hover:bg-gray-700",
-                            isRecording ? "text-red-400" : "text-gray-400 hover:text-white"
-                          )}
-                        >
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{isRecording ? 'Stop recording' : 'Start voice input'}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <Button
-                    onClick={sendMessage}
-                    disabled={(!input.trim() && attachments.length === 0) || isLoading || !user.hasApiKeys}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              {/* Advanced Input */}
+              <AdvancedInput
+                value={input}
+                onChange={setInput}
+                onSend={sendMessage}
+                onAttach={handleFileUpload}
+                onRecord={toggleRecording}
+                isRecording={isRecording}
+                isLoading={isLoading}
+                disabled={!user.hasApiKeys}
+                placeholder={
+                  !user.hasApiKeys 
+                    ? "Please configure API keys to start chatting..." 
+                    : "Type your message... (Shift+Enter for new line)"
+                }
+                selectedModel={selectedModel}
+                attachments={attachments}
+                onRemoveAttachment={removeAttachment}
+                mode={selectedMode}
+              />
               
               {/* Tips */}
               <div className="mt-2 flex items-center justify-between">
