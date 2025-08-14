@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 import { toast } from 'sonner'
@@ -601,6 +601,17 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
       { id: '3', title: 'Generating response', content: 'Crafting a comprehensive answer', status: 'active' }
     ]
     
+    const assistantMessage: Message = {
+      id: `msg-${Date.now()}-assistant`,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toISOString(),
+      model: modelToUse.name,
+      provider: modelToUse.provider,
+      status: 'streaming',
+      thinkingSteps
+    }
+    
     try {
       const res = await fetch('/api/aioptimise/chat', {
         method: 'POST',
@@ -617,17 +628,6 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
       })
       
       if (!res.ok) throw new Error('Failed to send message')
-      
-      const assistantMessage: Message = {
-        id: `msg-${Date.now()}-assistant`,
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-        model: modelToUse.name,
-        provider: modelToUse.provider,
-        status: 'streaming',
-        thinkingSteps
-      }
       
       setMessages(prev => [...prev, assistantMessage])
       
@@ -865,7 +865,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                       <WifiOff className="w-4 h-4 text-red-400" />
                     )}
                     <Button
-                      onClick={createThread}
+                      onClick={() => createThread()}
                       size="sm"
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
@@ -1819,7 +1819,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                     size="sm"
                     variant="ghost"
                     className="w-full justify-start h-8 text-xs"
-                    onClick={createThread}
+                    onClick={() => createThread()}
                   >
                     <Plus className="w-3 h-3 mr-2" />
                     New Conversation
