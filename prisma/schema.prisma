@@ -41,6 +41,10 @@ model User {
   notifications         Notification[]
   notificationPreferences NotificationPreferences?
   conversations         Conversation[]
+  threads               Thread[]
+  messages              Message[]
+  threadParticipants    ThreadParticipant[]
+  attachments           Attachment[]
   aiThreads             AIThread[]
   promptPreferences     PromptPreference[]
   modelOverrides        ModelOverride[]
@@ -110,6 +114,7 @@ model Organization {
   permissions       Permission[]
   alertRules        AlertRule[]
   activeAlerts      ActiveAlert[]
+  threads           Thread[]
 }
 
 model ApiKey {
@@ -1351,4 +1356,99 @@ model ActiveAlert {
   @@index([organizationId])
   @@index([ruleId])
   @@index([resolved, acknowledged])
+}
+
+// AIOptimise Thread and Message Models
+model Thread {
+  id             String   @id @default(cuid())
+  title          String
+  userId         String
+  organizationId String?
+  mode           String   @default("focus") // focus, coding, creative, analysis
+  status         String   @default("active") // active, archived, shared
+  isPinned       Boolean  @default(false)
+  metadata       Json?    // Store additional settings, participants, etc.
+  
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  messages       Message[]
+  participants   ThreadParticipant[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastMessageAt  DateTime?
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  threadId       String
+  userId         String?  // null for AI messages
+  role           String   // user, assistant, system
+  content        String   @db.Text
+  model          String?  // AI model used
+  provider       String?  // AI provider
+  
+  // Token and cost tracking
+  promptTokens   Int?
+  completionTokens Int?
+  totalTokens    Int?
+  cost           Float?
+  latency        Int?     // Response time in ms
+  
+  // Attachments and metadata
+  attachments    Json?    // Array of attachment objects
+  metadata       Json?    // Temperature, maxTokens, etc.
+  feedback       String?  // positive, negative, null
+  error          String?
+  status         String   @default("complete") // sending, processing, streaming, complete, error
+  
+  thread         Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user           User?    @relation(fields: [userId], references: [id])
+  
+  createdAt      DateTime @default(now())
+  editedAt       DateTime?
+  
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ThreadParticipant {
+  id             String   @id @default(cuid())
+  threadId       String
+  userId         String
+  role           String   @default("viewer") // owner, admin, editor, viewer
+  joinedAt       DateTime @default(now())
+  lastSeenAt     DateTime?
+  isTyping       Boolean  @default(false)
+  
+  thread         Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model Attachment {
+  id             String   @id @default(cuid())
+  messageId      String?
+  userId         String
+  filename       String
+  mimeType       String
+  size           Int
+  url            String
+  storageKey     String?  // S3 key or local path
+  
+  user           User     @relation(fields: [userId], references: [id])
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([messageId])
+  @@index([userId])
 }
