@@ -80,7 +80,12 @@ export default withAuth(
     }
     
     // Apply CSRF protection to API routes (except auth and csrf endpoints)
+    // TEMPORARILY DISABLED: CSRF validation is causing site-wide issues
+    // TODO: Re-enable after fixing client-side CSRF token handling
+    const CSRF_ENABLED = false // Toggle this to enable/disable CSRF protection
+    
     if (
+      CSRF_ENABLED &&
       pathname.startsWith('/api') &&
       !pathname.startsWith('/api/auth') &&
       !pathname.startsWith('/api/csrf') &&
