@@ -7,7 +7,9 @@ import { ModelSelector } from '@/lib/prompt-analyzer/model-selector';
 import { OptimizationMode, MessageRole } from '@prisma/client';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import { safeDecrypt } from '@/lib/crypto-helper';
+import { apiKeyService, type Provider } from '@/lib/core/api-key.service';
+import { userService } from '@/lib/core/user.service';
+import { usageService } from '@/lib/core/usage.service';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -16,9 +18,16 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Ensure user exists with organization
+    const user = await userService.ensureUser({
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image
+    });
 
     const body = await request.json();
     const { 
@@ -31,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Get user preferences
     const preferences = await prisma.promptPreference.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
     });
 
     // Analyze prompt and select model
@@ -200,17 +209,15 @@ async function processAIResponse(
     
     const dbProvider = providerMapping[model.provider.toLowerCase()] || model.provider.toLowerCase();
     
-    // Get API keys
+    // Get API key using unified service
     console.log('Looking for API key:', { userId, provider: dbProvider, modelProvider: model.provider });
-    const apiKeys = await prisma.apiKey.findMany({
-      where: {
-        userId,
-        provider: dbProvider,
-        isActive: true,
-      },
-    });
-
-    if (!apiKeys.length) {
+    const apiKey = await apiKeyService.getApiKey(
+      userId,
+      dbProvider as Provider,
+      undefined // Will use user's organization if available
+    );
+    
+    if (!apiKey) {
       console.error('No API key found for provider:', dbProvider);
       await writer.write(encoder.encode(`data: ${JSON.stringify({ 
         type: 'error', 
@@ -219,20 +226,8 @@ async function processAIResponse(
       await writer.close();
       return;
     }
-
-    // Decrypt API key
-    const apiKey = safeDecrypt(apiKeys[0].encryptedKey);
-    console.log('Using API key for provider:', dbProvider, 'key starts with:', apiKey?.substring(0, 10));
     
-    if (!apiKey) {
-      console.error('Failed to decrypt API key for provider:', dbProvider);
-      await writer.write(encoder.encode(`data: ${JSON.stringify({ 
-        type: 'error', 
-        error: `Failed to decrypt API key for ${model.provider}. Please re-add your API key in settings.` 
-      })}\n\n`));
-      await writer.close();
-      return;
-    }
+    console.log('Using API key for provider:', dbProvider, 'key starts with:', apiKey.substring(0, 10));
 
     // Stream response based on provider
     // Use the normalized dbProvider for comparison

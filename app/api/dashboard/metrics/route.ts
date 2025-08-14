@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       const newOrg = await prisma.organization.create({
         data: {
           name: `${user.name || user.email}'s Organization`,
+          domain: user.email.split('@')[1] || 'example.com',
           users: {
             connect: { id: user.id }
           }

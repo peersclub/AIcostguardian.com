@@ -1,0 +1,465 @@
+/**
+ * Unified API Key Service
+ * Central service for all API key operations across the application
+ * Used by: AIOptimise, AIOptimiseV2, Settings, Onboarding, Organization settings
+ */
+
+import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production'
+const ALGORITHM = 'aes-256-gcm'
+
+export type Provider = 'openai' | 'claude' | 'gemini' | 'grok' | 'perplexity' | 'cohere' | 'mistral'
+
+export interface ApiKey {
+  id: string
+  provider: Provider
+  encryptedKey: string
+  lastUsed: Date | null
+  lastTested: Date | null
+  isActive: boolean
+  createdAt: Date
+  userId: string
+  organizationId: string
+}
+
+export interface ApiKeyInput {
+  provider: Provider
+  key: string
+  userId: string
+  organizationId: string
+}
+
+export interface ApiKeyValidation {
+  isValid: boolean
+  error?: string
+  model?: string
+}
+
+class ApiKeyService {
+  private static instance: ApiKeyService
+  private cache: Map<string, { key: string; timestamp: number }> = new Map()
+  private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+  private constructor() {}
+
+  static getInstance(): ApiKeyService {
+    if (!ApiKeyService.instance) {
+      ApiKeyService.instance = new ApiKeyService()
+    }
+    return ApiKeyService.instance
+  }
+
+  /**
+   * Encrypt an API key for storage
+   */
+  private encrypt(text: string): string {
+    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+    const iv = crypto.randomBytes(16)
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+    
+    let encrypted = cipher.update(text, 'utf8', 'hex')
+    encrypted += cipher.final('hex')
+    
+    const authTag = cipher.getAuthTag()
+    
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted
+  }
+
+  /**
+   * Decrypt an API key for use
+   */
+  private decrypt(encryptedData: string): string {
+    try {
+      const parts = encryptedData.split(':')
+      if (parts.length !== 3) {
+        throw new Error('Invalid encrypted data format')
+      }
+
+      const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+      const iv = Buffer.from(parts[0], 'hex')
+      const authTag = Buffer.from(parts[1], 'hex')
+      const encrypted = parts[2]
+      
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+      decipher.setAuthTag(authTag)
+      
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+      decrypted += decipher.final('utf8')
+      
+      return decrypted
+    } catch (error) {
+      console.error('Decryption error:', error)
+      throw new Error('Failed to decrypt API key')
+    }
+  }
+
+  /**
+   * Get all API keys for a user/organization
+   */
+  async getApiKeys(userId: string, organizationId?: string): Promise<ApiKey[]> {
+    const where = organizationId 
+      ? { organizationId, userId }
+      : { userId }
+
+    const keys = await prisma.apiKey.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    })
+
+    return keys.map(key => ({
+      ...key,
+      provider: key.provider as Provider
+    }))
+  }
+
+  /**
+   * Get a specific API key
+   */
+  async getApiKey(userId: string, provider: Provider, organizationId?: string): Promise<string | null> {
+    // Check cache first
+    const cacheKey = `${userId}-${provider}-${organizationId || 'personal'}`
+    const cached = this.cache.get(cacheKey)
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.key
+    }
+
+    const where = organizationId
+      ? { userId, provider, organizationId, isActive: true }
+      : { userId, provider, isActive: true }
+
+    const apiKey = await prisma.apiKey.findFirst({
+      where,
+      orderBy: { createdAt: 'desc' }
+    })
+
+    if (!apiKey) {
+      return null
+    }
+
+    const decryptedKey = this.decrypt(apiKey.encryptedKey)
+    
+    // Update cache
+    this.cache.set(cacheKey, {
+      key: decryptedKey,
+      timestamp: Date.now()
+    })
+
+    // Update last used timestamp asynchronously
+    prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsed: new Date() }
+    }).catch(console.error)
+
+    return decryptedKey
+  }
+
+  /**
+   * Save or update an API key
+   */
+  async saveApiKey(input: ApiKeyInput): Promise<ApiKey> {
+    const encryptedKey = this.encrypt(input.key)
+
+    // Validate the key first
+    const validation = await this.validateApiKey(input.provider, input.key)
+    if (!validation.isValid) {
+      throw new Error(validation.error || 'Invalid API key')
+    }
+
+    // Check if key already exists
+    const existing = await prisma.apiKey.findFirst({
+      where: {
+        userId: input.userId,
+        provider: input.provider,
+        organizationId: input.organizationId
+      }
+    })
+
+    let apiKey: any
+
+    if (existing) {
+      // Update existing key
+      apiKey = await prisma.apiKey.update({
+        where: { id: existing.id },
+        data: {
+          encryptedKey,
+          isActive: true,
+          lastTested: new Date()
+        }
+      })
+    } else {
+      // Create new key
+      apiKey = await prisma.apiKey.create({
+        data: {
+          provider: input.provider,
+          encryptedKey,
+          userId: input.userId,
+          organizationId: input.organizationId,
+          isActive: true,
+          lastTested: new Date()
+        }
+      })
+    }
+
+    // Clear cache
+    const cacheKey = `${input.userId}-${input.provider}-${input.organizationId || 'personal'}`
+    this.cache.delete(cacheKey)
+
+    return {
+      ...apiKey,
+      provider: apiKey.provider as Provider
+    }
+  }
+
+  /**
+   * Delete an API key
+   */
+  async deleteApiKey(userId: string, provider: Provider, organizationId?: string): Promise<boolean> {
+    const where = organizationId
+      ? { userId, provider, organizationId }
+      : { userId, provider }
+
+    const apiKey = await prisma.apiKey.findFirst({ where })
+    
+    if (!apiKey) {
+      return false
+    }
+
+    await prisma.apiKey.delete({
+      where: { id: apiKey.id }
+    })
+
+    // Clear cache
+    const cacheKey = `${userId}-${provider}-${organizationId || 'personal'}`
+    this.cache.delete(cacheKey)
+
+    return true
+  }
+
+  /**
+   * Validate an API key by testing it with the provider
+   */
+  async validateApiKey(provider: Provider, key: string): Promise<ApiKeyValidation> {
+    try {
+      switch (provider) {
+        case 'openai':
+          return await this.validateOpenAIKey(key)
+        case 'claude':
+          return await this.validateClaudeKey(key)
+        case 'gemini':
+          return await this.validateGeminiKey(key)
+        case 'grok':
+          return await this.validateGrokKey(key)
+        case 'perplexity':
+          return await this.validatePerplexityKey(key)
+        case 'cohere':
+          return await this.validateCohereKey(key)
+        case 'mistral':
+          return await this.validateMistralKey(key)
+        default:
+          return { isValid: false, error: 'Unsupported provider' }
+      }
+    } catch (error) {
+      console.error(`API key validation error for ${provider}:`, error)
+      return { 
+        isValid: false, 
+        error: error instanceof Error ? error.message : 'Validation failed' 
+      }
+    }
+  }
+
+  private async validateOpenAIKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const hasGPT4 = data.data?.some((m: any) => m.id.includes('gpt-4'))
+        return { 
+          isValid: true, 
+          model: hasGPT4 ? 'gpt-4' : 'gpt-3.5-turbo' 
+        }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to OpenAI' }
+    }
+  }
+
+  private async validateClaudeKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_tokens: 1
+        })
+      })
+
+      if (response.ok || response.status === 400) {
+        return { isValid: true, model: 'claude-3-opus' }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to Anthropic' }
+    }
+  }
+
+  private async validateGeminiKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models?key=${key}`
+      )
+
+      if (response.ok) {
+        return { isValid: true, model: 'gemini-pro' }
+      }
+
+      if (response.status === 403 || response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to Google AI' }
+    }
+  }
+
+  private async validateGrokKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'grok-beta',
+          messages: [{ role: 'user', content: 'test' }],
+          max_tokens: 1
+        })
+      })
+
+      if (response.ok || response.status === 400) {
+        return { isValid: true, model: 'grok-beta' }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to xAI' }
+    }
+  }
+
+  private async validatePerplexityKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-sonar-small-128k-online',
+          messages: [{ role: 'user', content: 'test' }],
+          max_tokens: 1
+        })
+      })
+
+      if (response.ok || response.status === 400) {
+        return { isValid: true, model: 'llama-3.1-sonar' }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to Perplexity' }
+    }
+  }
+
+  private async validateCohereKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.cohere.ai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      })
+
+      if (response.ok) {
+        return { isValid: true, model: 'command' }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to Cohere' }
+    }
+  }
+
+  private async validateMistralKey(key: string): Promise<ApiKeyValidation> {
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      })
+
+      if (response.ok) {
+        return { isValid: true, model: 'mistral-large' }
+      }
+
+      if (response.status === 401) {
+        return { isValid: false, error: 'Invalid API key' }
+      }
+
+      return { isValid: false, error: `API error: ${response.status}` }
+    } catch (error) {
+      return { isValid: false, error: 'Failed to connect to Mistral' }
+    }
+  }
+
+  /**
+   * Clear the cache (useful for testing or forced refresh)
+   */
+  clearCache(): void {
+    this.cache.clear()
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; keys: string[] } {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys())
+    }
+  }
+}
+
+// Export singleton instance
+export const apiKeyService = ApiKeyService.getInstance()

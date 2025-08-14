@@ -59,6 +59,7 @@ model User {
   auditLogs             AuditLog[]
   roles                 Role[]       @relation("UserRoles")
   alertRules            AlertRule[]
+  preferences           UserPreferences?
 }
 
 model Organization {
@@ -97,6 +98,17 @@ model Organization {
   billingEmail     String?
   billingCycle     String   @default("monthly") // monthly, yearly
   nextBillingDate  DateTime?
+  invoiceFrequency String?  @default("monthly") // Added for settings API
+  paymentMethod    String?  @default("card") // Added for settings API
+  spendingLimit    Float?   // Already exists
+  alertThreshold   Float?   @default(80) // Added for settings API
+  
+  // Team Settings
+  allowInvites     Boolean  @default(true) // Added for settings API
+  defaultRole      String   @default("viewer") // Added for settings API
+  requireApproval  Boolean  @default(true) // Added for settings API
+  maxMembers       Int?     @default(10) // Added for settings API
+  apiRateLimit     Int?     @default(1000) // Added for settings API
   
   users             User[]
   apiKeys           ApiKey[]
@@ -115,6 +127,51 @@ model Organization {
   alertRules        AlertRule[]
   activeAlerts      ActiveAlert[]
   threads           Thread[]
+}
+
+model UserPreferences {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  
+  // General Settings
+  theme                   String    @default("dark")
+  language                String    @default("en")
+  timezone                String    @default("UTC")
+  dateFormat              String?   @default("MM/DD/YYYY")
+  currency                String?   @default("USD")
+  
+  // Notification Settings
+  emailNotifications      Boolean   @default(true)
+  pushNotifications       Boolean   @default(false)
+  smsNotifications        Boolean   @default(false)
+  notificationFrequency   String?   @default("realtime")
+  digestTime              String?   @default("09:00")
+  
+  // Security Settings
+  twoFactorEnabled        Boolean   @default(false)
+  sessionTimeout          Int?      @default(30)
+  ipWhitelist             String[]  @default([])
+  
+  // AI Settings
+  defaultModel            String    @default("gpt-4o-mini")
+  autoOptimize            Boolean   @default(true)
+  streamResponses         Boolean   @default(true)
+  saveHistory             Boolean   @default(true)
+  contextWindow           Int?      @default(8000)
+  temperature             Float?    @default(0.7)
+  maxTokens               Int?      @default(4000)
+  
+  // Advanced Settings
+  debugMode               Boolean   @default(false)
+  telemetry               Boolean   @default(true)
+  betaFeatures            Boolean   @default(false)
+  customEndpoint          String?
+  webhookUrl              String?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ApiKey {
