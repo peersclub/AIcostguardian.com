@@ -49,7 +49,7 @@ export default function TeamManagement() {
   const fetchTeamMembers = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/team/members')
+      const response = await fetch('/api/organization/members')
       if (response.ok) {
         const members = await response.json()
         setTeamMembers(members.map((member: any) => ({
@@ -73,7 +73,7 @@ export default function TeamManagement() {
 
     setIsInviting(true)
     try {
-      const response = await fetch('/api/team/members', {
+      const response = await fetch('/api/organization/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inviteData)
@@ -100,7 +100,7 @@ export default function TeamManagement() {
     if (!confirm('Are you sure you want to remove this team member?')) return
     
     try {
-      const response = await fetch(`/api/team/members?id=${memberId}`, {
+      const response = await fetch(`/api/organization/members/${memberId}`, {
         method: 'DELETE'
       })
 
@@ -118,7 +118,7 @@ export default function TeamManagement() {
 
   const handleRoleChange = async (memberId: string, newRole: 'admin' | 'manager' | 'member') => {
     try {
-      const response = await fetch('/api/team/members', {
+      const response = await fetch('/api/organization/members', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId, updates: { role: newRole } })

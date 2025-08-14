@@ -283,7 +283,7 @@
 
 ### Management Routes
 ```typescript
-/api/team/members        # Team member management
+/api/organization/members # Team member management
 /api/team/stats         # Team statistics
 /api/settings/api-keys  # API key management
 /api/subscription/status # Subscription info

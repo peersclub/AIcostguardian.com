@@ -138,7 +138,7 @@
 | Analytics - Trends | `/analytics/trends` | ✅ | 🎨 | Mock | Historical data |
 | Analytics - Usage | `/analytics/usage` | ✅ | 🎨 | Mock | Detailed usage |
 | Team | `/team` | ✅ | 🎨 | Mock | Team management |
-| Team Members | `/team/members` | ✅ | 🎨 | Mock | Member list |
+| Team Members | `/organization/members` | ✅ | ✅ | Functional | Member list |
 | Settings | `/settings` | ✅ | 🔧 | Local Storage | API keys |
 | Billing | `/billing` | ✅ | 🎨 | Mock | Subscription |
 | Integrations | `/integrations` | ✅ | 🎨 | Mock | Third-party |
@@ -174,7 +174,7 @@
 | `/api/settings/api-keys` | GET/POST | ✅ | 🔧 | Yes | Local storage |
 | `/api/settings/*-key` | GET/POST/DELETE | ✅ | 🔧 | Yes | Per-provider keys |
 | **Team** ||||||
-| `/api/team/members` | GET/POST | ✅ | 🎨 | Yes | Mock data |
+| `/api/organization/members` | GET/POST/PUT/DELETE | ✅ | ✅ | Yes | Functional |
 | `/api/team/stats` | GET | ✅ | 🎨 | Yes | Mock statistics |
 | **Subscription** ||||||
 | `/api/subscription/status` | GET | ✅ | 🎨 | Yes | Mock status |

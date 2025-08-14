@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
 import { 
   Send, 
   Bot, 
@@ -40,9 +41,9 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ModelSelector } from './components/model-selector';
-import { ThreadSidebar } from './components/thread-sidebar';
+import { ThreadSidebarEnhanced } from './components/thread-sidebar-enhanced';
 import { MetricsPanel } from './components/metrics-panel';
-import { MessageComponent } from './components/message';
+import { MessageEnhanced } from './components/message-enhanced';
 import { PromptAnalysis } from './components/prompt-analysis';
 
 interface Thread {
@@ -53,6 +54,12 @@ interface Thread {
   totalCost: number;
   isPinned: boolean;
   isArchived: boolean;
+  tags: string[];
+  isShared: boolean;
+  collaborators: any[];
+  mode?: 'standard' | 'coding' | 'research' | 'focus' | 'creative';
+  isLive?: boolean;
+  hasError?: boolean;
 }
 
 interface Message {
@@ -92,6 +99,7 @@ export default function AIOptimiseClient() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
     messageCount: 0,
     totalCost: 0,
@@ -113,8 +121,14 @@ export default function AIOptimiseClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load threads on mount
+  // Load threads and CSRF token on mount
   useEffect(() => {
+    // Fetch CSRF token
+    fetch('/api/csrf')
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.token))
+      .catch(err => console.error('Failed to fetch CSRF token:', err));
+    
     loadThreads();
   }, []);
 
@@ -137,9 +151,14 @@ export default function AIOptimiseClient() {
 
   const createNewThread = async () => {
     try {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken;
+      }
+      
       const response = await fetch('/api/aioptimise/threads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ title: 'New Chat' }),
       });
       
@@ -148,6 +167,8 @@ export default function AIOptimiseClient() {
         setThreads([thread, ...threads]);
         setCurrentThread(thread);
         setMessages([]);
+      } else {
+        console.error('Failed to create thread:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Failed to create thread:', error);
@@ -189,9 +210,14 @@ export default function AIOptimiseClient() {
     setCurrentAnalysis(null); // Reset analysis
     
     try {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken;
+      }
+      
       const response = await fetch('/api/aioptimise/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           threadId: currentThread.id,
           message: messageText, // Use stored message text
@@ -298,13 +324,17 @@ export default function AIOptimiseClient() {
   return (
     <div className="flex h-screen bg-background">
       {/* Thread Sidebar */}
-      <ThreadSidebar
+      <ThreadSidebarEnhanced
         threads={threads}
         currentThread={currentThread}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onNewThread={createNewThread}
         onSelectThread={loadThread}
+        onPinThread={(id) => console.log('Pin thread:', id)}
+        onArchiveThread={(id) => console.log('Archive thread:', id)}
+        onDeleteThread={(id) => console.log('Delete thread:', id)}
+        onShareThread={(id) => console.log('Share thread:', id)}
       />
       
       {/* Main Chat Area */}
@@ -383,11 +413,20 @@ export default function AIOptimiseClient() {
             ) : (
               <div className="space-y-6">
               {messages.map((message, index) => (
-                <MessageComponent
+                <MessageEnhanced
                   key={message.id}
                   message={message}
                   onRegenerate={() => regenerateMessage(message.id)}
                   onFeedback={(feedback) => handleFeedback(message.id, feedback)}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  onCopy={() => {
+                    navigator.clipboard.writeText(message.content)
+                    toast({
+                      title: 'Copied to clipboard',
+                      description: 'Message content copied successfully'
+                    })
+                  }}
                 />
               ))}
                 {isStreaming && (

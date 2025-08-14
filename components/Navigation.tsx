@@ -33,7 +33,9 @@ import {
   BookOpen,
   AlertTriangle,
   Sparkles,
-  Key
+  Key,
+  Activity,
+  Bell
 } from 'lucide-react'
 import { EnhancedNotificationBell } from '@/components/notifications/EnhancedNotificationBell'
 
@@ -102,10 +104,10 @@ export default function Navigation() {
       visibility: 'auth',
       children: [
         { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, visibility: 'auth' },
+        { label: 'Usage & Analytics', href: '/usage', icon: BarChart3, visibility: 'auth' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'auth' },
-        { label: 'Usage Reports', href: '/analytics/usage', icon: FileText, visibility: 'auth' },
-        { label: 'Cost Trends', href: '/analytics/trends', icon: TrendingUp, visibility: 'auth' },
-        { label: 'Provider Insights', href: '/analytics/providers', icon: Globe, visibility: 'auth' }
+        { label: 'Monitoring', href: '/monitoring/dashboard', icon: Activity, visibility: 'auth' },
+        { label: 'Alerts', href: '/alerts', icon: AlertTriangle, visibility: 'auth' }
       ]
     },
     {
@@ -123,9 +125,10 @@ export default function Navigation() {
       children: [
         { label: 'General Settings', href: '/settings', icon: Settings, visibility: 'auth' },
         { label: 'API Keys', href: '/settings/api-keys', icon: Key, badge: 'New', visibility: 'auth' },
-        { label: 'Team Members', href: '/team/members', icon: Users, visibility: 'auth' },
-        { label: 'Permissions', href: '/team/permissions', icon: Shield, visibility: 'auth' },
-        { label: 'Usage Limits', href: '/team/limits', icon: CreditCard, visibility: 'auth' },
+        { label: 'Notifications', href: '/notifications/settings', icon: Bell, visibility: 'auth' },
+        { label: 'Team Members', href: '/organization/members', icon: Users, visibility: 'auth' },
+        { label: 'Permissions', href: '/organization/permissions', icon: Shield, visibility: 'auth' },
+        { label: 'Usage Limits', href: '/organization/usage-limits', icon: CreditCard, visibility: 'auth' },
         { label: 'Billing', href: '/billing', icon: CreditCard, visibility: 'auth' }
       ]
     }

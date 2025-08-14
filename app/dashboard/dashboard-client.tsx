@@ -409,7 +409,7 @@ function DashboardV2Content() {
                       <Lightbulb className="w-5 h-5 text-yellow-400" />
                       Strategic Intelligence
                     </h3>
-                    <Link href="/analytics/usage/v2" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
+                    <Link href="/usage" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
                       View Details <ChevronRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -487,7 +487,7 @@ function DashboardV2Content() {
                     <Users className="w-5 h-5 text-purple-400" />
                     Department Performance
                   </h3>
-                  <Link href="/team/members" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
+                  <Link href="/organization/members" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
                     Manage Team <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -601,7 +601,7 @@ function DashboardV2Content() {
                     <Globe className="w-5 h-5 text-green-400" />
                     Provider Performance Matrix
                   </h3>
-                  <Link href="/analytics/providers/v2" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
+                  <Link href="/usage" className="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
                     Detailed Analysis <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -738,7 +738,7 @@ function DashboardV2Content() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Link href="/analytics/usage/v2" className="group">
+              <Link href="/usage" className="group">
                 <div className="p-4 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-lg border border-blue-500/30 hover:border-blue-400/50 transition-all">
                   <div className="flex items-center gap-3 mb-2">
                     <BarChart3 className="w-5 h-5 text-blue-400" />
@@ -758,7 +758,7 @@ function DashboardV2Content() {
                 </div>
               </Link>
 
-              <Link href="/team/members" className="group">
+              <Link href="/organization/members" className="group">
                 <div className="p-4 bg-gradient-to-br from-purple-900/30 to-purple-800/30 rounded-lg border border-purple-500/30 hover:border-purple-400/50 transition-all">
                   <div className="flex items-center gap-3 mb-2">
                     <Users className="w-5 h-5 text-purple-400" />
@@ -768,7 +768,7 @@ function DashboardV2Content() {
                 </div>
               </Link>
 
-              <Link href="/analytics/trends/v2" className="group">
+              <Link href="/usage" className="group">
                 <div className="p-4 bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all">
                   <div className="flex items-center gap-3 mb-2">
                     <TrendingUp className="w-5 h-5 text-green-400" />

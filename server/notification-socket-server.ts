@@ -1,7 +1,7 @@
 import { Server as HTTPServer } from 'http'
 import { Server as SocketIOServer, Socket } from 'socket.io'
 import { prisma } from '../lib/prisma'
-import { NotificationEvent } from '../lib/services/notification-socket.service'
+import { NotificationEvent } from '../lib/types/notification-events'
 
 interface NotificationPayload {
   id: string

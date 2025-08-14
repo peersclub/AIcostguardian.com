@@ -7,6 +7,7 @@ import {
   EmailAttachment,
   ChannelError
 } from '../types'
+import { sesEmailService } from '../../email/ses-email.service'
 
 /**
  * Email notification channel with multiple provider support
@@ -37,10 +38,21 @@ export class EmailNotificationChannel implements NotificationChannel {
 
   constructor(config: any) {
     this.config = {
-      defaultProvider: 'sendgrid',
+      defaultProvider: 'aws-ses', // Changed to use AWS SES as default
       trackOpens: true,
       trackClicks: true,
       ...config
+    }
+
+    // Auto-configure AWS SES if environment variables are present
+    if (!this.config.awsSes && process.env.SES_SMTP_USERNAME) {
+      this.config.awsSes = {
+        region: process.env.SES_REGION || 'us-east-1',
+        accessKeyId: process.env.SES_SMTP_USERNAME || '',
+        secretAccessKey: process.env.SES_SMTP_PASSWORD || '',
+        fromEmail: process.env.SES_FROM_EMAIL || 'noreply@aicostguardian.com',
+        fromName: process.env.SES_FROM_NAME || 'AI Cost Guardian'
+      }
     }
 
     // Log warning if no provider configured but don't throw
@@ -363,42 +375,22 @@ export class EmailNotificationChannel implements NotificationChannel {
     channelConfig: EmailChannelConfig,
     startTime: number
   ): Promise<DeliveryResult> {
-    if (!this.config.awsSes) {
-      throw new ChannelError('AWS SES not configured', 'EMAIL')
-    }
-
     try {
-      // This would use the AWS SDK
-      // For now, simulate the API call
-      const response = await this.simulateHttpRequest(
-        `https://email.${this.config.awsSes.region}.amazonaws.com/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-amz-json-1.0',
-            'X-Amz-Target': 'AWSSimpleEmailService.SendEmail'
-          },
-          body: JSON.stringify({
-            Source: `${this.config.awsSes.fromName} <${emailData.from}>`,
-            Destination: {
-              ToAddresses: [emailData.to]
-            },
-            Message: {
-              Subject: { Data: emailData.subject },
-              Body: {
-                Text: { Data: emailData.text },
-                ...(emailData.html ? { Html: { Data: emailData.html } } : {})
-              }
-            }
-          })
-        }
-      )
+      // Use our SES email service
+      const success = await sesEmailService.sendEmail({
+        to: emailData.to,
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
+        from: emailData.from,
+        replyTo: emailData.replyTo,
+        attachments: emailData.attachments
+      })
 
       const latency = Date.now() - startTime
+      const messageId = `ses_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-      if (response.status === 200) {
-        const messageId = `ses_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        
+      if (success) {
         return {
           success: true,
           channel: 'EMAIL',
@@ -408,16 +400,11 @@ export class EmailNotificationChannel implements NotificationChannel {
           attempts: 1,
           metadata: {
             provider: 'aws-ses',
-            statusCode: response.status
+            statusCode: 200
           }
         }
       } else {
-        throw new ChannelError(
-          `AWS SES API error: ${response.status}`,
-          'EMAIL',
-          response.status,
-          response.status < 500
-        )
+        throw new ChannelError('AWS SES send failed', 'EMAIL')
       }
     } catch (error) {
       if (error instanceof ChannelError) {
