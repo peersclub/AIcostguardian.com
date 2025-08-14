@@ -534,7 +534,7 @@ export default function FullUsageClient() {
                         </Card>
                       ))
                     ) : Object.entries(usageData?.byProvider || {}).length > 0 ? (
-                      Object.entries(usageData.byProvider).map(([provider, data]: [string, any]) => (
+                      Object.entries(usageData?.byProvider || {}).map(([provider, data]: [string, any]) => (
                         <Card key={provider} className="bg-gray-900/50 backdrop-blur-xl border-gray-700">
                           <CardHeader>
                             <div className="flex items-center justify-between">
