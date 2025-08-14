@@ -493,7 +493,7 @@ export default function MonitoringDashboard() {
           >
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white">Usage by Provider</h3>
-              <p className="text-gray-300 mt-1">Cost and token distribution across AI providers</p>
+              <p className="text-gray-400 mt-1">Cost and token distribution across AI providers</p>
             </div>
             <div className="space-y-4">
               <LoadingOverlay isLoading={isLoading} message="Loading usage data...">
@@ -509,20 +509,27 @@ export default function MonitoringDashboard() {
                   Object.entries(usageData).map(([provider, data], index) => (
                     <motion.div 
                       key={provider} 
-                      className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors"
+                      className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: 0.1 * index }}
                     >
                       <div className="flex items-center space-x-4">
-                        <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
-                        <Badge className="bg-blue-900/20 text-blue-300 border-blue-500/30">
-                          {data.totalRequests} requests
-                        </Badge>
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                          <span className="text-lg font-bold text-blue-400">
+                            {provider.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium capitalize text-white">{provider.replace('_', ' ')}</div>
+                          <div className="text-sm text-gray-500">
+                            {data.totalRequests} requests
+                          </div>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-white">${data.totalCost.toFixed(2)}</div>
-                        <div className="text-sm text-gray-400">
+                        <div className="text-lg font-bold text-white">${data.totalCost.toFixed(2)}</div>
+                        <div className="text-sm text-gray-500">
                           {data.totalTokens.toLocaleString()} tokens
                         </div>
                       </div>
@@ -542,7 +549,7 @@ export default function MonitoringDashboard() {
           >
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white">Top Models by Cost</h3>
-              <p className="text-gray-300 mt-1">Most expensive models in the selected time period</p>
+              <p className="text-gray-400 mt-1">Most expensive models in the selected time period</p>
             </div>
             <div className="space-y-3">
               {Object.entries(usageData)
@@ -556,19 +563,19 @@ export default function MonitoringDashboard() {
                 .sort((a, b) => b.cost - a.cost)
                 .slice(0, 5)
                 .map(({ provider, model, cost, tokens, requests }, index) => (
-                  <div key={`${provider}-${model}`} className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors">
+                  <div key={`${provider}-${model}`} className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all">
                     <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 bg-blue-900/20 text-blue-300 border border-blue-500/30 rounded-full flex items-center justify-center text-xs font-medium">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center text-sm font-bold text-purple-400">
                         {index + 1}
                       </div>
                       <div>
                         <div className="font-medium text-white">{model}</div>
-                        <div className="text-sm text-gray-400 capitalize">{provider.replace('_', ' ')}</div>
+                        <div className="text-sm text-gray-500 capitalize">{provider.replace('_', ' ')}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-white">${cost.toFixed(2)}</div>
-                      <div className="text-sm text-gray-400">{tokens.toLocaleString()} tokens</div>
+                      <div className="text-lg font-bold text-white">${cost.toFixed(2)}</div>
+                      <div className="text-sm text-gray-500">{tokens.toLocaleString()} tokens</div>
                     </div>
                   </div>
                 ))}
@@ -764,12 +771,12 @@ export default function MonitoringDashboard() {
               ) : alerts.length > 0 ? (
                 <div className="space-y-3">
                   {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-800/30 hover:bg-gray-700/30 transition-colors">
+                    <div key={alert.id} className="flex items-center justify-between p-4 rounded-xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all">
                       <div className="flex items-center space-x-4">
-                        <div className={`w-3 h-3 rounded-full ${alert.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <div className={`w-3 h-3 rounded-full ${alert.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></div>
                         <div>
                           <div className="font-medium text-white">{alert.message}</div>
-                          <div className="text-sm text-gray-400 capitalize">
+                          <div className="text-sm text-gray-500 capitalize">
                             {alert.provider.replace('_', ' ')} • ${alert.threshold} threshold
                           </div>
                         </div>
@@ -779,7 +786,7 @@ export default function MonitoringDashboard() {
                           checked={alert.isActive}
                           onCheckedChange={(checked) => toggleAlert(alert.id, checked)}
                         />
-                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
+                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
                           Delete
                         </Button>
                       </div>
