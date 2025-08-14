@@ -99,12 +99,12 @@ export function CleanInput({
   const currentModeData = modes.find(m => m.id === currentMode) || modes[0]
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="relative">
         {/* Main Input Container */}
-        <div className="relative bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl">
+        <div className="relative border border-gray-800/50 rounded-xl">
           {/* Mode and Model Selection Bar */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800/50">
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-800/30">
             <div className="flex items-center gap-2">
               {/* Mode Selector */}
               <DropdownMenu>
@@ -158,10 +158,12 @@ export function CleanInput({
               </Button>
             </div>
 
-            {/* Token Counter (placeholder) */}
-            <div className="text-xs text-gray-500">
-              ~{Math.ceil(input.length / 4)} tokens
-            </div>
+            {/* Token Counter */}
+            {input.length > 0 && (
+              <div className="text-[10px] text-gray-600">
+                {Math.ceil(input.length / 4)} tokens
+              </div>
+            )}
           </div>
 
           {/* Model Override Panel */}
@@ -252,11 +254,11 @@ export function CleanInput({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Send a message..."
+              placeholder="Message AIOptimise..."
               className={cn(
-                "w-full px-4 py-3 pr-24 bg-transparent text-white placeholder-gray-500",
-                "resize-none focus:outline-none",
-                "min-h-[56px] max-h-[200px]"
+                "w-full px-3 py-2 pr-20 bg-transparent text-white placeholder-gray-600",
+                "resize-none focus:outline-none text-sm",
+                "min-h-[40px] max-h-[120px]"
               )}
               disabled={isLoading}
             />
@@ -324,17 +326,6 @@ export function CleanInput({
           </div>
         </div>
 
-        {/* Helper Text */}
-        <div className="mt-2 px-1 flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            {isLoading ? 'Processing...' : 'Press Enter to send, Shift+Enter for new line'}
-          </span>
-          {selectedModel && (
-            <span className="text-xs text-purple-400">
-              Using {selectedModel.name}
-            </span>
-          )}
-        </div>
       </div>
     </div>
   )

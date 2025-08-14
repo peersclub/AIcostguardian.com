@@ -44,6 +44,9 @@ import { PromptAnalyzer, analyzePrompt } from './components/prompt-analyzer'
 import { CleanInput } from './components/clean-input'
 import { ParticipantManager } from './components/participant-manager'
 import { ModelSwitcher } from './components/model-switcher'
+import { ThreadManager } from './components/thread-manager'
+import { InfoPanel } from './components/info-panel'
+import { getModeSettings, OptimizationMode } from './components/mode-selector'
 import { useWebSocket } from '@/lib/websocket'
 
 // Types
@@ -197,7 +200,7 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
-  const [selectedMode, setSelectedMode] = useState<'focus' | 'coding' | 'creative' | 'analysis'>('focus')
+  const [selectedMode, setSelectedMode] = useState<OptimizationMode>('focus')
   const [promptAnalysis, setPromptAnalysis] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [threadParticipants, setThreadParticipants] = useState<any[]>([])
@@ -369,6 +372,9 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   
   const handleSendMessage = async (messageText: string, mode: string, modelOverride?: any) => {
     if (!messageText.trim() || isLoading || !user.hasApiKeys) return
+    
+    // Apply mode settings
+    const modeSettings = getModeSettings(selectedMode)
     
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -737,13 +743,9 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Background - matching dashboard */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+    <div className="fixed inset-0 bg-gray-950 overflow-hidden">
+      {/* Simplified background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
 
       <div className="relative z-10 h-full flex">
         {/* Sidebar */}
@@ -754,10 +756,39 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="w-80 bg-gray-900/50 backdrop-blur-xl border-r border-gray-800 flex flex-col"
+              className="w-72 flex flex-col"
             >
-              {/* Sidebar Header */}
-              <div className="p-4 border-b border-gray-800">
+              <ThreadManager
+                threads={threads.map(t => ({
+                  ...t,
+                  pinned: t.isPinned || false,
+                  archived: false,
+                  tags: [],
+                  collaborators: t.sharedWith
+                }))}
+                currentThreadId={currentThread?.id || null}
+                onSelectThread={selectThread}
+                onCreateThread={createNewThread}
+                onDeleteThread={deleteThread}
+                onArchiveThread={(id) => console.log('Archive', id)}
+                onPinThread={togglePin}
+                onShareThread={(id) => setShareThreadId(id)}
+                onRenameThread={(id, title) => {
+                  setThreads(prev => prev.map(t => 
+                    t.id === id ? { ...t, title } : t
+                  ))
+                }}
+                onInviteCollaborator={async (threadId, email) => {
+                  await shareThread(threadId, email)
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content */}
+        <div className="flex-1 flex">
+          <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
@@ -1338,6 +1369,21 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
             </div>
           </div>
         </div>
+        
+        {/* Right Sidebar - Info Panel */}
+        <InfoPanel
+          subscription={(user as any)?.subscription || 'FREE'}
+          usage={{
+            dailyTokens: limits.dailyUsed * 1000,
+            dailyLimit: limits.dailyLimit * 1000,
+            monthlyCost: limits.monthlyUsed,
+            monthlyBudget: limits.monthlyLimit
+          }}
+          activeCollaborators={currentThread?.sharedWith?.length || 0}
+          currentModel={selectedModel.name}
+          estimatedCost={0}
+          className="w-64"
+        />
       </div>
     </div>
   )
