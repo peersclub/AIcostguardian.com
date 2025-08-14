@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
@@ -18,7 +19,7 @@ import {
   TrendingUp, AlertCircle, Lightbulb, BookOpen, Menu,
   Globe, Database, Upload, Eye, EyeOff, Clock, Wifi,
   WifiOff, User, Bot, Loader2, ChevronDown, Maximize2,
-  Shield, Key, ExternalLink, Palette, ChevronUp
+  Shield, Key, ExternalLink, Palette, ChevronUp, ArrowLeft
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -433,6 +434,8 @@ const useWebSocket = (userId: string) => {
 }
 
 export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV2ClientProps) {
+  const router = useRouter()
+  
   // Core state
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -831,6 +834,19 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
       onDrop={handleDrop}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
+      
+      {/* Back Button - Fixed at top */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          onClick={() => router.back()}
+          size="sm"
+          variant="ghost"
+          className="bg-gray-900/80 backdrop-blur-md border border-gray-800 hover:bg-gray-800/80 text-gray-300 hover:text-white transition-all"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      </div>
       
       {/* Drag overlay */}
       {isDragging && (
