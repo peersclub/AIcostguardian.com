@@ -1,4 +1,5 @@
 import GoogleProvider from 'next-auth/providers/google'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import type { NextAuthOptions } from 'next-auth'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import prisma from '@/lib/prisma'
@@ -41,9 +42,153 @@ const customAdapter = !isBuildPhase ? {
 export const authOptions: NextAuthOptions = {
   adapter: customAdapter,
   providers: [
+    // Demo/Test Credentials Provider
+    CredentialsProvider({
+      name: 'Demo Account',
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "demo@example.com" },
+        password: { label: "Password", type: "password", placeholder: "demo123" }
+      },
+      async authorize(credentials) {
+        // Super Admin Account
+        if (credentials?.email === 'admin@aicostguardian.com' && credentials?.password === 'admin@2024') {
+          let user = await prisma.user.findUnique({
+            where: { email: 'admin@aicostguardian.com' }
+          })
+          
+          if (!user) {
+            // Create organization first
+            let org = await prisma.organization.findFirst({
+              where: { domain: 'aicostguardian.com' }
+            })
+            
+            if (!org) {
+              org = await prisma.organization.create({
+                data: {
+                  name: 'AI Cost Guardian Admin',
+                  domain: 'aicostguardian.com',
+                  subscription: 'ENTERPRISE',
+                  isActive: true,
+                  billingCycle: 'MONTHLY',
+                  allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI', 'GROK', 'PERPLEXITY']
+                }
+              })
+            }
+            
+            user = await prisma.user.create({
+              data: {
+                email: 'admin@aicostguardian.com',
+                name: 'Super Admin',
+                role: 'SUPER_ADMIN',
+                isSuperAdmin: true,
+                organizationId: org.id,
+                company: 'AI Cost Guardian'
+              }
+            })
+          }
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image
+          }
+        }
+        
+        // Regular Demo Account
+        if (credentials?.email === 'demo@example.com' && credentials?.password === 'demo123') {
+          let user = await prisma.user.findUnique({
+            where: { email: 'demo@example.com' }
+          })
+          
+          if (!user) {
+            // Create demo organization
+            let org = await prisma.organization.findFirst({
+              where: { domain: 'example.com' }
+            })
+            
+            if (!org) {
+              org = await prisma.organization.create({
+                data: {
+                  name: 'Demo Company',
+                  domain: 'example.com',
+                  subscription: 'PRO',
+                  isActive: true,
+                  billingCycle: 'MONTHLY',
+                  allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI']
+                }
+              })
+            }
+            
+            user = await prisma.user.create({
+              data: {
+                email: 'demo@example.com',
+                name: 'Demo User',
+                role: 'USER',
+                organizationId: org.id,
+                company: 'Demo Company'
+              }
+            })
+          }
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image
+          }
+        }
+        
+        // Manager Demo Account
+        if (credentials?.email === 'manager@example.com' && credentials?.password === 'manager123') {
+          let user = await prisma.user.findUnique({
+            where: { email: 'manager@example.com' }
+          })
+          
+          if (!user) {
+            // Use same demo organization
+            let org = await prisma.organization.findFirst({
+              where: { domain: 'example.com' }
+            })
+            
+            if (!org) {
+              org = await prisma.organization.create({
+                data: {
+                  name: 'Demo Company',
+                  domain: 'example.com',
+                  subscription: 'PRO',
+                  isActive: true,
+                  billingCycle: 'MONTHLY',
+                  allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI']
+                }
+              })
+            }
+            
+            user = await prisma.user.create({
+              data: {
+                email: 'manager@example.com',
+                name: 'Manager User',
+                role: 'ADMIN',
+                organizationId: org.id,
+                company: 'Demo Company'
+              }
+            })
+          }
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image
+          }
+        }
+        
+        return null
+      }
+    }),
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || 'placeholder',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'placeholder',
       authorization: {
         params: {
           prompt: "consent",
@@ -244,5 +389,8 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
-  debug: process.env.NODE_ENV === 'development' // Enable debug mode only in development
+  debug: process.env.NODE_ENV === 'development', // Enable debug mode only in development
+  session: {
+    strategy: 'jwt' // Use JWT strategy for credentials provider
+  }
 }
