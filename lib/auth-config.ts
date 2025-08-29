@@ -91,7 +91,9 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            image: user.image
+            image: user.image,
+            company: user.company || '',
+            isEnterpriseUser: user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
           }
         }
         
@@ -112,7 +114,7 @@ export const authOptions: NextAuthOptions = {
                 data: {
                   name: 'Demo Company',
                   domain: 'example.com',
-                  subscription: 'PRO',
+                  subscription: 'GROWTH',
                   isActive: true,
                   billingCycle: 'MONTHLY',
                   allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI']
@@ -135,7 +137,9 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            image: user.image
+            image: user.image,
+            company: user.company || '',
+            isEnterpriseUser: user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
           }
         }
         
@@ -156,7 +160,7 @@ export const authOptions: NextAuthOptions = {
                 data: {
                   name: 'Demo Company',
                   domain: 'example.com',
-                  subscription: 'PRO',
+                  subscription: 'GROWTH',
                   isActive: true,
                   billingCycle: 'MONTHLY',
                   allowedProviders: ['OPENAI', 'ANTHROPIC', 'GEMINI']
@@ -179,7 +183,9 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            image: user.image
+            image: user.image,
+            company: user.company || '',
+            isEnterpriseUser: user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
           }
         }
         
@@ -389,8 +395,5 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
-  debug: process.env.NODE_ENV === 'development', // Enable debug mode only in development
-  session: {
-    strategy: 'jwt' // Use JWT strategy for credentials provider
-  }
+  debug: process.env.NODE_ENV === 'development' // Enable debug mode only in development
 }
