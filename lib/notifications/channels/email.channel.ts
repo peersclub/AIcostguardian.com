@@ -7,6 +7,7 @@ import {
   EmailAttachment,
   ChannelError
 } from '../types'
+import { sendGridEmailService } from '../../email/sendgrid-email.service'
 import { sesEmailService } from '../../email/ses-email.service'
 
 /**
@@ -38,13 +39,23 @@ export class EmailNotificationChannel implements NotificationChannel {
 
   constructor(config: any) {
     this.config = {
-      defaultProvider: 'aws-ses', // Changed to use AWS SES as default
+      defaultProvider: 'sendgrid', // Use SendGrid as primary provider
       trackOpens: true,
       trackClicks: true,
       ...config
     }
 
-    // Auto-configure AWS SES if environment variables are present
+    // Auto-configure SendGrid if environment variables are present
+    if (!this.config.sendgrid && process.env.SENDGRID_API_KEY) {
+      this.config.sendgrid = {
+        apiKey: process.env.SENDGRID_API_KEY,
+        fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@aicostguardian.com',
+        fromName: process.env.SENDGRID_FROM_NAME || 'AI Cost Guardian',
+        webhookEnabled: process.env.SENDGRID_WEBHOOK_ENABLED === 'true'
+      }
+    }
+
+    // Auto-configure AWS SES if environment variables are present (fallback)
     if (!this.config.awsSes && process.env.SES_SMTP_USERNAME) {
       this.config.awsSes = {
         region: process.env.SES_REGION || 'us-east-1',
@@ -308,58 +319,38 @@ export class EmailNotificationChannel implements NotificationChannel {
     }
 
     try {
-      // This would use the actual SendGrid SDK
-      // For now, simulate the API call
-      const response = await this.simulateHttpRequest('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.sendgrid.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: {
-            email: emailData.from,
-            name: this.config.sendgrid.fromName
-          },
-          personalizations: [{
-            to: [{ email: emailData.to }],
-            subject: emailData.subject,
-            custom_args: emailData.customArgs
-          }],
-          content: [
-            { type: 'text/plain', value: emailData.text },
-            ...(emailData.html ? [{ type: 'text/html', value: emailData.html }] : [])
-          ],
-          attachments: emailData.attachments,
-          headers: emailData.headers,
-          tracking_settings: emailData.trackingSettings
-        })
+      // Use the actual SendGrid service
+      const result = await sendGridEmailService.sendEmail({
+        to: emailData.to,
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
+        attachments: emailData.attachments,
+        categories: ['notification', emailData.customArgs?.type].filter(Boolean),
+        customArgs: emailData.customArgs
       })
 
       const latency = Date.now() - startTime
 
-      if (response.status >= 200 && response.status < 300) {
-        const messageId = response.headers?.['x-message-id'] || `sg_${Date.now()}`
-        
+      if (result.success) {
         return {
           success: true,
           channel: 'EMAIL',
           destination: emailData.to,
-          messageId,
+          messageId: result.messageId || `sg_${Date.now()}`,
           latency,
           attempts: 1,
           metadata: {
             provider: 'sendgrid',
-            statusCode: response.status,
-            responseHeaders: response.headers
+            statusCode: 200
           }
         }
       } else {
         throw new ChannelError(
-          `SendGrid API error: ${response.status}`,
+          result.error || 'SendGrid send failed',
           'EMAIL',
-          response.status,
-          response.status < 500 // 4xx errors are not recoverable
+          500,
+          false // Retry allowed
         )
       }
     } catch (error) {

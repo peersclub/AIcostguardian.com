@@ -1,45 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
-import prisma from '@/lib/prisma'
-import { safeDecrypt } from '@/lib/crypto-helper'
+import { apiKeyService, type Provider } from '@/lib/core/api-key.service'
+import { userService } from '@/lib/core/user.service'
+import { usageService } from '@/lib/core/usage.service'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-// OpenAI API model pricing (per 1000 tokens)
-const MODEL_PRICING = {
-  'gpt-4o': { input: 0.005, output: 0.015 },
-  'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
-  'gpt-4-turbo': { input: 0.01, output: 0.03 },
-  'gpt-4': { input: 0.03, output: 0.06 },
-  'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
-}
-
-async function validateOpenAIKey(apiKey: string): Promise<{ isValid: boolean; error?: string; isAdmin?: boolean }> {
-  try {
-    // Check for admin/org keys
-    if (apiKey.startsWith('org-') || apiKey.includes('admin')) {
-      return { isValid: true, isAdmin: true }
-    }
-
-    // Test regular API key by making a simple call to OpenAI
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
-    })
-
-    if (response.ok) {
-      return { isValid: true, isAdmin: false }
-    } else {
-      const error = await response.text()
-      return { isValid: false, error: `Invalid API key: ${response.status}` }
-    }
-  } catch (error: any) {
-    return { isValid: false, error: error.message || 'Failed to validate API key' }
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,23 +20,21 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get user's stored API key from database
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { apiKeys: true }
+    // Ensure user exists with organization
+    const user = await userService.ensureUser({
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image
     })
 
-    if (!user) {
-      return NextResponse.json({
-        isConfigured: false,
-        isValid: false,
-        error: 'User not found'
-      })
-    }
-
-    const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'openai')
+    // Check if API key exists using central service
+    const apiKey = await apiKeyService.getApiKey(
+      user.id,
+      'openai' as Provider,
+      user.organizationId || undefined
+    )
     
-    if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
+    if (!apiKey) {
       return NextResponse.json({
         isConfigured: false,
         isValid: false,
@@ -76,16 +42,18 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Decrypt and validate the key
+    // Validate the key
     try {
-      const decryptedKey = safeDecrypt(apiKeyRecord.encryptedKey)
-      const validation = await validateOpenAIKey(decryptedKey)
+
+      // Validate using central service
+      const validation = await apiKeyService.validateApiKey('openai' as Provider, apiKey)
       
       return NextResponse.json({
         isConfigured: true,
         isValid: validation.isValid,
-        isAdmin: validation.isAdmin,
-        error: validation.error
+        isAdmin: apiKey.includes('admin') || apiKey.startsWith('org-'),
+        error: validation.error,
+        model: validation.model
       })
     } catch (error) {
       return NextResponse.json({
@@ -117,45 +85,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
+    // Ensure user exists with organization
+    const user = await userService.ensureUser({
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image
+    })
+
     let apiKey = testApiKey
-
-    // Track if we're using a stored key
     let usingStoredKey = false
-    let apiKeyRecordId: string | null = null
 
-    // If no test key provided or explicitly using stored key, get from database
+    // If no test key provided or explicitly using stored key, get from central service
     if (!apiKey || useStoredKey) {
-      const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        include: { apiKeys: true }
-      })
-
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
-      }
-
-      const apiKeyRecord = user.apiKeys.find((k: any) => k.provider === 'openai')
-      if (!apiKeyRecord || !apiKeyRecord.encryptedKey) {
+      apiKey = await apiKeyService.getApiKey(
+        user.id,
+        'openai' as Provider,
+        user.organizationId || undefined
+      )
+      
+      if (!apiKey) {
         return NextResponse.json({ 
           error: 'OpenAI API key not configured. Please add your API key in Settings.' 
         }, { status: 400 })
       }
-
-      try {
-        apiKey = safeDecrypt(apiKeyRecord.encryptedKey)
-        usingStoredKey = true
-        apiKeyRecordId = apiKeyRecord.id
-      } catch (error) {
-        console.error('Decryption error for OpenAI key:', error)
-        return NextResponse.json({ 
-          success: false,
-          error: 'Failed to decrypt stored API key. Please re-add your API key in Settings.' 
-        }, { status: 500 })
-      }
+      
+      usingStoredKey = true
     }
 
-    // Validate the API key
-    const validation = await validateOpenAIKey(apiKey)
+    // Validate the API key using central service
+    const validation = await apiKeyService.validateApiKey('openai' as Provider, apiKey)
     
     if (!validation.isValid) {
       return NextResponse.json({
@@ -164,21 +122,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Update lastTested timestamp if using stored key
-    if (usingStoredKey && apiKeyRecordId) {
-      try {
-        await prisma.apiKey.update({
-          where: { id: apiKeyRecordId },
-          data: { lastTested: new Date() }
-        })
-      } catch (error) {
-        console.error('Failed to update lastTested timestamp:', error)
-        // Continue execution even if timestamp update fails
-      }
-    }
+    // Note: updateLastTested requires keyId which we don't have from getApiKey
+    // This could be improved in the future by returning the key object from getApiKey
 
     // Check if it's an admin/organization key
-    if (validation.isAdmin) {
+    const isAdminKey = apiKey.startsWith('org-') || apiKey.includes('admin')
+    if (isAdminKey) {
       return NextResponse.json({
         success: true,
         response: {
@@ -215,6 +164,8 @@ export async function POST(request: NextRequest) {
 
     // Make actual OpenAI API call
     try {
+      const startTime = Date.now()
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -239,14 +190,38 @@ export async function POST(request: NextRequest) {
       }
 
       const data = await response.json()
+      const latency = Date.now() - startTime
       
-      // Calculate cost
+      // Calculate cost using central service
       const promptTokens = data.usage?.prompt_tokens || 0
       const completionTokens = data.usage?.completion_tokens || 0
       const totalTokens = data.usage?.total_tokens || 0
       
-      const pricing = MODEL_PRICING[model as keyof typeof MODEL_PRICING] || { input: 0.002, output: 0.002 }
-      const cost = (promptTokens * pricing.input / 1000) + (completionTokens * pricing.output / 1000)
+      const cost = usageService.calculateCost(
+        'openai' as Provider,
+        model,
+        promptTokens,
+        completionTokens
+      )
+
+      // Track usage if using stored key
+      if (usingStoredKey) {
+        await usageService.logUsage({
+          userId: user.id,
+          organizationId: user.organizationId || '',
+          provider: 'openai' as Provider,
+          model,
+          promptTokens,
+          completionTokens,
+          totalTokens,
+          cost: cost.totalCost,
+          metadata: {
+            endpoint: '/api/openai/test',
+            latency,
+            success: true
+          }
+        })
+      }
 
       return NextResponse.json({
         success: true,
@@ -257,7 +232,7 @@ export async function POST(request: NextRequest) {
             promptTokens,
             completionTokens,
             totalTokens,
-            cost
+            cost: cost.totalCost
           }
         }
       })
