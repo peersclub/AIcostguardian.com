@@ -1,0 +1,119 @@
+Test ID,Module,Feature,Test Case,Priority,Test Type,Precondition,Test Steps,Expected Result,Test Data,Account Type,Status,Actual Result,Pass/Fail,Bug ID,Tester Name,Test Date,Comments
+TC001,Authentication,Login,Valid Login - Super Admin,Critical,Functional,Application running,"1. Go to /auth/signin
+2. Click Demo Account
+3. Enter admin@aicostguardian.com
+4. Enter admin@2024
+5. Click Sign In",User redirected to dashboard with admin privileges,"Email: admin@aicostguardian.com
+Password: admin@2024",Super Admin,Not Started,,,,,,
+TC002,Authentication,Login,Valid Login - Manager,Critical,Functional,Application running,"1. Go to /auth/signin
+2. Click Demo Account
+3. Enter manager@example.com
+4. Enter manager123
+5. Click Sign In",User redirected to dashboard with manager privileges,"Email: manager@example.com
+Password: manager123",Manager,Not Started,,,,,,
+TC003,Authentication,Login,Valid Login - User,Critical,Functional,Application running,"1. Go to /auth/signin
+2. Click Demo Account
+3. Enter demo@example.com
+4. Enter demo123
+5. Click Sign In",User redirected to dashboard with user privileges,"Email: demo@example.com
+Password: demo123",User,Not Started,,,,,,
+TC004,Authentication,Login,Invalid Password,High,Negative,Application running,"1. Go to /auth/signin
+2. Enter demo@example.com
+3. Enter wrong_password
+4. Click Sign In",Error message displayed: Invalid credentials,"Email: demo@example.com
+Password: wrong_password",User,Not Started,,,,,,
+TC005,Authentication,Logout,Successful Logout,Critical,Functional,User logged in,"1. Click user menu
+2. Click Logout
+3. Confirm logout",User redirected to homepage and session cleared,N/A,Any,Not Started,,,,,,
+TC006,Dashboard,Load,Dashboard Components Load,Critical,Functional,User logged in,"1. Navigate to /dashboard
+2. Wait for page load",All dashboard widgets load within 3 seconds,N/A,User,Not Started,,,,,,
+TC007,Dashboard,Stats,Real-time Stats Update,High,Functional,Dashboard loaded,"1. Open dashboard
+2. Keep page open for 60 seconds
+3. Observe stats",Statistics update automatically without refresh,N/A,User,Not Started,,,,,,
+TC008,AI Chat,Basic Chat,Send Simple Message,Critical,Functional,"User logged in, API key configured","1. Go to /aioptimise
+2. Type: Hello, how are you?
+3. Press Enter",AI responds within 5 seconds,Prompt: Hello how are you?,User,Not Started,,,,,,
+TC009,AI Chat,Model Switch,Change AI Model,Critical,Functional,Chat page loaded,"1. Open model selector
+2. Select different model
+3. Send message",Model changes and pricing updates,N/A,User,Not Started,,,,,,
+TC010,AI Chat,Cost Tracking,Real-time Cost Display,Critical,Functional,Chat active,"1. Send message
+2. Observe cost tracker
+3. Send another message",Cost accumulates correctly in real-time,N/A,User,Not Started,,,,,,
+TC011,API Keys,Add Key,Add OpenAI Key,Critical,Functional,Settings page open,"1. Go to /settings/api-keys
+2. Click Add Key
+3. Select OpenAI
+4. Enter key
+5. Test connection
+6. Save",Key saved and connection successful,Valid OpenAI key,User,Not Started,,,,,,
+TC012,API Keys,Test Connection,Validate API Key,High,Functional,API key added,"1. Click Test button
+2. Wait for response",Connection status shows success/failure,Valid/Invalid key,User,Not Started,,,,,,
+TC013,API Keys,Delete Key,Remove API Key,High,Functional,API key exists,"1. Click delete icon
+2. Confirm deletion",Key removed from list,N/A,User,Not Started,,,,,,
+TC014,Usage,View Usage,Display Usage Data,Critical,Functional,Usage data exists,"1. Navigate to /usage
+2. Select date range",Usage data displays with charts,N/A,User,Not Started,,,,,,
+TC015,Usage,Export,Export Usage Report,High,Functional,Usage page loaded,"1. Click Export button
+2. Select format (CSV)
+3. Download",File downloads with correct data,N/A,User,Not Started,,,,,,
+TC016,Team,Invite Member,Send Team Invitation,Critical,Functional,Manager account,"1. Go to /organization/members
+2. Click Invite
+3. Enter email
+4. Select role
+5. Send",Invitation sent successfully,Email: test@example.com,Manager,Not Started,,,,,,
+TC017,Team,Set Limits,Configure Usage Limits,High,Functional,Team member exists,"1. Select member
+2. Set spending limit
+3. Save",Limit applied to user,$50/month limit,Manager,Not Started,,,,,,
+TC018,Billing,View Plan,Display Current Plan,High,Functional,User logged in,"1. Navigate to /billing
+2. View plan details",Current subscription plan displays,N/A,User,Not Started,,,,,,
+TC019,Billing,Invoice,Download Invoice,Medium,Functional,Invoice exists,"1. Go to invoice history
+2. Click download",PDF invoice downloads,N/A,User,Not Started,,,,,,
+TC020,Alerts,Create Alert,Set Budget Alert,High,Functional,Alerts page open,"1. Go to /alerts
+2. Create new alert
+3. Set threshold $100
+4. Save",Alert rule created,$100 threshold,User,Not Started,,,,,,
+TC021,Alerts,Trigger,Alert Notification,High,Functional,Alert configured,"1. Exceed threshold
+2. Check notifications",Alert triggers and notification appears,Exceed limit,User,Not Started,,,,,,
+TC022,Analytics,Trends,View Usage Trends,Medium,Functional,Data exists,"1. Go to /analytics/trends
+2. Select time period",Trend charts display correctly,Last 30 days,User,Not Started,,,,,,
+TC023,Analytics,Compare,Period Comparison,Medium,Functional,Historical data exists,"1. Select compare mode
+2. Choose two periods",Comparison data displays,This vs last month,User,Not Started,,,,,,
+TC024,Admin,Super Admin,Access Admin Panel,Critical,Functional,Super admin account,"1. Navigate to /super-admin
+2. View statistics",Admin panel loads with all controls,N/A,Super Admin,Not Started,,,,,,
+TC025,Admin,Organizations,Manage Organizations,Critical,Functional,Super admin panel,"1. View all orgs
+2. Edit organization
+3. Save changes",Organization updated successfully,N/A,Super Admin,Not Started,,,,,,
+TC026,Security,XSS,Prevent Script Injection,Critical,Security,Any input field,"1. Enter <script>alert('XSS')</script>
+2. Submit",Script does not execute,XSS payload,User,Not Started,,,,,,
+TC027,Security,SQL Injection,Prevent SQL Injection,Critical,Security,Login page,"1. Enter ' OR '1'='1
+2. Submit",Login fails safely,SQL injection payload,None,Not Started,,,,,,
+TC028,Security,Session,Session Timeout,High,Security,User logged in,"1. Login
+2. Wait 30 minutes idle
+3. Try action",Session expires and redirects to login,N/A,User,Not Started,,,,,,
+TC029,Performance,Page Load,Homepage Load Time,High,Performance,Browser cleared,"1. Clear cache
+2. Load homepage
+3. Measure time",Page loads in < 2 seconds,N/A,None,Not Started,,,,,,
+TC030,Performance,Dashboard Load,Dashboard Performance,Critical,Performance,User logged in,"1. Navigate to dashboard
+2. Measure load time",Dashboard loads in < 3 seconds,N/A,User,Not Started,,,,,,
+TC031,Mobile,Responsive,Mobile Layout,High,Compatibility,Mobile device,"1. Open on mobile
+2. Navigate pages
+3. Test interactions",Layout adapts correctly,375x667 viewport,User,Not Started,,,,,,
+TC032,Mobile,Touch,Touch Gestures,Medium,Compatibility,Touch device,"1. Test swipe
+2. Test tap
+3. Test pinch zoom",Gestures work as expected,Mobile device,User,Not Started,,,,,,
+TC033,Browser,Chrome,Chrome Compatibility,High,Compatibility,Chrome browser,"1. Open in Chrome
+2. Test all features",All features work correctly,Chrome 90+,User,Not Started,,,,,,
+TC034,Browser,Firefox,Firefox Compatibility,High,Compatibility,Firefox browser,"1. Open in Firefox
+2. Test all features",All features work correctly,Firefox 88+,User,Not Started,,,,,,
+TC035,Browser,Safari,Safari Compatibility,High,Compatibility,Safari browser,"1. Open in Safari
+2. Test all features",All features work correctly,Safari 14+,User,Not Started,,,,,,
+TC036,Integration,OpenAI,OpenAI API Integration,Critical,Integration,OpenAI key configured,"1. Send chat to OpenAI
+2. Verify response",Response received from OpenAI,Valid API key,User,Not Started,,,,,,
+TC037,Integration,Claude,Claude API Integration,Critical,Integration,Claude key configured,"1. Send chat to Claude
+2. Verify response",Response received from Claude,Valid API key,User,Not Started,,,,,,
+TC038,Integration,Email,Email Notifications,High,Integration,Email configured,"1. Trigger email event
+2. Check inbox",Email received,Valid email,User,Not Started,,,,,,
+TC039,Onboarding,New User,First Time Setup,High,Functional,New account,"1. Complete signup
+2. Follow onboarding
+3. Reach dashboard",Onboarding completes successfully,New user data,User,Not Started,,,,,,
+TC040,Notifications,In-App,Display Notifications,Medium,Functional,Notifications exist,"1. Trigger notification
+2. Check bell icon
+3. Open notification center",Notifications display correctly,N/A,User,Not Started,,,,,,
