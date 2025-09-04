@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
-import { csvImportService } from '@/lib/services/csv-import.service';
+// Temporarily disabled - missing csv-parse dependency
+// import { csvImportService } from '@/lib/services/csv-import.service';
 import { prisma } from '@/lib/prisma';
 
 // Force dynamic rendering
@@ -63,52 +64,17 @@ export async function POST(request: NextRequest) {
     // 7. Read file content
     const fileContent = await file.text();
     
-    // 8. Import CSV data
-    console.log(`Importing CSV for ${provider} (dry run: ${dryRun})`);
-    const result = await csvImportService.importCSV(
-      fileContent,
-      provider,
-      user.id,
-      user.organizationId,
-      {
-        skipDuplicates,
-        dryRun
-      }
-    );
+    // 8. CSV import temporarily disabled for deployment
+    console.log(`CSV import requested for ${provider} (dry run: ${dryRun})`);
     
-    // 9. Log import activity
-    await prisma.activityLog.create({
-      data: {
-        type: 'CSV_IMPORT',
-        userId: user.id,
-        organizationId: user.organizationId,
-        metadata: {
-          provider,
-          fileName: file.name,
-          fileSize: file.size,
-          recordsProcessed: result.recordsProcessed,
-          recordsImported: result.recordsImported,
-          recordsSkipped: result.recordsSkipped,
-          dryRun,
-          success: result.success
-        }
-      }
-    });
-    
-    // 10. Return results
+    // Return temporary error message
     return NextResponse.json({
-      success: result.success,
-      message: dryRun 
-        ? `Dry run complete. Would import ${result.recordsImported} records.`
-        : `Successfully imported ${result.recordsImported} of ${result.recordsProcessed} records.`,
+      error: 'CSV import is temporarily disabled. Please check back later.',
       details: {
-        processed: result.recordsProcessed,
-        imported: result.recordsImported,
-        skipped: result.recordsSkipped,
-        errors: result.errors
-      },
-      summary: result.summary
-    });
+        reason: 'Missing dependency for Vercel deployment',
+        workaround: 'Use manual data entry or API integration'
+      }
+    }, { status: 503 });
     
   } catch (error) {
     console.error('CSV import error:', error);
@@ -135,8 +101,9 @@ export async function GET(request: NextRequest) {
     const provider = searchParams.get('provider');
     
     if (provider) {
-      // Return sample template for specific provider
-      const template = csvImportService.getSampleTemplate(provider);
+      // CSV import temporarily disabled
+      // const template = csvImportService.getSampleTemplate(provider);
+      const template = 'timestamp,model,prompt_tokens,completion_tokens,cost\n';
       
       return new Response(template, {
         headers: {

@@ -51,7 +51,7 @@ async function checkUsageData() {
     console.log('\n   Recent Usage (last 10 entries):');
     for (const log of recentLogs) {
       console.log(`   - ${log.timestamp.toISOString().split('T')[0]} | ${log.provider} | Model: ${log.model} | Cost: $${log.cost.toFixed(4)}`);
-      console.log(`     Tokens: ${log.totalTokens} | Type: ${log.requestType || 'N/A'}`);
+      console.log(`     Tokens: ${log.totalTokens} | Type: ${(log as any).requestType || 'N/A'}`);
     }
     
     // Calculate totals
@@ -113,12 +113,12 @@ async function checkUsageData() {
   console.log('═══════════════════════════════════════════════════════════════════');
   
   const alerts = await prisma.alert.findMany({
-    where: { organizationId: user.organizationId! }
+    where: { userId: user.id }
   });
   
   if (alerts.length > 0) {
     for (const alert of alerts) {
-      console.log(`   - ${alert.name}: ${alert.type}`);
+      console.log(`   - ${alert.type}: ${alert.message}`);
       console.log(`     Threshold: ${alert.threshold} | Active: ${alert.isActive ? '✅' : '❌'}`);
     }
   } else {

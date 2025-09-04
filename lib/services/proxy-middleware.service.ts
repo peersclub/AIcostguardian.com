@@ -375,24 +375,31 @@ class ProxyMiddlewareService {
         const totalSpent = (spending._sum.cost || 0) + cost;
         const utilization = (totalSpent / budget.amount) * 100;
         
-        // Check thresholds
-        if (utilization >= 100 && !budget.alertSent100) {
+        // Check thresholds - using metadata to track alerts
+        const metadata = budget.metadata as any || {};
+        if (utilization >= 100 && !metadata.alertSent100) {
           await this.sendBudgetAlert(budget, utilization, 'exceeded');
           await prisma.budget.update({
             where: { id: budget.id },
-            data: { alertSent100: true }
+            data: { 
+              metadata: { ...metadata, alertSent100: true }
+            }
           });
-        } else if (utilization >= 80 && !budget.alertSent80) {
+        } else if (utilization >= 80 && !metadata.alertSent80) {
           await this.sendBudgetAlert(budget, utilization, 'warning');
           await prisma.budget.update({
             where: { id: budget.id },
-            data: { alertSent80: true }
+            data: { 
+              metadata: { ...metadata, alertSent80: true }
+            }
           });
-        } else if (utilization >= 50 && !budget.alertSent50) {
+        } else if (utilization >= 50 && !metadata.alertSent50) {
           await this.sendBudgetAlert(budget, utilization, 'info');
           await prisma.budget.update({
             where: { id: budget.id },
-            data: { alertSent50: true }
+            data: { 
+              metadata: { ...metadata, alertSent50: true }
+            }
           });
         }
       }
@@ -441,15 +448,21 @@ class ProxyMiddlewareService {
     // Store notification in database
     await prisma.notification.create({
       data: {
-        type: 'BUDGET_ALERT',
+        type: severity === 'exceeded' ? 'COST_THRESHOLD_EXCEEDED' : 
+              severity === 'warning' ? 'COST_THRESHOLD_WARNING' : 
+              'COST_THRESHOLD_WARNING',
         title: `Budget ${severity === 'exceeded' ? 'Exceeded' : 'Alert'}: ${budget.name}`,
         message: `Your ${budget.name} budget is at ${utilization.toFixed(1)}% utilization`,
-        severity,
+        priority: severity === 'exceeded' ? 'HIGH' : severity === 'warning' ? 'MEDIUM' : 'LOW',
         organizationId: budget.organizationId,
-        metadata: {
+        status: 'SENT',
+        channels: ['in-app', 'email'],
+        userId: budget.organizationId, // Will need proper user context
+        data: {
           budgetId: budget.id,
           utilization,
-          amount: budget.amount
+          amount: budget.amount,
+          severity
         }
       }
     });
@@ -460,20 +473,27 @@ class ProxyMiddlewareService {
    */
   private async storeFailedRequest(request: ProxyRequest, error: any) {
     try {
-      await prisma.failedRequest.create({
+      // Store as usage log with error flag - failedRequest model doesn't exist
+      await prisma.usageLog.create({
         data: {
           provider: request.provider,
-          endpoint: request.endpoint,
-          error: error.message || 'Unknown error',
+          model: request.model || 'unknown',
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          cost: 0,
+          userId: request.userId,
+          organizationId: request.organizationId,
           metadata: {
+            failed: true,
+            endpoint: request.endpoint,
+            error: error.message || 'Unknown error',
             request: {
               model: request.model,
               method: request.method
             },
-            error: error.stack || error.toString()
-          },
-          userId: request.userId,
-          organizationId: request.organizationId
+            errorDetails: error.stack || error.toString()
+          }
         }
       });
     } catch (dbError) {

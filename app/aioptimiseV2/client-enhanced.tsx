@@ -129,6 +129,13 @@ interface ModelOption {
   requiresApiKey?: boolean
 }
 
+const PROVIDER_ICONS = {
+  openai: '🤖',
+  anthropic: '🔮',
+  google: '🌟',
+  x: '🚀'
+}
+
 interface PromptAnalysis {
   complexity: 'simple' | 'moderate' | 'complex' | 'expert'
   category: string

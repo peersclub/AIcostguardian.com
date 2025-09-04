@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { startOfMonth, startOfWeek, startOfDay, subDays, subMonths } from 'date-fns'
+import { executiveMetricsService } from '@/lib/services/executive-metrics.service'
+import { predictiveAnalyticsService } from '@/lib/services/predictive-analytics.service'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -186,7 +188,11 @@ export async function GET(request: NextRequest) {
       status: data.spend > 1000 ? 'optimal' : 'good'
     }))
 
-    // Prepare executive metrics
+    // Calculate real executive metrics
+    const calculatedMetrics = await executiveMetricsService.calculateExecutiveMetrics(organizationId)
+    const performanceMetrics = await executiveMetricsService.getPerformanceMetrics(organizationId)
+    
+    // Prepare executive metrics with real calculated values
     const executiveMetrics = {
       totalSpend: Math.round(totalSpend * 100) / 100,
       monthlyBudget: monthlyBudget?.amount || 0,
@@ -194,14 +200,20 @@ export async function GET(request: NextRequest) {
       costPerEmployee: organization?.users.length 
         ? Math.round((totalSpend / organization.users.length) * 100) / 100 
         : 0,
-      efficiency: 94.2, // TODO: Calculate real efficiency
-      riskScore: alerts.length * 10,
-      forecastAccuracy: 87.3, // TODO: Implement forecasting
-      complianceScore: 98.5, // TODO: Implement compliance scoring
+      efficiency: calculatedMetrics.efficiency,
+      riskScore: calculatedMetrics.riskScore,
+      forecastAccuracy: calculatedMetrics.forecastAccuracy,
+      complianceScore: calculatedMetrics.complianceScore,
       monthlyGrowth: Math.round(spendGrowth * 10) / 10,
       quarterlyTrend: 8.3, // TODO: Calculate quarterly trend
       avgCostPerRequest: Math.round(avgCostPerRequest * 10000) / 10000,
-      peakHourMultiplier: 1.34 // TODO: Calculate peak hour costs
+      peakHourMultiplier: 1.34, // TODO: Calculate peak hour costs
+      savingsOpportunity: calculatedMetrics.savingsOpportunity,
+      // Add performance metrics
+      responseTime: performanceMetrics.responseTime,
+      availability: performanceMetrics.availability,
+      errorRate: performanceMetrics.errorRate,
+      throughput: performanceMetrics.throughput
     }
 
     // Prepare team metrics
@@ -215,30 +227,41 @@ export async function GET(request: NextRequest) {
       topDepartments: [] // TODO: Implement department tracking
     }
 
-    // Prepare forecast data
+    // Generate real forecast data
+    const forecasts = await predictiveAnalyticsService.generateCostForecast(organizationId, 30)
+    
+    // Calculate weekly, monthly, and quarterly forecasts
+    const weekForecast = forecasts.slice(0, 7).reduce((sum, f) => sum + f.predictedCost, 0)
+    const monthForecast = forecasts.reduce((sum, f) => sum + f.predictedCost, 0)
+    const quarterForecast = monthForecast * 3 // Estimate based on monthly trend
+    
     const forecastData = [
       { 
         period: 'Next Week', 
-        spend: Math.round(totalSpend * 0.25 * 100) / 100,
-        confidence: 94, 
-        status: 'on-track' 
+        spend: Math.round(weekForecast * 100) / 100,
+        confidence: Math.round(forecasts.slice(0, 7).reduce((sum, f) => sum + f.confidence, 0) / 7), 
+        status: weekForecast > (monthlyBudget?.amount || 0) / 4 ? 'over-budget' : 'on-track' 
       },
       { 
         period: 'Next Month', 
-        spend: Math.round(totalSpend * 1.1 * 100) / 100,
-        confidence: 87, 
-        status: budgetUtilization > 80 ? 'over-budget' : 'on-track'
+        spend: Math.round(monthForecast * 100) / 100,
+        confidence: Math.round(forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length), 
+        status: monthForecast > (monthlyBudget?.amount || 0) ? 'over-budget' : 'on-track'
       },
       { 
         period: 'Next Quarter', 
-        spend: Math.round(totalSpend * 3.2 * 100) / 100,
-        confidence: 73, 
-        status: 'on-track' 
+        spend: Math.round(quarterForecast * 100) / 100,
+        confidence: 73, // Lower confidence for longer-term forecast
+        status: quarterForecast > (monthlyBudget?.amount || 0) * 3 ? 'over-budget' : 'on-track' 
       }
     ]
 
-    // Prepare business insights
+    // Prepare business insights with pattern detection
     const businessInsights = []
+    
+    // Get detected patterns and optimization recommendations
+    const patterns = await predictiveAnalyticsService.detectPatterns(organizationId, 30)
+    const optimizations = await predictiveAnalyticsService.generateOptimizationRecommendations(organizationId)
     
     // Add budget alert if needed
     if (budgetUtilization > 80) {
@@ -268,6 +291,39 @@ export async function GET(request: NextRequest) {
         confidence: 76,
         timeframe: '1-2 months',
         category: 'risk-management'
+      })
+    }
+    
+    // Add pattern-based insights
+    for (const pattern of patterns.slice(0, 2)) {
+      if (pattern.type === 'spike' || pattern.type === 'anomaly') {
+        businessInsights.push({
+          type: 'pattern',
+          priority: 'high',
+          title: pattern.type === 'spike' ? 'Cost Spike Detected' : 'Unusual Pattern',
+          description: pattern.description,
+          impact: pattern.impact || 'Potential cost impact',
+          action: pattern.recommendation || 'Review usage',
+          confidence: (pattern as any).confidence ? (pattern as any).confidence * 100 : 75,
+          timeframe: 'This week',
+          category: 'pattern-analysis'
+        })
+      }
+    }
+    
+    // Add optimization insights
+    if (optimizations.length > 0 && calculatedMetrics.savingsOpportunity > 50) {
+      const topOptimization = optimizations[0]
+      businessInsights.push({
+        type: 'opportunity',
+        priority: 'medium',
+        title: 'Cost Optimization Available',
+        description: topOptimization.recommendation,
+        impact: `Save $${topOptimization.savingsPotential.toFixed(2)}/month`,
+        action: 'Implement optimization',
+        confidence: topOptimization.confidence * 100,
+        timeframe: '1-2 weeks',
+        category: 'cost-optimization'
       })
     }
 

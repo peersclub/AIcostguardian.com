@@ -87,8 +87,8 @@ export async function POST(
     // Process webhook based on provider and type
     const result = await processWebhook(provider, data);
     
-    // Store webhook event for audit
-    await prisma.webhookEvent.create({
+    // Store webhook event for audit - disabled (model doesn't exist)
+    /* await prisma.webhookEvent.create({
       data: {
         provider,
         type: data.type || data.event || 'unknown',
@@ -96,7 +96,7 @@ export async function POST(
         processed: result.success,
         error: result.error
       }
-    });
+    }); */
     
     if (result.success) {
       return NextResponse.json({ received: true, processed: true });
