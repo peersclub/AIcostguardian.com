@@ -1,0 +1,47 @@
+// Add these models to your schema.prisma file
+
+model WebhookEvent {
+  id               String   @id @default(cuid())
+  provider         String   // openai, claude, gemini, etc.
+  type             String   // Event type from provider
+  payload          Json     // Raw webhook payload
+  processed        Boolean  @default(false)
+  error            String?  // Error message if processing failed
+  
+  createdAt        DateTime @default(now())
+  
+  @@index([provider, processed])
+  @@index([createdAt])
+}
+
+model FailedRequest {
+  id               String   @id @default(cuid())
+  provider         String
+  endpoint         String
+  error            String
+  metadata         Json?    // Additional error details
+  
+  userId           String
+  organizationId   String
+  
+  user             User     @relation(fields: [userId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  
+  @@index([userId, provider])
+  @@index([organizationId, createdAt])
+}
+
+// Update Budget model to add alert tracking fields
+model Budget {
+  // ... existing fields ...
+  
+  // Add these fields for alert tracking
+  alertSent50      Boolean  @default(false)
+  alertSent80      Boolean  @default(false)
+  alertSent100     Boolean  @default(false)
+  lastAlertAt      DateTime?
+  
+  // ... rest of the model ...
+}

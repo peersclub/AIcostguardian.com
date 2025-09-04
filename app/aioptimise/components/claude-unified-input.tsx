@@ -415,23 +415,23 @@ export function ClaudeUnifiedInput({
       {/* Main Input Container */}
       <div
         className={cn(
-          'relative bg-gray-900/80 backdrop-blur-xl rounded-2xl border transition-all',
+          'relative bg-gray-900/80 backdrop-blur-xl rounded-2xl border transition-all min-h-[60px]',
           isFocused
             ? `${currentMode.borderColor} border-opacity-100`
             : 'border-gray-800 hover:border-gray-700',
           isStreaming && 'ring-2 ring-violet-500/20'
         )}
       >
-        <div className="flex items-end">
+        <div className="flex items-stretch">
           {/* Left Section: Mode & Model Selector */}
-          <div className="flex items-center gap-2 p-3 pb-4">
+          <div className="flex items-center gap-2 p-3">
             {/* Mode Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors',
+                  'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap min-w-[120px]',
                   currentMode.bgColor,
-                  'hover:opacity-80'
+                  'hover:opacity-90'
                 )}>
                   <ModeIcon className={cn('h-4 w-4', currentMode.color)} />
                   <span className={cn('text-sm font-medium', currentMode.color)}>
@@ -447,7 +447,7 @@ export function ClaudeUnifiedInput({
                     <DropdownMenuItem
                       key={key}
                       onClick={() => onModeChange?.(key as any)}
-                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-800 cursor-pointer"
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100"
                     >
                       <div className={cn('p-1.5 rounded-lg', config.bgColor)}>
                         <Icon className={cn('h-4 w-4', config.color)} />
@@ -472,7 +472,7 @@ export function ClaudeUnifiedInput({
             {/* Model Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors whitespace-nowrap min-w-[100px]">
                   <Hash className="h-3.5 w-3.5 text-gray-400" />
                   <span className="text-sm text-gray-300">{getModelDisplay()}</span>
                   <ChevronDown className="h-3 w-3 text-gray-400" />
@@ -483,12 +483,12 @@ export function ClaudeUnifiedInput({
                   <div className="text-xs font-medium text-gray-400 mb-1">AI Model</div>
                   <div className="text-xs text-gray-600">Select model or let AI choose</div>
                 </div>
-                <DropdownMenuSeparator className="bg-gray-800" />
+                <DropdownMenuSeparator className="bg-gray-700" />
                 {modelPresets.map((preset) => (
                   <DropdownMenuItem
                     key={`${preset.provider}-${preset.model}`}
                     onClick={() => onModelSelect?.(preset.provider, preset.model)}
-                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-800 cursor-pointer"
+                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100"
                   >
                     <div>
                       <div className="text-sm text-gray-200">{preset.label}</div>
@@ -505,7 +505,7 @@ export function ClaudeUnifiedInput({
           </div>
 
           {/* Center: Text Input */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative flex items-center">
             <textarea
               ref={textareaRef}
               value={value}
@@ -517,8 +517,8 @@ export function ClaudeUnifiedInput({
               disabled={isLoading || isStreaming}
               className={cn(
                 'w-full bg-transparent text-gray-100 placeholder-gray-500',
-                'resize-none outline-none px-2 py-3',
-                'min-h-[52px] max-h-[300px]',
+                'resize-none outline-none px-3 py-3',
+                'min-h-[52px] max-h-[300px] overflow-y-auto',
                 (isLoading || isStreaming) && 'opacity-50 cursor-not-allowed'
               )}
               rows={1}
@@ -526,7 +526,7 @@ export function ClaudeUnifiedInput({
           </div>
 
           {/* Right Section: Actions */}
-          <div className="flex items-center gap-1 p-3 pb-4">
+          <div className="flex items-center gap-1 p-3">
             {/* Attachment Button */}
             <Button
               variant="ghost"
@@ -592,10 +592,10 @@ export function ClaudeUnifiedInput({
         </div>
 
         {/* Bottom hint bar */}
-        <div className="absolute -bottom-6 left-0 right-0 flex items-center justify-between px-3 text-xs text-gray-600">
+        <div className="absolute -bottom-5 left-0 right-0 flex items-center justify-between px-3 text-[10px] text-gray-600 pointer-events-none">
           <span>Press Enter to send, Shift+Enter for new line</span>
           {value.length > 0 && (
-            <span>{value.length} characters</span>
+            <span className="font-mono">{value.length} chars</span>
           )}
         </div>
       </div>

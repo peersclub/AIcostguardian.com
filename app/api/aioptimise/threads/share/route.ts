@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     // 3. Set expiration if needed
     
     // For now, return a mock share URL
-    const shareUrl = `${process.env.NEXTAUTH_URL || 'https://aicostguardian.com'}/aioptimiseV2/shared/${shareToken}`
+    const shareUrl = `${process.env.NEXTAUTH_URL || 'https://aicostguardian.com'}/aioptimise/shared/${shareToken}`
 
     return NextResponse.json({ 
       shareUrl,

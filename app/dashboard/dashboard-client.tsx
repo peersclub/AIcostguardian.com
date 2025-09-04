@@ -157,19 +157,26 @@ function DashboardV2Content() {
 
   // Use real provider data or show empty state
   const performanceMetrics = {
-    providers: dashboardData?.providers?.map((provider: any) => ({
-      id: provider.provider.toLowerCase(),
-      name: provider.provider,
-      spend: provider.cost,
-      share: provider.percentage,
-      performance: 90 + Math.random() * 10, // Placeholder until we have real performance data
-      reliability: 95 + Math.random() * 5,
-      costEfficiency: 85 + Math.random() * 15,
-      trend: provider.trend || 'stable',
-      change: provider.change || 0,
-      status: provider.cost > 0 ? 'active' : 'inactive',
-      recommendation: provider.cost > 0 ? 'Monitor usage' : 'Not in use'
-    })) || []
+    providers: dashboardData?.providers?.map((provider: any) => {
+      // Handle different data structures - provider might be a string or object
+      const providerName = typeof provider === 'string' ? provider : (provider.provider || provider.name || 'unknown');
+      const providerCost = typeof provider === 'object' ? (provider.cost || 0) : 0;
+      const providerPercentage = typeof provider === 'object' ? (provider.percentage || 0) : 0;
+      
+      return {
+        id: providerName.toLowerCase(),
+        name: providerName,
+        spend: providerCost,
+        share: providerPercentage,
+        performance: 90 + Math.random() * 10, // Placeholder until we have real performance data
+        reliability: 95 + Math.random() * 5,
+        costEfficiency: 85 + Math.random() * 15,
+        trend: provider.trend || 'stable',
+        change: provider.change || 0,
+        status: providerCost > 0 ? 'active' : 'inactive',
+        recommendation: providerCost > 0 ? 'Monitor usage' : 'Not in use'
+      }
+    }) || []
   }
 
   // Use real forecast data if available

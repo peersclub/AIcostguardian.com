@@ -241,18 +241,18 @@ export function ThreadSidebarEnhanced({
                     <SortAsc className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSortBy('recent')}>
+                <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                  <DropdownMenuLabel className="text-gray-400">Sort by</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-gray-800" />
+                  <DropdownMenuItem onClick={() => setSortBy('recent')} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                     <Clock className="h-4 w-4 mr-2" />
                     Recent
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy('cost')}>
+                  <DropdownMenuItem onClick={() => setSortBy('cost')} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Cost
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy('messages')}>
+                  <DropdownMenuItem onClick={() => setSortBy('messages')} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Messages
                   </DropdownMenuItem>
@@ -341,37 +341,37 @@ export function ThreadSidebarEnhanced({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-200"
+                                className="h-6 w-6 p-0 opacity-50 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreVertical className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onPinThread?.(thread.id)}>
+                            <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                              <DropdownMenuItem onClick={() => onPinThread?.(thread.id)} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                                 <Pin className="h-4 w-4 mr-2" />
                                 {thread.isPinned ? 'Unpin' : 'Pin'}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onArchiveThread?.(thread.id)}>
+                              <DropdownMenuItem onClick={() => onArchiveThread?.(thread.id)} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                                 <Archive className="h-4 w-4 mr-2" />
                                 Archive
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onShareThread?.(thread.id)}>
+                              <DropdownMenuItem onClick={() => onShareThread?.(thread.id)} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                                 <Share2 className="h-4 w-4 mr-2" />
                                 Share
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {}}>
+                              <DropdownMenuItem onClick={() => {}} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                                 <Edit className="h-4 w-4 mr-2" />
                                 Rename
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {}}>
+                              <DropdownMenuItem onClick={() => {}} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                                 <Download className="h-4 w-4 mr-2" />
                                 Export
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                              <DropdownMenuSeparator className="bg-gray-800" />
                               <DropdownMenuItem 
                                 onClick={() => onDeleteThread?.(thread.id)}
-                                className="text-red-600"
+                                className="hover:bg-red-900/30 text-red-400 hover:text-red-300 cursor-pointer focus:bg-red-900/30 focus:text-red-300"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete

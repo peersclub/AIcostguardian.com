@@ -40,19 +40,26 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     docsUrl: 'https://platform.openai.com/api-keys',
     models: ['GPT-4', 'GPT-3.5', 'DALL-E', 'Whisper']
   },
-  anthropic: {
-    name: 'Anthropic',
+  claude: {
+    name: 'Claude (Anthropic)',
     logo: '/logos/anthropic.svg',
     placeholder: 'sk-ant-...',
     docsUrl: 'https://console.anthropic.com/account/keys',
     models: ['Claude 3 Opus', 'Claude 3 Sonnet', 'Claude 3 Haiku']
   },
-  google: {
-    name: 'Google',
+  gemini: {
+    name: 'Gemini (Google)',
     logo: '/logos/google.svg',
     placeholder: 'AIza...',
     docsUrl: 'https://makersuite.google.com/app/apikey',
     models: ['Gemini Pro', 'Gemini 1.5 Pro', 'Gemini 1.5 Flash']
+  },
+  grok: {
+    name: 'Grok (xAI)',
+    logo: '/logos/xai.svg',
+    placeholder: 'xai-...',
+    docsUrl: 'https://x.ai/api',
+    models: ['Grok Beta', 'Grok-2 Beta']
   },
   perplexity: {
     name: 'Perplexity',
@@ -61,12 +68,19 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     docsUrl: 'https://www.perplexity.ai/settings/api',
     models: ['Sonar Pro', 'Sonar', 'Codellama']
   },
-  xai: {
-    name: 'xAI',
-    logo: '/logos/xai.svg',
-    placeholder: 'xai-...',
-    docsUrl: 'https://x.ai/api',
-    models: ['Grok Beta']
+  cohere: {
+    name: 'Cohere',
+    logo: '/logos/cohere.svg',
+    placeholder: 'co-...',
+    docsUrl: 'https://dashboard.cohere.ai/api-keys',
+    models: ['Command', 'Command R', 'Command R+']
+  },
+  mistral: {
+    name: 'Mistral',
+    logo: '/logos/mistral.svg',
+    placeholder: 'mk-...',
+    docsUrl: 'https://console.mistral.ai/api-keys',
+    models: ['Mistral Large', 'Mistral Medium', 'Mistral Small']
   }
 }
 
@@ -82,7 +96,8 @@ interface KeyValidationState {
 
 export default function OnboardingApiSetup() {
   const router = useRouter()
-  const [selectedProviders, setSelectedProviders] = useState<string[]>(['openai', 'anthropic'])
+  // Show first 4 main providers by default
+  const [selectedProviders, setSelectedProviders] = useState<string[]>(['openai', 'claude', 'gemini', 'grok'])
   const [keyStates, setKeyStates] = useState<KeyValidationState>({})
   const [bulkImport, setBulkImport] = useState('')
   const [saving, setSaving] = useState(false)

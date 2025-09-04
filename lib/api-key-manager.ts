@@ -55,7 +55,7 @@ export interface BatchValidationResult {
   }
 }
 
-// Provider-specific key patterns
+// Provider-specific key patterns (support both old and new names)
 const KEY_PATTERNS = {
   openai: {
     usage: /^sk-proj-/,
@@ -67,7 +67,17 @@ const KEY_PATTERNS = {
     admin: /^sk-ant-admin-/,
     standard: /^sk-ant-/
   },
+  claude: {
+    usage: /^sk-ant-api/,
+    admin: /^sk-ant-admin-/,
+    standard: /^sk-ant-/
+  },
   google: {
+    usage: /^AIza/,
+    admin: /^admin_/,
+    standard: /^AIza/
+  },
+  gemini: {
     usage: /^AIza/,
     admin: /^admin_/,
     standard: /^AIza/
@@ -81,6 +91,21 @@ const KEY_PATTERNS = {
     usage: /^xai-/,
     admin: /^xai-admin-/,
     standard: /^xai-/
+  },
+  grok: {
+    usage: /^xai-/,
+    admin: /^xai-admin-/,
+    standard: /^xai-/
+  },
+  cohere: {
+    usage: /^co-/,
+    admin: /^co-admin-/,
+    standard: /^co-/
+  },
+  mistral: {
+    usage: /^mk-/,
+    admin: /^mk-admin-/,
+    standard: /^mk-/
   }
 }
 
@@ -125,23 +150,32 @@ class ApiKeyManager {
       // Detect type if not provided
       const keyType = type || this.detectKeyType(provider, key)
 
-      // Provider-specific validation
+      // Provider-specific validation (support both old and new naming)
       let result: ValidationResult
       switch (provider.toLowerCase()) {
         case 'openai':
           result = await this.validateOpenAIKey(key, keyType)
           break
         case 'anthropic':
+        case 'claude':
           result = await this.validateAnthropicKey(key, keyType)
           break
         case 'google':
+        case 'gemini':
           result = await this.validateGoogleKey(key, keyType)
           break
         case 'perplexity':
           result = await this.validatePerplexityKey(key, keyType)
           break
         case 'xai':
+        case 'grok':
           result = await this.validateXAIKey(key, keyType)
+          break
+        case 'cohere':
+          result = await this.validateCohereKey(key, keyType)
+          break
+        case 'mistral':
+          result = await this.validateMistralKey(key, keyType)
           break
         default:
           result = { valid: false, keyType: KeyType.STANDARD, error: 'Unsupported provider' }
@@ -298,9 +332,61 @@ class ApiKeyManager {
       valid: true, // Placeholder
       keyType: type,
       capabilities: {
-        models: ['grok-beta'],
+        models: ['grok-beta', 'grok-2-beta'],
         hasAdminAccess: type === KeyType.ADMIN
       }
+    }
+  }
+
+  private async validateCohereKey(key: string, type: KeyType): Promise<ValidationResult> {
+    // Cohere validation logic
+    try {
+      const response = await fetch('https://api.cohere.ai/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${key}`
+        }
+      })
+
+      if (response.ok) {
+        return {
+          valid: true,
+          keyType: type,
+          capabilities: {
+            models: ['command', 'command-r', 'command-r-plus'],
+            hasAdminAccess: type === KeyType.ADMIN
+          }
+        }
+      }
+      
+      return { valid: false, keyType: type, error: 'Invalid Cohere API key' }
+    } catch (error) {
+      return { valid: false, keyType: type, error: 'Failed to validate Cohere key' }
+    }
+  }
+
+  private async validateMistralKey(key: string, type: KeyType): Promise<ValidationResult> {
+    // Mistral validation logic
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${key}`
+        }
+      })
+
+      if (response.ok) {
+        return {
+          valid: true,
+          keyType: type,
+          capabilities: {
+            models: ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'],
+            hasAdminAccess: type === KeyType.ADMIN
+          }
+        }
+      }
+      
+      return { valid: false, keyType: type, error: 'Invalid Mistral API key' }
+    } catch (error) {
+      return { valid: false, keyType: type, error: 'Failed to validate Mistral key' }
     }
   }
 
@@ -317,7 +403,7 @@ class ApiKeyManager {
       
       const createData: any = {
         userId,
-        provider: provider.toUpperCase(),
+        provider: provider.toLowerCase(), // Store in lowercase to match core service
         encryptedKey,
         isActive: true
       }
@@ -385,7 +471,7 @@ class ApiKeyManager {
       
       // Server-side: use Prisma directly
       const where = provider 
-        ? { userId, provider: provider.toUpperCase() }
+        ? { userId, provider: provider.toLowerCase() }
         : { userId }
 
       const keys = await prisma.apiKey.findMany({

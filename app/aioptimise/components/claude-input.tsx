@@ -309,7 +309,7 @@ export function ClaudeInput({
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuContent align="start" className="w-64 bg-gray-900 border-gray-800">
                   <ModelSelector
                     onSelect={(provider, model) => onModelChange?.(provider, model)}
                     onClose={() => {}}

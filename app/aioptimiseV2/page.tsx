@@ -11,7 +11,7 @@ export default async function AIOptimiseV2Page() {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.email) {
-    redirect('/auth/signin?callbackUrl=/aioptimiseV2')
+    redirect('/auth/signin?callbackUrl=/aioptimise')
   }
 
   // Get user with organization and API keys

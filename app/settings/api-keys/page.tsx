@@ -385,7 +385,6 @@ export default function ApiKeysSettings() {
   const [loading, setLoading] = useState(true)
   const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-  const [showAddDialog, setShowAddDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
 
   useEffect(() => {
@@ -492,7 +491,7 @@ export default function ApiKeysSettings() {
                 Refresh Status
               </Button>
               <Button 
-                onClick={() => setShowAddDialog(true)}
+                onClick={() => router.push('/onboarding/api-setup')}
                 className="bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -666,34 +665,6 @@ export default function ApiKeysSettings() {
         apiKey={selectedKey}
         onClose={() => setSelectedKey(null)}
       />
-
-      {/* Add Key Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add API Key</DialogTitle>
-            <DialogDescription>
-              Add a new API key for an AI provider
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              To add a new API key, go to the{' '}
-              <a href="/onboarding/api-setup" className="text-primary hover:underline">
-                API Setup page
-              </a>
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => window.location.href = '/onboarding/api-setup'}>
-                Go to Setup
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
         </motion.div>
       </div>

@@ -310,20 +310,20 @@ export function MessageEnhanced({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuLabel>Regenerate with</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onRegenerate()}>
+              <DropdownMenuContent align="start" className="bg-gray-900 border-gray-800">
+                <DropdownMenuLabel className="text-gray-400">Regenerate with</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-800" />
+                <DropdownMenuItem onClick={() => onRegenerate()} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   <Bot className="h-4 w-4 mr-2" />
                   Same model
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'openai', model: 'gpt-4o' })}>
+                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'openai', model: 'gpt-4o' })} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   GPT-4o
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'anthropic', model: 'claude-3.5-sonnet' })}>
+                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'anthropic', model: 'claude-3.5-sonnet' })} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   Claude 3.5 Sonnet
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'google', model: 'gemini-1.5-pro' })}>
+                <DropdownMenuItem onClick={() => onRegenerate({ provider: 'google', model: 'gemini-1.5-pro' })} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   Gemini 1.5 Pro
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -339,32 +339,32 @@ export function MessageEnhanced({
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="start" className="bg-gray-900 border-gray-800">
                 {onEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
+                  <DropdownMenuItem onClick={onEdit} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => {}}>
+                <DropdownMenuItem onClick={() => {}} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {}}>
+                <DropdownMenuItem onClick={() => {}} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowFeedback(!showFeedback)}>
+                <DropdownMenuItem onClick={() => setShowFeedback(!showFeedback)} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Add feedback
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {}}>
+                <DropdownMenuSeparator className="bg-gray-800" />
+                <DropdownMenuItem onClick={() => {}} className="hover:bg-gray-800 text-gray-200 cursor-pointer focus:bg-gray-800 focus:text-gray-100">
                   <Flag className="h-4 w-4 mr-2" />
                   Report
                 </DropdownMenuItem>
                 {onDelete && (
-                  <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                  <DropdownMenuItem onClick={onDelete} className="hover:bg-red-900/30 text-red-400 hover:text-red-300 cursor-pointer focus:bg-red-900/30 focus:text-red-300">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </DropdownMenuItem>

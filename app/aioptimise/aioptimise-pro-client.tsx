@@ -717,7 +717,7 @@ export default function AIOptimiseProClient() {
               </div>
             </ScrollArea>
             
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent z-20">
               <div className="max-w-3xl mx-auto">
                 <ClaudeUnifiedInput
                   value={input}
@@ -877,7 +877,7 @@ export default function AIOptimiseProClient() {
             
             {/* Input controls - positioned absolutely within content area */}
             {currentThread && (
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent">
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent z-20">
                 <div className="max-w-4xl mx-auto">
                   <ClaudeUnifiedInput
                     value={input}

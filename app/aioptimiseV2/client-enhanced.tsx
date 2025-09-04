@@ -60,6 +60,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { useThreadManager } from './hooks/useThreadManager'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 
 // Types
 interface Message {
@@ -173,12 +174,6 @@ interface AIOptimiseV2ClientProps {
 }
 
 // Constants
-const PROVIDER_ICONS = {
-  openai: '🤖',
-  anthropic: '🔮',
-  google: '🌟',
-  x: '🚀'
-}
 
 const MODELS: ModelOption[] = [
   {
@@ -933,14 +928,23 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
               {/* Thread List */}
               <div className="flex-1 overflow-y-auto">
                 <AnimatePresence>
-                  {threads.map((thread) => (
+                  {threads
+                    .sort((a, b) => {
+                      // Sort by pinned first, then by updated date
+                      if (a.isPinned && !b.isPinned) return -1
+                      if (!a.isPinned && b.isPinned) return 1
+                      if (a.isArchived && !b.isArchived) return 1
+                      if (!a.isArchived && b.isArchived) return -1
+                      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                    })
+                    .map((thread) => (
                     <motion.div
                       key={thread.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       className={cn(
-                        "border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer",
+                        "group border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer",
                         currentThread?.id === thread.id && "bg-indigo-950/20 border-l-2 border-l-indigo-500"
                       )}
                       onClick={() => selectThread(thread.id)}
@@ -1534,9 +1538,9 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                       }
                     }}
                     placeholder={`Message AIOptimise (${selectedMode} mode)...`}
-                    className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none min-h-[24px] max-h-[120px] py-2"
+                    className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none min-h-[24px] max-h-[120px] py-2 overflow-hidden"
                     style={{ 
-                      height: Math.min(Math.max(24, input.split('\n').length * 20), 120) 
+                      height: 'auto'
                     }}
                     disabled={isLoading || isStreaming}
                   />

@@ -74,7 +74,7 @@ export default function OnboardingCompletePage() {
       icon: Brain,
       title: 'AI Optimize',
       description: 'Start using AI with optimized models',
-      href: '/aioptimiseV2',
+      href: '/aioptimise',
       color: 'text-purple-500'
     },
     {
@@ -214,7 +214,7 @@ export default function OnboardingCompletePage() {
           <Button
             size="lg"
             variant="outline"
-            onClick={() => router.push('/aioptimiseV2')}
+            onClick={() => router.push('/aioptimise')}
             className="border-gray-300 dark:border-gray-700"
           >
             <Brain className="w-5 h-5 mr-2" />
