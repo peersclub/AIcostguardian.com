@@ -56,6 +56,9 @@ model User {
   imageUploads          ImageUpload[]
   usageLimit            UsageLimit?
   threadPresences       ThreadPresence[]
+  modelPerformance      ModelPerformance[]
+  budgets               Budget[]
+  costPredictions       CostPrediction[]
   auditLogs             AuditLog[]
   roles                 Role[]       @relation("UserRoles")
   alertRules            AlertRule[]
@@ -118,6 +121,7 @@ model Organization {
   notificationRules NotificationRule[]
   notifications     Notification[]
   budgets           Budget[]
+  costPredictions   CostPrediction[]
   aiThreads         AIThread[]
   usageLimit        UsageLimit?
   invitations       Invitation[]
@@ -613,7 +617,8 @@ enum NotificationPriority {
 
 model Budget {
   id              String   @id @default(cuid())
-  organizationId  String
+  userId          String?  // Optional user-specific budget
+  organizationId  String?  // Optional org-wide budget
   name            String
   amount          Float
   spent           Float    @default(0)
@@ -626,9 +631,11 @@ model Budget {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
-  organization    Organization @relation(fields: [organizationId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
+  organization    Organization? @relation(fields: [organizationId], references: [id])
   
   @@index([organizationId, isActive])
+  @@index([userId, isActive])
 }
 
 enum BudgetPeriod {
@@ -1508,4 +1515,45 @@ model Attachment {
   
   @@index([messageId])
   @@index([userId])
+}
+
+// AI Model Performance Tracking
+model ModelPerformance {
+  id             String   @id @default(cuid())
+  userId         String
+  model          String
+  taskType       String
+  latency        Int      // in milliseconds
+  cost           Float
+  success        Boolean
+  userRating     Int?     // 1-5 scale
+  errorMessage   String?
+  
+  user           User     @relation(fields: [userId], references: [id])
+  timestamp      DateTime @default(now())
+  
+  @@index([userId, model])
+  @@index([userId, taskType])
+  @@index([timestamp])
+}
+
+// Cost Predictions
+model CostPrediction {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String?
+  period         String   // daily, weekly, monthly
+  predictedCost  Float
+  confidence     Float    // 0-1
+  basedOnDays    Int      // Number of days used for prediction
+  features       Json     // ML features used
+  
+  user           User     @relation(fields: [userId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([userId, period])
+  @@index([organizationId, period])
+  @@index([createdAt])
 }
