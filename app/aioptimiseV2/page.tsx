@@ -61,7 +61,7 @@ export default async function AIOptimiseV2Page() {
     email: user?.email || '',
     name: user?.name || '',
     image: user?.image || '',
-    hasApiKeys: hasApiKeys,
+    hasApiKeys: hasApiKeys || false,
     subscription: user?.organization?.subscription || 'FREE',
     apiKeyStatus: {
       openai: user?.apiKeys?.some(key => key.provider === 'OPENAI') || false,
@@ -72,8 +72,8 @@ export default async function AIOptimiseV2Page() {
   }
 
   const limitsProps = {
-    dailyLimit: user?.organization?.dailyLimit || 100,
-    monthlyLimit: user?.organization?.monthlyLimit || 1000,
+    dailyLimit: 100, // Default daily limit
+    monthlyLimit: 1000, // Default monthly limit
     dailyUsed: usageLimits._sum.cost || 0,
     monthlyUsed: monthlyUsage._sum.cost || 0,
     dailyTokens: usageLimits._sum.inputTokens || 0,

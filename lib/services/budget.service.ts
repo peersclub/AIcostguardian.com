@@ -135,7 +135,7 @@ export class BudgetService {
       
       const usage = await prisma.usageLog.aggregate({
         where: {
-          organizationId: budget.organizationId,
+          organizationId: budget.organizationId || undefined,
           timestamp: {
             gte: startDate,
             lte: endDate
@@ -358,7 +358,7 @@ export class BudgetService {
         await prisma.notification.create({
           data: {
             userId: user.id,
-            organizationId: budget.organizationId,
+            organizationId: budget.organizationId || undefined,
             type: budget.isOverBudget ? 'COST_THRESHOLD_EXCEEDED' : 'COST_THRESHOLD_WARNING',
             priority: budget.isOverBudget ? 'CRITICAL' : 'HIGH',
             title: budget.isOverBudget 

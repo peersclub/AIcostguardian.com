@@ -105,8 +105,8 @@ class CostPredictionService {
       select: {
         timestamp: true,
         cost: true,
-        promptTokens: true,
-        completionTokens: true,
+        inputTokens: true,
+        outputTokens: true,
         provider: true,
         model: true
       }
@@ -357,11 +357,11 @@ class CostPredictionService {
           predictedCost: prediction.predictedCost,
           confidence: prediction.confidence,
           basedOnDays: 30,
-          features: {
+          features: JSON.parse(JSON.stringify({
             patterns,
             trend: prediction.trend,
             percentageChange: prediction.percentageChange
-          }
+          }))
         }
       })
     } catch (error) {

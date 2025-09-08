@@ -95,6 +95,7 @@ export function MessageComponent({ message, onRegenerate, onFeedback }: MessageP
                   const match = /language-(\w+)/.exec(className || '');
                   const inline = node?.properties?.inline;
                   return !inline && match ? (
+                    /* @ts-ignore */
                     <SyntaxHighlighter
                       style={oneDark}
                       language={match[1]}
