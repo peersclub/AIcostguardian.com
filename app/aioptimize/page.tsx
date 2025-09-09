@@ -35,12 +35,12 @@ export default async function AiOptimizePage() {
     redirect('/auth/signin')
   }
 
-  // Enhanced API key status for all providers
+  // Enhanced API key status for all providers (using actual database values)
   const apiKeyStatus = {
-    openai: user.apiKeys?.some(key => key.provider === 'OPENAI' && key.isActive) || false,
-    anthropic: user.apiKeys?.some(key => key.provider === 'ANTHROPIC' && key.isActive) || false,
-    google: user.apiKeys?.some(key => key.provider === 'GOOGLE' && key.isActive) || false,
-    x: user.apiKeys?.some(key => key.provider === 'XAI' && key.isActive) || false,
+    openai: user.apiKeys?.some(key => key.provider === 'openai' && key.isActive) || false,
+    anthropic: user.apiKeys?.some(key => key.provider === 'claude' && key.isActive) || false,
+    google: user.apiKeys?.some(key => key.provider === 'gemini' && key.isActive) || false,
+    x: user.apiKeys?.some(key => key.provider === 'grok' && key.isActive) || false,
   }
 
   const hasApiKeys = Object.values(apiKeyStatus).some(status => status)

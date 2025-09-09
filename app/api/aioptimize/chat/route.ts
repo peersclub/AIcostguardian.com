@@ -23,10 +23,10 @@ import Anthropic from '@anthropic-ai/sdk'
 
 async function getProviderClient(provider: string, apiKeys: any[]) {
   const providerMap = {
-    'openai': 'OPENAI',
-    'anthropic': 'ANTHROPIC',
-    'google': 'GOOGLE',
-    'x': 'XAI'
+    'openai': 'openai',
+    'anthropic': 'claude',
+    'google': 'gemini',
+    'x': 'grok'
   }
 
   const apiKey = apiKeys.find(key => 
