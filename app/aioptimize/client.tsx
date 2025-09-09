@@ -219,7 +219,7 @@ export default function AiOptimizeClient({
   // Load thread messages
   const loadThreadMessages = async (threadId: string) => {
     try {
-      const response = await fetch(`/api/aioptimise/threads/${threadId}/messages`)
+      const response = await fetch(`/api/aioptimize/threads/${threadId}/messages`)
       if (response.ok) {
         const data = await response.json()
         setMessages(data.messages.map((msg: any) => ({
