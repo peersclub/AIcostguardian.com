@@ -63,7 +63,7 @@ export default function Navigation() {
       icon: Layers,
       visibility: 'visitor',
       children: [
-        { label: 'AIOptimise Pro', href: '/aioptimise-test', icon: Sparkles, badge: 'Try Now', visibility: 'all' },
+        { label: 'AiOptimize Pro', href: '/aioptimize', icon: Sparkles, badge: 'Try Now', visibility: 'all' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all' },
         { label: 'AI Models', href: '/models', icon: Brain, visibility: 'all' },
         { label: 'Integrations', href: '/integrations', icon: Globe, visibility: 'all' }
@@ -114,11 +114,17 @@ export default function Navigation() {
       ]
     },
     {
-      label: 'AIOptimise',
-      href: '/aioptimise',
+      label: 'AiOptimize',
+      href: '/aioptimize',
       icon: Sparkles,
       badge: 'Pro',
-      visibility: 'auth'
+      visibility: 'auth',
+      children: [
+        { label: 'Chat Interface', href: '/aioptimize', icon: Sparkles, visibility: 'auth' },
+        { label: 'Thread History', href: '/aioptimize?tab=threads', icon: FileText, visibility: 'auth' },
+        { label: 'Usage Analytics', href: '/aioptimize?tab=analytics', icon: BarChart3, visibility: 'auth' },
+        { label: 'Model Comparison', href: '/aioptimize?tab=models', icon: Brain, visibility: 'auth' }
+      ]
     },
     // Add Organization link for admins
     ...(isAdmin ? [{
