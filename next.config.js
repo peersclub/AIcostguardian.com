@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     scrollRestoration: true,
-    instrumentationHook: true
+    instrumentationHook: false
   },
   // Optimize for production
   swcMinify: true,

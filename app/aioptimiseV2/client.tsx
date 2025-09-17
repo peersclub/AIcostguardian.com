@@ -616,6 +616,7 @@ export default function AIOptimiseV2Client({ user, limits }: AIOptimiseV2ClientP
                                 const match = /language-(\w+)/.exec(className || '')
                                 const inline = !match
                                 return !inline ? (
+                                  // @ts-ignore
                                   <SyntaxHighlighter
                                     style={oneDark}
                                     language={match?.[1] || 'text'}

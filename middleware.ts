@@ -14,6 +14,9 @@ const rateLimitPaths = {
 } as const
 
 async function applyRateLimit(request: NextRequest) {
+  // Temporarily disabled for local development
+  return null;
+  
   const pathname = request.nextUrl.pathname
   
   // Skip rate limiting for non-API routes

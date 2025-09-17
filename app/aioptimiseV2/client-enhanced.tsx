@@ -1281,6 +1281,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                                 const inline = !match
                                 return !inline ? (
                                   <div className="overflow-x-auto">
+                                    {/* @ts-ignore */}
                                     <SyntaxHighlighter
                                       style={oneDark}
                                       language={match?.[1] || 'text'}

@@ -135,7 +135,7 @@ export class BudgetService {
       
       const usage = await prisma.usageLog.aggregate({
         where: {
-          organizationId: budget.organizationId,
+          organizationId: budget.organizationId || undefined,
           timestamp: {
             gte: startDate,
             lte: endDate
@@ -353,12 +353,13 @@ export class BudgetService {
         }
       })
       
-      // Create notifications for each user
-      for (const user of users) {
-        await prisma.notification.create({
-          data: {
-            userId: user.id,
-            organizationId: budget.organizationId,
+      // Create notifications for each user (skip if no organizationId)
+      if (budget.organizationId) {
+        for (const user of users) {
+          await prisma.notification.create({
+            data: {
+              userId: user.id,
+              organizationId: budget.organizationId,
             type: budget.isOverBudget ? 'COST_THRESHOLD_EXCEEDED' : 'COST_THRESHOLD_WARNING',
             priority: budget.isOverBudget ? 'CRITICAL' : 'HIGH',
             title: budget.isOverBudget 
@@ -378,6 +379,7 @@ export class BudgetService {
             }
           }
         })
+        }
       }
     } catch (error) {
       console.error('Error creating budget alert:', error)

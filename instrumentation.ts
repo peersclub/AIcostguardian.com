@@ -1,4 +1,7 @@
 export async function register() {
+  // Temporarily disabled for local development
+  return;
+  
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const Sentry = await import('@sentry/node');
     const { nodeProfilingIntegration } = await import('@sentry/profiling-node');
