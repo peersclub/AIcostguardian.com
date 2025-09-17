@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 export interface Thread {
@@ -17,119 +17,76 @@ export interface Thread {
   metadata?: any;
 }
 
-export interface ThreadActions {
+export interface ThreadManagerReturn {
   threads: Thread[];
   currentThread: Thread | null;
   loading: boolean;
-  loadThreads: () => Promise<void>;
   createThread: (title?: string) => Promise<Thread | null>;
-  selectThread: (threadId: string) => Promise<void>;
+  selectThread: (threadId: string) => void;
   deleteThread: (threadId: string) => Promise<void>;
   pinThread: (threadId: string) => Promise<void>;
   archiveThread: (threadId: string) => Promise<void>;
   renameThread: (threadId: string, newTitle: string) => Promise<void>;
-  shareThread: (threadId: string, options?: any) => Promise<{ shareUrl: string } | null>;
-  addCollaborator: (threadId: string, email: string) => Promise<void>;
-  removeCollaborator: (threadId: string, email: string) => Promise<void>;
-  addTag: (threadId: string, tag: string) => Promise<void>;
-  removeTag: (threadId: string, tag: string) => Promise<void>;
+  shareThread: (threadId: string, settings?: any) => Promise<{ shareUrl: string } | null>;
+  addCollaborator: (threadId: string, email: string, role?: string) => Promise<void>;
   searchThreads: (query: string) => Thread[];
+  loadThreads: () => Promise<void>;
 }
 
-export function useThreadManager(): ThreadActions {
+export function useThreadManager(): ThreadManagerReturn {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [currentThread, setCurrentThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Load threads on mount
-  useEffect(() => {
-    loadThreads();
-  }, []);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/aioptimise/threads?includeShared=true');
       if (!response.ok) throw new Error('Failed to load threads');
-      
+
       const data = await response.json();
-      const formattedThreads: Thread[] = data.threads.map((t: any) => ({
-        ...t,
-        tags: t.tags || [],
-        sharedWith: t.sharedWith || [],
-      }));
-      
-      setThreads(formattedThreads);
-      
-      // Auto-select first thread if none selected
-      if (!currentThread && formattedThreads.length > 0) {
-        setCurrentThread(formattedThreads[0]);
-      }
+      setThreads(data.threads || []);
     } catch (error) {
       console.error('Failed to load threads:', error);
-      toast.error('Failed to load conversations');
+      toast.error('Failed to load threads');
     } finally {
       setLoading(false);
     }
-  }, [currentThread]);
+  }, []);
 
-  const createThread = useCallback(async (title?: string) => {
+  const createThread = useCallback(async (title?: string): Promise<Thread | null> => {
     try {
       const response = await fetch('/api/aioptimise/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: title || `New Conversation ${new Date().toLocaleString()}`,
-          metadata: { createdFrom: 'aioptimise-v2' }
+        body: JSON.stringify({
+          title: title || 'New Conversation',
         }),
       });
 
       if (!response.ok) throw new Error('Failed to create thread');
 
       const newThread = await response.json();
-      const formattedThread: Thread = {
-        ...newThread,
-        tags: [],
-        sharedWith: [],
-      };
-      
-      setThreads(prev => [formattedThread, ...prev]);
-      setCurrentThread(formattedThread);
-      
+      setThreads(prev => [newThread, ...prev]);
+      setCurrentThread(newThread);
       toast.success('New conversation created');
-      return formattedThread;
+      return newThread;
     } catch (error) {
       console.error('Failed to create thread:', error);
-      toast.error('Failed to create conversation');
+      toast.error('Failed to create thread');
       return null;
     }
   }, []);
 
-  const selectThread = useCallback(async (threadId: string) => {
+  const selectThread = useCallback((threadId: string) => {
     const thread = threads.find(t => t.id === threadId);
     if (thread) {
       setCurrentThread(thread);
-      
-      // Load messages for this thread
-      try {
-        const response = await fetch(`/api/aioptimise/threads/${threadId}/messages`);
-        if (response.ok) {
-          const data = await response.json();
-          // Update thread with latest message info
-          setThreads(prev => prev.map(t => 
-            t.id === threadId 
-              ? { ...t, messageCount: data.messages.length, lastMessage: data.messages[data.messages.length - 1]?.content }
-              : t
-          ));
-        }
-      } catch (error) {
-        console.error('Failed to load thread messages:', error);
-      }
     }
   }, [threads]);
 
   const deleteThread = useCallback(async (threadId: string) => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/aioptimise/threads/${threadId}`, {
         method: 'DELETE',
@@ -138,41 +95,44 @@ export function useThreadManager(): ThreadActions {
       if (!response.ok) throw new Error('Failed to delete thread');
 
       setThreads(prev => prev.filter(t => t.id !== threadId));
-      
+
       if (currentThread?.id === threadId) {
-        const remainingThreads = threads.filter(t => t.id !== threadId);
-        setCurrentThread(remainingThreads[0] || null);
+        setCurrentThread(null);
       }
 
       toast.success('Conversation deleted');
     } catch (error) {
       console.error('Failed to delete thread:', error);
-      toast.error('Failed to delete conversation');
+      toast.error('Failed to delete thread');
+    } finally {
+      setLoading(false);
     }
-  }, [currentThread, threads]);
+  }, [currentThread]);
 
   const pinThread = useCallback(async (threadId: string) => {
     try {
       const thread = threads.find(t => t.id === threadId);
-      const isPinned = thread?.isPinned;
-      
+      if (!thread) return;
+
+      const method = thread.isPinned ? 'DELETE' : 'POST';
       const response = await fetch(`/api/aioptimise/threads/${threadId}/pin`, {
-        method: isPinned ? 'DELETE' : 'POST',
+        method,
       });
 
-      if (!response.ok) throw new Error(`Failed to ${isPinned ? 'unpin' : 'pin'} thread`);
+      if (!response.ok) throw new Error('Failed to update pin status');
 
-      setThreads(prev => prev.map(t => 
-        t.id === threadId ? { ...t, isPinned: !isPinned } : t
+      const isPinned = !thread.isPinned;
+      setThreads(prev => prev.map(t =>
+        t.id === threadId ? { ...t, isPinned } : t
       ));
-      
+
       if (currentThread?.id === threadId) {
-        setCurrentThread(prev => prev ? { ...prev, isPinned: !isPinned } : null);
+        setCurrentThread({ ...currentThread, isPinned });
       }
 
-      toast.success(`Conversation ${isPinned ? 'unpinned' : 'pinned'}`);
+      toast.success(isPinned ? 'Conversation pinned' : 'Conversation unpinned');
     } catch (error) {
-      console.error('Failed to pin/unpin thread:', error);
+      console.error('Failed to pin thread:', error);
       toast.error('Failed to update pin status');
     }
   }, [threads, currentThread]);
@@ -180,19 +140,29 @@ export function useThreadManager(): ThreadActions {
   const archiveThread = useCallback(async (threadId: string) => {
     try {
       const thread = threads.find(t => t.id === threadId);
-      const isArchived = thread?.isArchived;
-      
-      // For now, just update local state
-      setThreads(prev => prev.map(t => 
-        t.id === threadId ? { ...t, isArchived: !isArchived } : t
+      if (!thread) return;
+
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/archive`, {
+        method: thread.isArchived ? 'DELETE' : 'POST',
+      });
+
+      if (!response.ok) throw new Error('Failed to update archive status');
+
+      const isArchived = !thread.isArchived;
+      setThreads(prev => prev.map(t =>
+        t.id === threadId ? { ...t, isArchived } : t
       ));
-      
-      toast.success(`Conversation ${isArchived ? 'unarchived' : 'archived'}`);
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread({ ...currentThread, isArchived });
+      }
+
+      toast.success(isArchived ? 'Conversation archived' : 'Conversation unarchived');
     } catch (error) {
       console.error('Failed to archive thread:', error);
-      toast.error('Failed to archive conversation');
+      toast.error('Failed to update archive status');
     }
-  }, [threads]);
+  }, [threads, currentThread]);
 
   const renameThread = useCallback(async (threadId: string, newTitle: string) => {
     try {
@@ -204,111 +174,74 @@ export function useThreadManager(): ThreadActions {
 
       if (!response.ok) throw new Error('Failed to rename thread');
 
-      setThreads(prev => prev.map(t => 
+      setThreads(prev => prev.map(t =>
         t.id === threadId ? { ...t, title: newTitle } : t
       ));
-      
+
       if (currentThread?.id === threadId) {
-        setCurrentThread(prev => prev ? { ...prev, title: newTitle } : null);
+        setCurrentThread({ ...currentThread, title: newTitle });
       }
 
       toast.success('Conversation renamed');
     } catch (error) {
       console.error('Failed to rename thread:', error);
-      toast.error('Failed to rename conversation');
+      toast.error('Failed to rename thread');
     }
   }, [currentThread]);
 
-  const shareThread = useCallback(async (threadId: string, options?: any) => {
+  const shareThread = useCallback(async (threadId: string, settings?: any): Promise<{ shareUrl: string } | null> => {
     try {
       const response = await fetch(`/api/aioptimise/threads/${threadId}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options || {}),
+        body: JSON.stringify({ settings }),
       });
 
       if (!response.ok) throw new Error('Failed to share thread');
 
-      const data = await response.json();
-      toast.success('Share link created');
-      return data;
+      const result = await response.json();
+
+      setThreads(prev => prev.map(t =>
+        t.id === threadId ? { ...t, sharedWith: result.sharedWith || [] } : t
+      ));
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread({ ...currentThread, sharedWith: result.sharedWith || [] });
+      }
+
+      return { shareUrl: result.shareUrl };
     } catch (error) {
       console.error('Failed to share thread:', error);
-      toast.error('Failed to create share link');
+      toast.error('Failed to share thread');
       return null;
     }
-  }, []);
+  }, [currentThread]);
 
-  const addCollaborator = useCallback(async (threadId: string, email: string) => {
+  const addCollaborator = useCallback(async (threadId: string, email: string, role: string = 'VIEWER') => {
     try {
       const response = await fetch(`/api/aioptimise/threads/${threadId}/collaborators`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role: 'viewer' }),
+        body: JSON.stringify({ email, role }),
       });
 
       if (!response.ok) throw new Error('Failed to add collaborator');
 
-      setThreads(prev => prev.map(t => 
-        t.id === threadId 
-          ? { ...t, sharedWith: [...(t.sharedWith || []), email] }
-          : t
-      ));
-
-      toast.success(`Added ${email} as collaborator`);
+      toast.success(`Collaborator ${email} added successfully`);
     } catch (error) {
       console.error('Failed to add collaborator:', error);
       toast.error('Failed to add collaborator');
     }
   }, []);
 
-  const removeCollaborator = useCallback(async (threadId: string, email: string) => {
-    try {
-      const response = await fetch(`/api/aioptimise/threads/${threadId}/collaborators/${email}`, {
-        method: 'DELETE',
-      });
+  const searchThreads = useCallback((query: string): Thread[] => {
+    if (!query.trim()) return threads;
 
-      if (!response.ok) throw new Error('Failed to remove collaborator');
-
-      setThreads(prev => prev.map(t => 
-        t.id === threadId 
-          ? { ...t, sharedWith: (t.sharedWith || []).filter(e => e !== email) }
-          : t
-      ));
-
-      toast.success('Collaborator removed');
-    } catch (error) {
-      console.error('Failed to remove collaborator:', error);
-      toast.error('Failed to remove collaborator');
-    }
-  }, []);
-
-  const addTag = useCallback(async (threadId: string, tag: string) => {
-    setThreads(prev => prev.map(t => 
-      t.id === threadId 
-        ? { ...t, tags: [...(t.tags || []), tag] }
-        : t
-    ));
-    toast.success(`Tag "${tag}" added`);
-  }, []);
-
-  const removeTag = useCallback(async (threadId: string, tag: string) => {
-    setThreads(prev => prev.map(t => 
-      t.id === threadId 
-        ? { ...t, tags: (t.tags || []).filter(tg => tg !== tag) }
-        : t
-    ));
-    toast.success(`Tag "${tag}" removed`);
-  }, []);
-
-  const searchThreads = useCallback((query: string) => {
-    if (!query) return threads;
-    
-    const lowerQuery = query.toLowerCase();
-    return threads.filter(thread => 
-      thread.title.toLowerCase().includes(lowerQuery) ||
-      thread.lastMessage?.toLowerCase().includes(lowerQuery) ||
-      thread.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+    const lowercaseQuery = query.toLowerCase();
+    return threads.filter(thread =>
+      thread.title.toLowerCase().includes(lowercaseQuery) ||
+      thread.lastMessage?.toLowerCase().includes(lowercaseQuery) ||
+      thread.tags?.some(tag => tag.toLowerCase().includes(lowercaseQuery))
     );
   }, [threads]);
 
@@ -316,7 +249,6 @@ export function useThreadManager(): ThreadActions {
     threads,
     currentThread,
     loading,
-    loadThreads,
     createThread,
     selectThread,
     deleteThread,
@@ -325,9 +257,7 @@ export function useThreadManager(): ThreadActions {
     renameThread,
     shareThread,
     addCollaborator,
-    removeCollaborator,
-    addTag,
-    removeTag,
     searchThreads,
+    loadThreads,
   };
 }
