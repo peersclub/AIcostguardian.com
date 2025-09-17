@@ -63,7 +63,7 @@ export default function Navigation() {
       icon: Layers,
       visibility: 'visitor',
       children: [
-        { label: 'AiOptimise Chat', href: '/aioptimiseV2', icon: Sparkles, badge: 'Latest', visibility: 'all' },
+        { label: 'AiOptimise Chat', href: '/aioptimise', icon: Sparkles, badge: 'Latest', visibility: 'all' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all' },
         { label: 'AI Models', href: '/models', icon: Brain, visibility: 'all' },
         { label: 'Integrations', href: '/integrations', icon: Globe, visibility: 'all' }
@@ -115,7 +115,7 @@ export default function Navigation() {
     },
     {
       label: 'AiOptimise',
-      href: '/aioptimiseV2',
+      href: '/aioptimise',
       icon: Sparkles,
       badge: 'Pro',
       visibility: 'auth'
