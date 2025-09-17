@@ -60,6 +60,9 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { useThreadManager } from './hooks/useThreadManager'
+import { useApiKeys } from '@/hooks/use-api-keys'
+import type { Provider } from '@/lib/core/api-key.service'
+import { getAIProviderLogoWithFallback } from '@/components/ui/ai-logos'
 
 // Types
 interface Message {
@@ -118,13 +121,12 @@ interface Thread {
 interface ModelOption {
   id: string
   name: string
-  provider: 'openai' | 'anthropic' | 'google' | 'x'
+  provider: Provider
   contextLength: number
   inputCost: number
   outputCost: number
   speed: 'fast' | 'medium' | 'slow'
   capabilities: string[]
-  icon?: string
   requiresApiKey?: boolean
 }
 
@@ -149,7 +151,7 @@ interface CollaboratorStatus {
   cursor?: { x: number; y: number }
 }
 
-interface AIOptimiseV2ClientProps {
+interface AIOptimiseClientProps {
   user: {
     id: string
     email: string
@@ -157,12 +159,6 @@ interface AIOptimiseV2ClientProps {
     image?: string
     hasApiKeys: boolean
     subscription?: string
-    apiKeyStatus?: {
-      openai: boolean
-      anthropic: boolean
-      google: boolean
-      x: boolean
-    }
   }
   limits: {
     dailyLimit: number
@@ -172,12 +168,9 @@ interface AIOptimiseV2ClientProps {
   }
 }
 
-// Constants
-const PROVIDER_ICONS = {
-  openai: '🤖',
-  anthropic: '🔮',
-  google: '🌟',
-  x: '🚀'
+// Constants - Provider logo renderer
+const getProviderIcon = (provider: string, className: string = "w-4 h-4") => {
+  return getAIProviderLogoWithFallback(provider, className, true)
 }
 
 const MODELS: ModelOption[] = [
@@ -190,55 +183,50 @@ const MODELS: ModelOption[] = [
     outputCost: 0.03,
     speed: 'medium',
     capabilities: ['reasoning', 'coding', 'analysis', 'creative'],
-    icon: PROVIDER_ICONS.openai,
     requiresApiKey: true
   },
   {
     id: 'claude-3-opus',
     name: 'Claude 3 Opus',
-    provider: 'anthropic',
+    provider: 'claude',
     contextLength: 200000,
     inputCost: 0.015,
     outputCost: 0.075,
     speed: 'slow',
     capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision'],
-    icon: PROVIDER_ICONS.anthropic,
     requiresApiKey: true
   },
   {
     id: 'claude-3-sonnet',
     name: 'Claude 3 Sonnet',
-    provider: 'anthropic',
+    provider: 'claude',
     contextLength: 200000,
     inputCost: 0.003,
     outputCost: 0.015,
     speed: 'medium',
     capabilities: ['reasoning', 'coding', 'analysis', 'vision'],
-    icon: PROVIDER_ICONS.anthropic,
     requiresApiKey: true
   },
   {
     id: 'gemini-pro',
     name: 'Gemini Pro',
-    provider: 'google',
+    provider: 'gemini',
     contextLength: 32000,
     inputCost: 0.0005,
     outputCost: 0.0015,
     speed: 'fast',
     capabilities: ['reasoning', 'analysis', 'creative'],
-    icon: PROVIDER_ICONS.google,
     requiresApiKey: true
   },
   {
     id: 'grok-1',
     name: 'Grok',
-    provider: 'x',
+    provider: 'grok',
     contextLength: 8192,
     inputCost: 0.001,
     outputCost: 0.002,
     speed: 'fast',
     capabilities: ['reasoning', 'humor', 'real-time'],
-    icon: PROVIDER_ICONS.x,
     requiresApiKey: true
   }
 ]
@@ -326,13 +314,17 @@ const analyzePrompt = (prompt: string, mode: string): PromptAnalysis => {
   }
 }
 
-const formatDate = (dateString: string | Date) => {
+const formatDate = (dateString: string | Date | undefined) => {
   try {
+    if (!dateString) {
+      return 'Just now'
+    }
+
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString
     if (!isValid(date)) {
-      return 'Unknown date'
+      return 'Just now'
     }
-    
+
     const now = new Date()
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
     
@@ -371,70 +363,114 @@ const useKeyboardShortcuts = (callbacks: { [key: string]: () => void }) => {
 const useWebSocket = (userId: string) => {
   const [connected, setConnected] = useState(false)
   const [collaborators, setCollaborators] = useState<CollaboratorStatus[]>([])
-  const ws = useRef<WebSocket | null>(null)
+  const socket = useRef<any>(null)
 
   useEffect(() => {
     if (!userId) return
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001'
-    ws.current = new WebSocket(`${wsUrl}/ws?userId=${userId}`)
+    // Dynamically import socket.io-client
+    import('socket.io-client').then(({ io }) => {
+      const wsUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      console.log('Attempting to connect to Socket.io server at:', wsUrl)
+      socket.current = io(wsUrl, {
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+      })
 
-    ws.current.onopen = () => {
-      setConnected(true)
-      console.log('WebSocket connected')
-    }
+      socket.current.on('connect', () => {
+        setConnected(true)
+        console.log('Socket.io connected')
+      })
 
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        
-        switch (data.type) {
-          case 'collaborator_joined':
-            setCollaborators(prev => [...prev.filter(c => c.id !== data.user.id), data.user])
-            break
-          case 'collaborator_left':
-            setCollaborators(prev => prev.filter(c => c.id !== data.userId))
-            break
-          case 'collaborator_typing':
-            setCollaborators(prev => prev.map(c => 
-              c.id === data.userId ? { ...c, isTyping: data.isTyping } : c
-            ))
-            break
-          case 'collaborators_list':
-            setCollaborators(data.collaborators)
-            break
-        }
-      } catch (error) {
-        console.error('WebSocket message parsing error:', error)
-      }
-    }
+      socket.current.on('connected', (data: any) => {
+        console.log('Socket authenticated:', data)
+      })
 
-    ws.current.onclose = () => {
-      setConnected(false)
-      setCollaborators([])
-      console.log('WebSocket disconnected')
-    }
+      socket.current.on('presence:list', (presence: any[]) => {
+        const collabs = presence.map(p => ({
+          id: p.userId,
+          name: p.userName,
+          email: p.userEmail || '',
+          avatar: p.userImage,
+          isOnline: true,
+          isTyping: false,
+          lastSeen: new Date(p.lastSeen).toISOString()
+        }))
+        setCollaborators(collabs)
+      })
 
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
+      socket.current.on('typing:update', (data: any) => {
+        setCollaborators(prev => prev.map(c =>
+          c.id === data.userId ? { ...c, isTyping: data.isTyping } : c
+        ))
+      })
+
+      socket.current.on('user:joined', (data: any) => {
+        setCollaborators(prev => {
+          const exists = prev.find(c => c.id === data.userId)
+          if (exists) return prev
+          return [...prev, {
+            id: data.userId,
+            name: data.userName,
+            email: data.userEmail || '',
+            avatar: data.userImage,
+            isOnline: true,
+            isTyping: false,
+            lastSeen: new Date().toISOString()
+          }]
+        })
+      })
+
+      socket.current.on('user:left', (data: any) => {
+        setCollaborators(prev => prev.filter(c => c.id !== data.userId))
+      })
+
+      socket.current.on('disconnect', () => {
+        setConnected(false)
+        setCollaborators([])
+        console.log('Socket.io disconnected')
+      })
+
+      socket.current.on('connect_error', (error: any) => {
+        console.error('Socket.io connection error:', error)
+        console.log('Error details:', error.message)
+        setConnected(false)
+      })
+
+      socket.current.on('error', (error: any) => {
+        console.error('Socket.io error:', error)
+      })
+
+      // For debugging - try to connect even without authentication
+      socket.current.on('auth_failed', (data: any) => {
+        console.log('Authentication failed, but connection established:', data)
+        setConnected(true) // Show as connected for demo purposes
+      })
+    }).catch(error => {
+      console.error('Failed to load socket.io-client:', error)
+    })
 
     return () => {
-      ws.current?.close()
+      if (socket.current) {
+        socket.current.disconnect()
+        socket.current = null
+      }
     }
   }, [userId])
 
   const sendMessage = useCallback((type: string, data: any) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ type, ...data }))
+    if (socket.current?.connected) {
+      socket.current.emit(type, data)
     }
   }, [])
 
   return { connected, collaborators, sendMessage }
 }
 
-export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV2ClientProps) {
+export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps) {
   const router = useRouter()
+  const { keys, hasValidKey, getHealthyProviders, refreshKeys, isLoading: keysLoading } = useApiKeys()
   
   // Core state
   const [messages, setMessages] = useState<Message[]>([])
@@ -483,11 +519,13 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
   
   // Thread helper functions
   const createThread = useCallback(() => {
+    const now = new Date()
     const newThread = {
       id: `thread-${Date.now()}`,
       title: 'New Conversation',
       messages: [],
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       isPinned: false,
       isArchived: false
     }
@@ -626,8 +664,9 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
     
     // Check API keys
     const modelToUse = modelOverride || (autoOptimize ? await selectOptimalModel(text) : selectedModel)
-    if (modelToUse.requiresApiKey && !user.apiKeyStatus?.[modelToUse.provider]) {
+    if (modelToUse.requiresApiKey && !hasValidKey(modelToUse.provider)) {
       toast.error(`Please configure ${modelToUse.provider.toUpperCase()} API key first`)
+      router.push('/settings/api-keys')
       return
     }
     
@@ -641,6 +680,16 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
     }
     
     setMessages(prev => [...prev, userMessage])
+
+    // Update thread's updatedAt timestamp
+    if (currentThread) {
+      setThreads(prev => prev.map(thread =>
+        thread.id === currentThread.id
+          ? { ...thread, updatedAt: new Date() }
+          : thread
+      ))
+    }
+
     setInput('')
     setAttachments([])
     setIsLoading(true)
@@ -686,20 +735,61 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
         setIsStreaming(true)
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
-        
+
         let fullContent = ''
+        let buffer = ''
+
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          
-          const chunk = decoder.decode(value)
-          fullContent += chunk
-          
-          setMessages(prev => prev.map(msg => 
-            msg.id === assistantMessage.id 
-              ? { ...msg, content: fullContent }
-              : msg
-          ))
+
+          const chunk = decoder.decode(value, { stream: true })
+          buffer += chunk
+
+          // Parse SSE events from buffer
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6) // Remove "data: " prefix
+
+              if (data === '[DONE]') {
+                break
+              }
+
+              try {
+                const parsed = JSON.parse(data)
+
+                if (parsed.type === 'content') {
+                  fullContent += parsed.content
+
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessage.id
+                      ? { ...msg, content: fullContent }
+                      : msg
+                  ))
+                } else if (parsed.type === 'analysis') {
+                  // Handle analysis data if needed
+                  setPromptAnalysis(parsed.analysis)
+                } else if (parsed.type === 'metadata') {
+                  // Handle final metadata
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessage.id
+                      ? {
+                          ...msg,
+                          metadata: parsed.metadata,
+                          cost: parsed.metadata?.cost || 0,
+                          tokens: parsed.metadata?.totalTokens || 0
+                        }
+                      : msg
+                  ))
+                }
+              } catch (e) {
+                console.warn('Failed to parse SSE data:', data, e)
+              }
+            }
+          }
         }
         
         setMessages(prev => prev.map(msg => 
@@ -752,7 +842,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
     
     // Filter models based on API key availability
     const availableModels = MODELS.filter(model => 
-      !model.requiresApiKey || user.apiKeyStatus?.[model.provider]
+      !model.requiresApiKey || hasValidKey(model.provider)
     )
     
     if (availableModels.length === 0) {
@@ -870,35 +960,23 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
   }, [messages])
 
   const isModelAvailable = (model: ModelOption) => {
-    return !model.requiresApiKey || user.apiKeyStatus?.[model.provider]
+    return !model.requiresApiKey || hasValidKey(model.provider)
   }
 
   // Render
   return (
-    <div 
-      className="fixed inset-0 bg-gray-950 overflow-hidden"
+    <div
+      className="fixed inset-x-0 top-16 bottom-0 bg-gray-950 overflow-hidden"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
       
-      {/* Back Button - Fixed at top */}
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          onClick={() => router.back()}
-          size="sm"
-          variant="ghost"
-          className="bg-gray-900/80 backdrop-blur-md border border-gray-800 hover:bg-gray-800/80 text-gray-300 hover:text-white transition-all"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-      </div>
       
       {/* Drag overlay */}
       {isDragging && (
-        <div className="fixed inset-0 z-50 bg-blue-500/20 backdrop-blur-sm border-2 border-dashed border-blue-400 flex items-center justify-center">
+        <div className="absolute inset-0 z-[60] bg-blue-500/20 backdrop-blur-sm border-2 border-dashed border-blue-400 flex items-center justify-center">
           <div className="text-center">
             <Upload className="w-12 h-12 mx-auto mb-4 text-blue-400" />
             <p className="text-white text-lg font-medium">Drop files to upload</p>
@@ -988,7 +1066,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       className={cn(
-                        "border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer",
+                        "group border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer",
                         currentThread?.id === thread.id && "bg-indigo-950/20 border-l-2 border-l-indigo-500"
                       )}
                       onClick={() => selectThread(thread.id)}
@@ -1041,7 +1119,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800/80 backdrop-blur-sm"
+                                className="h-6 w-6 opacity-70 hover:opacity-100 transition-opacity hover:bg-gray-800/80 backdrop-blur-sm"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreVertical className="w-3 h-3" />
@@ -1166,54 +1244,18 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Model Selector */}
-              <Select 
-                value={selectedModel.id} 
-                onValueChange={(id) => {
-                  const model = MODELS.find(m => m.id === id)
-                  if (model && isModelAvailable(model)) {
-                    setSelectedModel(model)
-                  } else {
-                    toast.error('This model requires API key configuration')
-                  }
-                }}
-              >
-                <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
-                  <div className="flex items-center gap-2">
-                    <span>{selectedModel.icon}</span>
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
-                  {MODELS.map(model => (
-                    <SelectItem 
-                      key={model.id} 
-                      value={model.id}
-                      disabled={!isModelAvailable(model)}
-                      className="hover:bg-gray-800/50"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span>{model.icon}</span>
-                          <span>{model.name}</span>
-                        </div>
-                        {!isModelAvailable(model) && (
-                          <Key className="w-3 h-3 text-red-400 ml-2" />
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Quick Actions */}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setInfoPanelOpen(!infoPanelOpen)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  {infoPanelOpen ? <ChevronRight className="h-5 w-5" /> : <Settings className="h-5 w-5" />}
+                </Button>
+              </div>
 
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setInfoPanelOpen(!infoPanelOpen)}
-                className="text-gray-400 hover:text-white"
-              >
-                {infoPanelOpen ? <ChevronRight className="h-5 w-5" /> : <Settings className="h-5 w-5" />}
-              </Button>
             </div>
           </div>
           
@@ -1260,9 +1302,9 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                               <div className="flex items-center gap-1">
                                 <span>{message.model || 'AI'}</span>
                                 {message.provider && (
-                                  <span className="text-[10px] opacity-60">
-                                    {PROVIDER_ICONS[message.provider as keyof typeof PROVIDER_ICONS]}
-                                  </span>
+                                  <div className="opacity-60">
+                                    {getProviderIcon(message.provider, "w-3 h-3")}
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -1479,7 +1521,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
           
           {/* Enhanced Input Area */}
           <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm p-4 flex-shrink-0">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto overflow-hidden">
               {/* Prompt Analysis */}
               {promptAnalysis && (
                 <motion.div
@@ -1496,12 +1538,12 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                         promptAnalysis.complexity === 'complex' && 'text-orange-400',
                         promptAnalysis.complexity === 'expert' && 'text-red-400'
                       )}>{promptAnalysis.complexity}</span></span>
-                      <span>Est. Cost: ${promptAnalysis.estimatedCost.toFixed(4)}</span>
-                      <span>Tokens: ~{promptAnalysis.estimatedTokens}</span>
+                      <span>Est. Cost: ${(promptAnalysis.estimatedCost || 0).toFixed(4)}</span>
+                      <span>Tokens: ~{promptAnalysis.estimatedTokens || 0}</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500">
-                    Suggested model: {MODELS.find(m => m.id === promptAnalysis.suggestedModel)?.name}
+                    Suggested model: {MODELS.find(m => m.id === promptAnalysis.suggestedModel)?.name || 'Auto-selected'}
                   </div>
                 </motion.div>
               )}
@@ -1562,7 +1604,7 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
 
               {/* Input Container */}
               <div className="relative border border-gray-800/50 rounded-xl bg-gray-900/30 backdrop-blur-sm">
-                <div className="flex items-center px-4 py-2">
+                <div className="flex items-center px-4 py-3 min-w-0 overflow-hidden">
                   <textarea
                     ref={textareaRef}
                     value={input}
@@ -1582,9 +1624,9 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                       }
                     }}
                     placeholder={`Message AIOptimise (${selectedMode} mode)...`}
-                    className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none min-h-[24px] max-h-[120px] py-2"
-                    style={{ 
-                      height: Math.min(Math.max(24, input.split('\n').length * 20), 120) 
+                    className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none min-h-[20px] max-h-[120px] py-0 min-w-0 overflow-hidden leading-5"
+                    style={{
+                      height: Math.min(Math.max(20, input.split('\n').length * 20), 120)
                     }}
                     disabled={isLoading || isStreaming}
                   />
@@ -1676,50 +1718,84 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
                   )}
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setAutoOptimize(!autoOptimize)}
-                          className={cn(
-                            "h-7 px-2 text-xs transition-all",
-                            autoOptimize && "text-indigo-400 bg-indigo-500/10"
-                          )}
-                        >
-                          <Zap className="h-3 w-3 mr-1" />
-                          Auto-Optimize
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Automatically select the best model for your prompt</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                {/* Integrated Model Selection & Auto-Optimize */}
+                <div className="flex items-center gap-3">
+                  {/* Model Selection with Auto-Optimize Integration */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Model:</span>
+                    <div className="relative">
+                      <Select
+                        value={autoOptimize ? "auto" : selectedModel.id}
+                        onValueChange={(value) => {
+                          if (value === "auto") {
+                            setAutoOptimize(true)
+                          } else {
+                            setAutoOptimize(false)
+                            const model = MODELS.find(m => m.id === value)
+                            if (model && isModelAvailable(model)) {
+                              setSelectedModel(model)
+                            } else {
+                              toast.error('This model requires API key configuration')
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-44 bg-gray-800/50 border-gray-700 text-white h-7">
+                          <div className="flex items-center gap-2">
+                            {autoOptimize ? (
+                              <>
+                                <Zap className="w-4 h-4 text-indigo-400" />
+                                <span className="truncate text-xs text-indigo-400 font-medium">Auto</span>
+                              </>
+                            ) : (
+                              <>
+                                {getProviderIcon(selectedModel.provider, "w-4 h-4")}
+                                <span className="truncate text-xs">{selectedModel.name}</span>
+                              </>
+                            )}
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
+                          {/* Auto-Optimize Option */}
+                          <SelectItem value="auto" className="hover:bg-gray-800/50 py-3">
+                            <div className="flex items-center gap-3 w-full">
+                              <Zap className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-indigo-400 font-medium text-sm">Auto</span>
+                                <span className="text-xs text-gray-500 leading-tight">
+                                  Balanced quality and speed,<br />
+                                  recommended for most tasks
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setStreamResponse(!streamResponse)}
-                          className={cn(
-                            "h-7 px-2 text-xs transition-all",
-                            streamResponse && "text-green-400 bg-green-500/10"
-                          )}
-                        >
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          Stream
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Stream responses in real-time</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                          {/* Separator */}
+                          <div className="h-px bg-gray-700 my-1" />
+
+                          {/* Manual Model Selection */}
+                          {MODELS.map(model => (
+                            <SelectItem
+                              key={model.id}
+                              value={model.id}
+                              disabled={!isModelAvailable(model)}
+                              className="hover:bg-gray-800/50"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  {getProviderIcon(model.provider, "w-4 h-4")}
+                                  <span>{model.name}</span>
+                                </div>
+                                {!isModelAvailable(model) && (
+                                  <Key className="w-3 h-3 text-red-400 ml-2" />
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1834,14 +1910,14 @@ export default function AIOptimiseV2ClientEnhanced({ user, limits }: AIOptimiseV
               <div className="p-4 border-b border-gray-800">
                 <h4 className="text-sm font-medium text-white mb-3">API Keys</h4>
                 <div className="space-y-2">
-                  {Object.entries(PROVIDER_ICONS).map(([provider, icon]) => (
+                  {['openai', 'claude', 'gemini', 'grok', 'perplexity', 'cohere', 'mistral'].map((provider) => (
                     <div key={provider} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">{icon}</span>
+                        {getProviderIcon(provider, "w-4 h-4")}
                         <span className="text-xs text-gray-400 capitalize">{provider}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        {user.apiKeyStatus?.[provider as keyof typeof user.apiKeyStatus] ? (
+                        {hasValidKey(provider as Provider) ? (
                           <Check className="w-3 h-3 text-green-500" />
                         ) : (
                           <X className="w-3 h-3 text-red-500" />

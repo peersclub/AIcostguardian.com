@@ -5,7 +5,10 @@
   "installCommand": "npm install",
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 10
+      "maxDuration": 30
+    },
+    "app/api/aioptimise/chat/route.ts": {
+      "maxDuration": 60
     }
   },
   "env": {

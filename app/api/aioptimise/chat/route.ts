@@ -30,13 +30,25 @@ export async function POST(request: NextRequest) {
     });
 
     const body = await request.json();
-    const { 
-      threadId, 
-      message, 
+    const {
+      threadId,
+      message,
       mode = OptimizationMode.BALANCED,
       modelOverride,
-      files 
+      files
     } = body;
+
+    // If no threadId provided, create a new thread
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      const newThread = await prisma.aIThread.create({
+        data: {
+          userId: user.id,
+          title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
+        },
+      });
+      currentThreadId = newThread.id;
+    }
 
     // Get user preferences
     const preferences = await prisma.promptPreference.findUnique({
@@ -95,7 +107,7 @@ export async function POST(request: NextRequest) {
     // Create user message in database
     const userMessage = await prisma.aIMessage.create({
       data: {
-        threadId,
+        threadId: currentThreadId,
         role: MessageRole.USER,
         content: message,
         selectedModel: selectedModel.model,
@@ -156,7 +168,7 @@ export async function POST(request: NextRequest) {
     processAIResponse(
       selectedModel,
       message,
-      threadId,
+      currentThreadId,
       user.id,
       modelReason,
       writer,
@@ -245,9 +257,9 @@ async function processAIResponse(
         const delta = chunk.choices[0]?.delta?.content || '';
         if (delta) {
           content += delta;
-          await writer.write(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'content', 
-            content: delta 
+          await writer.write(encoder.encode(`data: ${JSON.stringify({
+            type: 'content',
+            content: delta
           })}\n\n`));
         }
 
