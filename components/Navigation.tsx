@@ -63,9 +63,7 @@ export default function Navigation() {
       icon: Layers,
       visibility: 'visitor',
       children: [
-        { label: 'AiOptimize (New)', href: '/aioptimize', icon: Sparkles, badge: 'Latest', visibility: 'all' },
-        { label: 'AiOptimise (Original)', href: '/aioptimise', icon: Brain, badge: 'V1', visibility: 'all' },
-        { label: 'AiOptimiseV2 (Enhanced)', href: '/aioptimiseV2', icon: Target, badge: 'V2', visibility: 'all' },
+        { label: 'AiOptimise Chat', href: '/aioptimiseV2', icon: Sparkles, badge: 'Latest', visibility: 'all' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'all' },
         { label: 'AI Models', href: '/models', icon: Brain, visibility: 'all' },
         { label: 'Integrations', href: '/integrations', icon: Globe, visibility: 'all' }
@@ -116,16 +114,11 @@ export default function Navigation() {
       ]
     },
     {
-      label: 'AiOptimize',
-      href: '/aioptimize',
+      label: 'AiOptimise',
+      href: '/aioptimiseV2',
       icon: Sparkles,
       badge: 'Pro',
-      visibility: 'auth',
-      children: [
-        { label: 'AiOptimize (New)', href: '/aioptimize', icon: Sparkles, badge: 'Latest', visibility: 'auth' },
-        { label: 'AiOptimise (Original)', href: '/aioptimise', icon: Brain, badge: 'V1', visibility: 'auth' },
-        { label: 'AiOptimiseV2 (Enhanced)', href: '/aioptimiseV2', icon: Target, badge: 'V2', visibility: 'auth' }
-      ]
+      visibility: 'auth'
     },
     // Add Organization link for admins
     ...(isAdmin ? [{
