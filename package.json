@@ -21,6 +21,8 @@
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
+    "test:seed": "tsx prisma/seed-test.ts",
+    "test:teardown": "tsx prisma/teardown.ts",
     "type-check": "tsc --noEmit",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
