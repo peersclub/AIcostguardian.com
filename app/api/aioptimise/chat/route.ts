@@ -7,6 +7,7 @@ import { ModelSelector } from '@/lib/prompt-analyzer/model-selector';
 import { OptimizationMode, MessageRole } from '@prisma/client';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import { getGeminiClient } from '@/lib/gemini-client';
 import { apiKeyService, type Provider } from '@/lib/core/api-key.service';
 import { userService } from '@/lib/core/user.service';
 import { usageService } from '@/lib/core/usage.service';
@@ -14,6 +15,66 @@ import { usageService } from '@/lib/core/usage.service';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Helper function to build messages with project context
+function buildMessagesWithContext(userMessage: string, projectContext: any) {
+  const messages: any[] = [];
+
+  // Add system message if project context exists
+  if (projectContext) {
+    let systemPrompt = '';
+
+    // Add system prompt from project
+    if (projectContext.systemPrompt) {
+      systemPrompt += projectContext.systemPrompt;
+    }
+
+    // Add instructions
+    if (projectContext.instructions) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Instructions: ${projectContext.instructions}`;
+    }
+
+    // Add project goals
+    if (projectContext.projectGoals) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Project Goals: ${projectContext.projectGoals}`;
+    }
+
+    // Add expected outcome
+    if (projectContext.expectedOutcome) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Expected Outcome: ${projectContext.expectedOutcome}`;
+    }
+
+    // Add keywords as context
+    if (projectContext.keywords && projectContext.keywords.length > 0) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Relevant Keywords: ${projectContext.keywords.join(', ')}`;
+    }
+
+    // Add project type context
+    if (projectContext.projectType) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Project Type: ${projectContext.projectType.replace('_', ' ').toLowerCase()}`;
+    }
+
+    // Add category if specified
+    if (projectContext.category) {
+      systemPrompt += systemPrompt ? '\n\n' : '';
+      systemPrompt += `Category: ${projectContext.category}`;
+    }
+
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+  }
+
+  // Add user message
+  messages.push({ role: 'user', content: userMessage });
+
+  return messages;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +96,8 @@ export async function POST(request: NextRequest) {
       message,
       mode = OptimizationMode.BALANCED,
       modelOverride,
-      files
+      files,
+      projectContext
     } = body;
 
     // If no threadId provided, create a new thread
@@ -164,10 +226,13 @@ export async function POST(request: NextRequest) {
       }
     })}\n\n`));
 
+    // Build messages with project context
+    const messages = buildMessagesWithContext(message, projectContext);
+
     // Process with selected model
     processAIResponse(
       selectedModel,
-      message,
+      messages,
       currentThreadId,
       user.id,
       modelReason,
@@ -193,7 +258,7 @@ export async function POST(request: NextRequest) {
 
 async function processAIResponse(
   model: { provider: string; model: string },
-  prompt: string,
+  messages: any[],
   threadId: string,
   userId: string,
   modelReason: string,
@@ -246,10 +311,10 @@ async function processAIResponse(
     if (dbProvider === 'openai') {
       console.log('Creating OpenAI client with model:', model.model);
       const openai = new OpenAI({ apiKey });
-      
+
       const stream = await openai.chat.completions.create({
         model: model.model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: messages,
         stream: true,
       });
 
@@ -271,10 +336,15 @@ async function processAIResponse(
       }
     } else if (dbProvider === 'anthropic') {
       const anthropic = new Anthropic({ apiKey });
-      
+
+      // Extract system message for Anthropic (if exists)
+      const systemMessage = messages.find(msg => msg.role === 'system');
+      const userMessages = messages.filter(msg => msg.role !== 'system');
+
       const stream = await anthropic.messages.create({
         model: model.model,
-        messages: [{ role: 'user', content: prompt }],
+        system: systemMessage?.content,
+        messages: userMessages,
         max_tokens: 4096,
         stream: true,
       });
@@ -283,16 +353,88 @@ async function processAIResponse(
         if (chunk.type === 'content_block_delta') {
           const delta = (chunk.delta as any).text || '';
           content += delta;
-          await writer.write(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'content', 
-            content: delta 
+          await writer.write(encoder.encode(`data: ${JSON.stringify({
+            type: 'content',
+            content: delta
           })}\n\n`));
         }
       }
-      
+
       // Estimate tokens for Anthropic
-      promptTokens = Math.ceil(prompt.length / 4);
+      const totalMessageLength = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+      promptTokens = Math.ceil(totalMessageLength / 4);
       completionTokens = Math.ceil(content.length / 4);
+    } else if (dbProvider === 'gemini' || dbProvider === 'google') {
+      const geminiClient = getGeminiClient(userId, apiKey);
+      const geminiModel = geminiClient.getGenerativeModel({
+        model: model.model,
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature: 0.7,
+        }
+      });
+
+      // Convert messages to Gemini format
+      const prompt = messages.map(msg => {
+        if (msg.role === 'system') {
+          return `System: ${msg.content}`;
+        } else if (msg.role === 'user') {
+          return `User: ${msg.content}`;
+        } else {
+          return `Assistant: ${msg.content}`;
+        }
+      }).join('\n\n');
+
+      const result = await geminiModel.generateContent(prompt);
+      const response = await result.response;
+      content = response.text();
+
+      // Simulate streaming by sending the content in chunks
+      const chunkSize = 50; // Characters per chunk
+      for (let i = 0; i < content.length; i += chunkSize) {
+        const chunk = content.slice(i, i + chunkSize);
+        await writer.write(encoder.encode(`data: ${JSON.stringify({
+          type: 'content',
+          content: chunk
+        })}\n\n`));
+
+        // Small delay to simulate natural streaming
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      // Estimate tokens for Gemini
+      const totalMessageLength = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+      promptTokens = Math.ceil(totalMessageLength / 4);
+      completionTokens = Math.ceil(content.length / 4);
+    } else if (dbProvider === 'grok' || dbProvider === 'xai') {
+      // Grok uses OpenAI-compatible API
+      const openai = new OpenAI({
+        apiKey,
+        baseURL: 'https://api.x.ai/v1'
+      });
+
+      const stream = await openai.chat.completions.create({
+        model: model.model,
+        messages: messages,
+        stream: true,
+      });
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content || '';
+        if (delta) {
+          content += delta;
+          await writer.write(encoder.encode(`data: ${JSON.stringify({
+            type: 'content',
+            content: delta
+          })}\n\n`));
+        }
+
+        // Update token counts (simplified)
+        if (chunk.usage) {
+          promptTokens = chunk.usage.prompt_tokens || 0;
+          completionTokens = chunk.usage.completion_tokens || 0;
+        }
+      }
     } else {
       // Mock response for other providers
       content = `This is a mock response from ${model.provider} - ${model.model}. In production, this would be the actual AI response.`;
@@ -301,7 +443,8 @@ async function processAIResponse(
         content 
       })}\n\n`));
       
-      promptTokens = Math.ceil(prompt.length / 4);
+      const totalMessageLength = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+      promptTokens = Math.ceil(totalMessageLength / 4);
       completionTokens = Math.ceil(content.length / 4);
     }
 

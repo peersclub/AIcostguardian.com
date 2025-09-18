@@ -63,6 +63,7 @@ model User {
   roles                 Role[]       @relation("UserRoles")
   alertRules            AlertRule[]
   preferences           UserPreferences?
+  editedThreadContexts  ThreadContext[] @relation("ThreadContextEditor")
 }
 
 model Organization {
@@ -719,6 +720,7 @@ model AIThread {
   analytics         ThreadAnalytics?
   collaborators     ThreadCollaborator[]
   presences         ThreadPresence[]
+  context           ThreadContext?
   
   @@index([userId, isArchived])
   @@index([userId, lastMessageAt])
@@ -1556,4 +1558,74 @@ model CostPrediction {
   @@index([userId, period])
   @@index([organizationId, period])
   @@index([createdAt])
+}
+
+// Collaborative Thread Context System
+model ThreadContext {
+  id                String    @id @default(cuid())
+  threadId          String    @unique
+
+  // Core Project Settings
+  projectName       String?   // Optional project name (can differ from thread title)
+  projectType       ProjectType @default(GENERAL)
+  systemPrompt      String?   @db.Text // Editable system prompt
+  instructions      String?   @db.Text // Project instructions/guidelines
+
+  // AI Behavior Configuration
+  defaultModel      String?   @default("gpt-4o-mini")
+  defaultProvider   String?   @default("openai")
+  temperature       Float?    @default(0.7)
+  maxTokens         Int?      @default(4000)
+  topP              Float?    @default(1.0)
+
+  // Context Management
+  contextWindow     Int?      @default(8000)
+  memoryEnabled     Boolean   @default(true)
+  memorySize        Int?      @default(50) // Number of messages to remember
+
+  // Collaboration Settings
+  allowEditing      Boolean   @default(true)  // Can collaborators edit context?
+  requireApproval   Boolean   @default(false) // Require approval for context changes?
+
+  // Project Metadata
+  category          String?   // e.g., "Development", "Research", "Content"
+  keywords          String[]  @default([])
+  projectGoals      String?   @db.Text
+  expectedOutcome   String?   @db.Text
+
+  // Versioning
+  version           Int       @default(1)
+  lastEditedBy      String?
+  lastEditedAt      DateTime?
+
+  // Template Support
+  isTemplate        Boolean   @default(false)
+  templateName      String?
+  templateCategory  String?
+  usageCount        Int       @default(0) // If template, track usage
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  thread            AIThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  lastEditor        User?     @relation("ThreadContextEditor", fields: [lastEditedBy], references: [id])
+
+  @@index([threadId])
+  @@index([projectType])
+  @@index([isTemplate, templateCategory])
+  @@index([category])
+}
+
+// New Enums for Collaborative Features
+enum ProjectType {
+  GENERAL          // General conversation
+  DEVELOPMENT      // Software development
+  RESEARCH         // Research project
+  CONTENT_CREATION // Content/writing
+  ANALYSIS         // Data analysis
+  BRAINSTORMING    // Ideation session
+  SUPPORT          // Customer support
+  TRAINING         // Training/education
+  ASSETWORKS_AI    // AssetWorks AI Financial Analytics Platform
+  CUSTOM           // Custom project type
 }

@@ -19,7 +19,7 @@ import {
   TrendingUp, AlertCircle, Lightbulb, BookOpen, Menu,
   Globe, Database, Upload, Eye, EyeOff, Clock, Wifi,
   WifiOff, User, Bot, Loader2, ChevronDown, Maximize2,
-  Shield, Key, ExternalLink, Palette, ChevronUp, ArrowLeft
+  Shield, Key, ExternalLink, Palette, ChevronUp, ArrowLeft, Folder
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -62,6 +62,8 @@ import { Slider } from '@/components/ui/slider'
 import { useThreadManager } from './hooks/useThreadManager'
 import { useApiKeys } from '@/hooks/use-api-keys'
 import type { Provider } from '@/lib/core/api-key.service'
+import { ContextPanel } from '@/components/ai-projects/ContextPanel'
+import { ProjectSettings } from '@/components/ai-projects/ProjectSettings'
 import { getAIProviderLogoWithFallback } from '@/components/ui/ai-logos'
 
 // Types
@@ -419,6 +421,11 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
+
+  // Pagination state
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false)
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -428,7 +435,13 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   const [autoOptimize, setAutoOptimize] = useState(true)
   const [streamResponse, setStreamResponse] = useState(true)
   const [showCostBreakdown, setShowCostBreakdown] = useState(false)
-  
+
+  // Project context state
+  const [projectContext, setProjectContext] = useState<any>(null)
+  const [contextLoading, setContextLoading] = useState(false)
+  const [showProjectSettings, setShowProjectSettings] = useState(false)
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false)
+
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [shareSettings, setShareSettings] = useState({
@@ -475,11 +488,32 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     setMessages([])
   }, [])
   
-  const selectThread = useCallback((threadId: string) => {
+  const selectThread = useCallback(async (threadId: string) => {
     const thread = threads.find(t => t.id === threadId)
     if (thread) {
       setCurrentThread(thread)
-      setMessages(thread.messages || [])
+      setMessages([]) // Clear messages first
+      setHasMoreOlderMessages(false)
+      setNextCursor(null)
+
+      try {
+        // Fetch initial messages from API (latest first, with pagination)
+        const response = await fetch(`/api/aioptimise/threads/${threadId}/messages?limit=20&direction=desc`)
+        if (response.ok) {
+          const data = await response.json()
+          // Messages come in desc order (newest first), so reverse to show chronologically
+          const reversedMessages = [...(data.messages || [])].reverse()
+          setMessages(reversedMessages)
+          setHasMoreOlderMessages(data.hasMore || false)
+          setNextCursor(data.nextCursor)
+        } else {
+          console.error('Failed to fetch messages:', response.statusText)
+          setMessages([])
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error)
+        setMessages([])
+      }
     }
   }, [threads])
   
@@ -493,14 +527,46 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   }, [currentThread])
   
   const renameThread = useCallback((threadId: string, newTitle: string) => {
-    setThreads(prev => prev.map(t => 
+    setThreads(prev => prev.map(t =>
       t.id === threadId ? { ...t, title: newTitle } : t
     ))
     if (currentThread?.id === threadId) {
       setCurrentThread({ ...currentThread, title: newTitle })
     }
   }, [currentThread])
-  
+
+  // Load older messages (pagination)
+  const loadOlderMessages = useCallback(async () => {
+    if (!currentThread?.id || !hasMoreOlderMessages || !nextCursor || isLoadingOlderMessages) {
+      return
+    }
+
+    setIsLoadingOlderMessages(true)
+
+    try {
+      const response = await fetch(
+        `/api/aioptimise/threads/${currentThread.id}/messages?limit=20&direction=desc&cursor=${nextCursor}`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        // Messages come in desc order (newest first), so reverse to show chronologically
+        const reversedMessages = [...(data.messages || [])].reverse()
+
+        // Add older messages to the beginning of the messages array
+        setMessages(prev => [...reversedMessages, ...prev])
+        setHasMoreOlderMessages(data.hasMore || false)
+        setNextCursor(data.nextCursor)
+      } else {
+        console.error('Failed to load older messages:', response.statusText)
+      }
+    } catch (error) {
+      console.error('Error loading older messages:', error)
+    } finally {
+      setIsLoadingOlderMessages(false)
+    }
+  }, [currentThread?.id, hasMoreOlderMessages, nextCursor, isLoadingOlderMessages])
+
   const searchThreads = useCallback((query: string) => {
     // Implement search functionality if needed
     return threads.filter(t => 
@@ -573,12 +639,45 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     if (chatContainerRef.current) {
       const container = chatContainerRef.current
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      
+
       if (isNearBottom) {
         container.scrollTop = container.scrollHeight
       }
     }
   }, [messages])
+
+  // Scroll handler for loading older messages
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!chatContainerRef.current) return
+
+      const container = chatContainerRef.current
+      const isNearTop = container.scrollTop < 200 // Trigger when 200px from top
+
+      if (isNearTop && hasMoreOlderMessages && !isLoadingOlderMessages) {
+        // Store current scroll position to maintain it after loading
+        const currentScrollHeight = container.scrollHeight
+        const currentScrollTop = container.scrollTop
+
+        loadOlderMessages().then(() => {
+          // Restore scroll position after new messages are added
+          setTimeout(() => {
+            if (chatContainerRef.current) {
+              const newScrollHeight = chatContainerRef.current.scrollHeight
+              const scrollDifference = newScrollHeight - currentScrollHeight
+              chatContainerRef.current.scrollTop = currentScrollTop + scrollDifference
+            }
+          }, 0)
+        })
+      }
+    }
+
+    const container = chatContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true })
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [hasMoreOlderMessages, isLoadingOlderMessages, loadOlderMessages])
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -598,6 +697,36 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     const files = Array.from(e.dataTransfer.files)
     handleFileUpload(files)
   }, [])
+
+  // Load project context for current thread
+  const loadProjectContext = async (threadId: string) => {
+    if (!threadId) return
+
+    try {
+      setContextLoading(true)
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/context`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setProjectContext(data)
+      } else if (response.status === 404) {
+        // No context exists yet
+        setProjectContext(null)
+      }
+    } catch (error) {
+      console.error('Error loading project context:', error)
+      setProjectContext(null)
+    } finally {
+      setContextLoading(false)
+    }
+  }
+
+  // Load context when thread changes
+  useEffect(() => {
+    if (currentThread?.id) {
+      loadProjectContext(currentThread.id)
+    }
+  }, [currentThread?.id])
 
   // Handlers
   const handleSendMessage = async (text: string, mode: string, modelOverride?: ModelOption) => {
@@ -664,7 +793,8 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
           provider: modelToUse.provider,
           mode,
           attachments,
-          stream: streamResponse
+          stream: streamResponse,
+          projectContext: projectContext
         })
       })
       
@@ -893,6 +1023,40 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       }
     } catch (error) {
       toast.error('Failed to create share link')
+    }
+  }
+
+  const handleSetupProject = async () => {
+    setProjectDropdownOpen(false) // Close dropdown when setting up project
+    try {
+      // Create a new thread first
+      const response = await fetch('/api/aioptimise/threads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'New Project Setup',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create thread')
+      }
+
+      const newThread = await response.json()
+
+      // Update the current thread state immediately
+      setCurrentThread(newThread)
+
+      // Add new thread to the threads list
+      setThreads(prev => [newThread, ...prev])
+
+      // Now open the project settings modal with the real thread ID
+      setShowProjectSettings(true)
+    } catch (error) {
+      console.error('Error creating thread for project setup:', error)
+      toast.error('Failed to create project. Please try again.')
     }
   }
 
@@ -1185,6 +1349,135 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Project Context - Compact dropdown for better header integration */}
+              {currentThread && (
+                <DropdownMenu open={projectDropdownOpen} onOpenChange={setProjectDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2 text-white hover:text-gray-300">
+                      <Folder className="w-4 h-4" />
+                      <span className="hidden md:inline text-sm">
+                        {contextLoading ? 'Loading...' : (projectContext?.projectName || 'Project')}
+                      </span>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-80 bg-gray-900/95 backdrop-blur-xl border-gray-700" align="start">
+                    {contextLoading ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-400">Loading project context...</p>
+                      </div>
+                    ) : projectContext ? (
+                      <div className="p-4 space-y-3">
+                        {/* Project Info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{projectContext.projectType === 'GENERAL' ? '💬' : projectContext.projectType === 'DEVELOPMENT' ? '💻' : projectContext.projectType === 'RESEARCH' ? '🔬' : projectContext.projectType === 'CONTENT_CREATION' ? '✍️' : projectContext.projectType === 'ANALYSIS' ? '📊' : projectContext.projectType === 'BRAINSTORMING' ? '💡' : projectContext.projectType === 'SUPPORT' ? '🎧' : projectContext.projectType === 'TRAINING' ? '🎓' : '⚙️'}</span>
+                            <h3 className="font-medium text-white">{projectContext.projectName}</h3>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {projectContext.projectType.replace('_', ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                            </Badge>
+                            {projectContext.category && (
+                              <Badge variant="outline" className="text-xs">
+                                {projectContext.category}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* AI Configuration */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
+                            <Brain className="h-3 w-3" />
+                            AI Configuration
+                          </div>
+                          <div className="pl-5 space-y-1 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Model:</span>
+                              <span className="text-indigo-400">{projectContext.defaultModel || 'Default'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Provider:</span>
+                              <span className="text-indigo-400">{projectContext.defaultProvider || 'OpenAI'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Instructions */}
+                        {projectContext.instructions && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
+                              <Hash className="h-3 w-3" />
+                              Instructions
+                            </div>
+                            <div className="pl-5 text-xs text-white">
+                              {projectContext.instructions.length > 120
+                                ? `${projectContext.instructions.substring(0, 120)}...`
+                                : projectContext.instructions
+                              }
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Keywords */}
+                        {projectContext.keywords?.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
+                              <Hash className="h-3 w-3" />
+                              Keywords
+                            </div>
+                            <div className="pl-5 flex flex-wrap gap-1">
+                              {projectContext.keywords.slice(0, 3).map((keyword: string, index: number) => (
+                                <Badge key={index} variant="outline" className="text-xs border-indigo-500/30 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                              {projectContext.keywords.length > 3 && (
+                                <Badge variant="outline" className="text-xs border-indigo-500/30 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors">
+                                  +{projectContext.keywords.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <DropdownMenuSeparator />
+
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <span>Version {projectContext.version}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 text-xs text-gray-400 hover:text-white"
+                            onClick={() => {
+                              setProjectDropdownOpen(false)
+                              setShowProjectSettings(true)
+                            }}
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <Folder className="w-8 h-8 mx-auto mb-2 text-gray-500" />
+                        <p className="text-sm mb-3 text-gray-400">No project context configured</p>
+                        <Button
+                          size="sm"
+                          onClick={handleSetupProject}
+                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border-0"
+                        >
+                          Set up project
+                        </Button>
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               {/* Quick Actions */}
               <div className="flex items-center gap-2">
                 <Button
@@ -1207,6 +1500,16 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
             style={{ height: 'calc(100vh - 140px)' }}
           >
             <div className="max-w-4xl mx-auto px-6 py-8">
+              {/* Loading indicator for older messages */}
+              {isLoadingOlderMessages && (
+                <div className="flex justify-center py-4 mb-4">
+                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading older messages...</span>
+                  </div>
+                </div>
+              )}
+
               <AnimatePresence>
                 {filteredAndSortedMessages.map((message, index) => (
                   <motion.div
@@ -1908,6 +2211,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                   </Button>
                 </div>
               </div>
+
             </motion.div>
           )}
         </AnimatePresence>
@@ -1991,6 +2295,21 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Project Settings Modal */}
+      {showProjectSettings && currentThread && (
+        <ProjectSettings
+          threadId={currentThread.id}
+          isOpen={showProjectSettings}
+          onClose={() => {
+            setShowProjectSettings(false)
+          }}
+          onSave={(newContext) => {
+            setProjectContext(newContext)
+            setShowProjectSettings(false)
+          }}
+        />
+      )}
     </div>
   )
 }

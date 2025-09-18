@@ -109,7 +109,8 @@ const TabsContent = React.forwardRef<
 >(({ className, value, children, ...props }, ref) => {
   const dataValue = props['data-value']
   const isActive = dataValue === value
-  
+
+
   return (
     <div
       ref={ref}
@@ -121,7 +122,7 @@ const TabsContent = React.forwardRef<
       hidden={!isActive}
       {...props}
     >
-      {children}
+      {isActive ? children : null}
     </div>
   )
 })

@@ -89,52 +89,62 @@ export default async function DashboardPage() {
 }
 ```
 
-## Theme & Dark Mode Best Practices - CRITICAL
+## Glass Morphism Design System - CRITICAL
 
-**NEVER use hardcoded colors like `text-gray-*` or `bg-gray-*` for text/UI elements**
+**MANDATORY: ALL UI components MUST follow the Glass Morphism Design System**
 
-Always use theme-aware Tailwind classes:
-- `text-foreground` - Primary text color (adapts to theme)
-- `text-muted-foreground` - Secondary/muted text
-- `bg-background` - Page background
-- `bg-card` - Card backgrounds
-- `bg-muted` - Muted backgrounds
-- `border-border` - Border colors
-- `text-primary` - Primary brand color text
-- `bg-primary` - Primary brand color background
+**Reference File: `DESIGN_SYSTEM.md` - Contains complete design standards**
 
-### Common Replacements:
-```
-❌ text-gray-200 → ✅ text-foreground
-❌ text-gray-400 → ✅ text-muted-foreground  
-❌ text-gray-600 → ✅ text-muted-foreground
-❌ bg-gray-800 → ✅ bg-card or bg-muted
-❌ border-gray-700 → ✅ border-border
+### Core Glass Morphism Classes:
+```css
+/* Main Containers */
+bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl
+
+/* Form Fields */
+bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500/20
+
+/* Typography */
+text-white           // Primary text
+text-gray-400        // Secondary text
+text-indigo-400      // Values/data text
+text-gray-500        // Muted text
 ```
 
-### Tables & Lists:
+### Provider/Model Order (CRITICAL):
 ```typescript
-// ✅ Correct table styling
-<table className="w-full text-sm text-foreground">
-  <thead>
-    <tr className="border-b border-border">
-      <th className="text-left py-2 text-foreground font-medium">...</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr className="border-b border-border hover:bg-muted/50">
-      <td className="py-2 text-foreground">...</td>
-    </tr>
-  </tbody>
-</table>
+// ✅ CORRECT ORDER
+1. Provider (FIRST)
+2. Model (SECOND - depends on provider)
+
+// ❌ WRONG ORDER
+1. Model
+2. Provider
 ```
 
-### Form Controls:
+### Modal Structure Template:
 ```typescript
-// ✅ Correct select/button styling
-<SelectTrigger className="bg-background text-foreground border-border">
-<Button className="text-foreground border-border">
+<div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div className="w-full max-w-4xl h-[85vh] flex flex-col bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl">
+    {/* Fixed header */}
+    <div className="border-b border-gray-700 p-6 flex-shrink-0">
+      <h2 className="text-xl font-semibold text-white">Title</h2>
+    </div>
+    {/* Scrollable content */}
+    <div className="flex-1 overflow-y-auto p-6">
+      {/* Content */}
+    </div>
+  </div>
+</div>
 ```
+
+### FORBIDDEN Classes:
+```css
+❌ bg-white, bg-gray-100, bg-gray-200, text-black
+❌ Any bright solid colors that break glass morphism
+❌ Model selection before provider selection
+```
+
+**ALWAYS check DESIGN_SYSTEM.md before creating ANY UI component!**
 
 ## AI Provider Logos
 - The project uses AI provider logos (OpenAI, Anthropic, Gemini, etc.) not company branding
