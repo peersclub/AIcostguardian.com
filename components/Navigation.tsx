@@ -35,7 +35,8 @@ import {
   Sparkles,
   Key,
   Activity,
-  Bell
+  Bell,
+  Award
 } from 'lucide-react'
 import { EnhancedNotificationBell } from '@/components/notifications/EnhancedNotificationBell'
 
@@ -107,8 +108,11 @@ export default function Navigation() {
       visibility: 'auth',
       children: [
         { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, visibility: 'auth' },
+        { label: 'Executive Center', href: '/executive', icon: Award, badge: 'Executive', visibility: 'auth' },
+        { label: 'Predictive Analytics', href: '/analytics', icon: Brain, badge: 'AI', visibility: 'auth' },
         { label: 'Usage & Analytics', href: '/usage', icon: BarChart3, visibility: 'auth' },
         { label: 'Cost Calculator', href: '/ai-cost-calculator', icon: Calculator, visibility: 'auth' },
+        { label: 'Model Optimization', href: '/optimization', icon: Zap, badge: 'Pro', visibility: 'auth' },
         { label: 'Monitoring', href: '/monitoring/dashboard', icon: Activity, visibility: 'auth' },
         { label: 'Alerts', href: '/alerts', icon: AlertTriangle, visibility: 'auth' }
       ]

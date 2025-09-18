@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { motion } from 'framer-motion'
-import { 
-  TrendingUp, 
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  TrendingUp,
   TrendingDown,
   DollarSign,
   Users,
@@ -25,7 +25,21 @@ import {
   ChevronRight,
   Clock,
   Shield,
-  Brain
+  Brain,
+  Wifi,
+  WifiOff,
+  Play,
+  Pause,
+  Server,
+  Database,
+  Globe,
+  Target,
+  Gauge,
+  LineChart,
+  PieChart,
+  Award,
+  ExternalLink,
+  Building2
 } from 'lucide-react'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { Button } from '@/components/ui/button'
@@ -46,34 +60,135 @@ export default function MonitoringDashboard() {
   const [monitoringData, setMonitoringData] = useState<any>(null)
   const [realTimeEnabled, setRealTimeEnabled] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [webSocketConnected, setWebSocketConnected] = useState(false)
+  const [realTimeMetrics, setRealTimeMetrics] = useState<any[]>([])
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'disconnected'>('excellent')
+  const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // WebSocket connection for real-time updates
+  const connectWebSocket = useCallback(() => {
+    if (!session || wsRef.current?.readyState === WebSocket.OPEN) return
+
+    try {
+      // Use existing websocket endpoint that already exists in the API routes
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = `${protocol}//${window.location.host}/api/monitoring/websocket`
+
+      wsRef.current = new WebSocket(wsUrl)
+
+      wsRef.current.onopen = () => {
+        console.log('WebSocket connected')
+        setWebSocketConnected(true)
+        setConnectionQuality('excellent')
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current)
+          reconnectTimeoutRef.current = null
+        }
+      }
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          // Update real-time metrics
+          if (data.type === 'metrics') {
+            setMonitoringData(prev => ({
+              ...prev,
+              metrics: { ...prev?.metrics, ...data.payload }
+            }))
+            setRealTimeMetrics(prev => [
+              ...prev.slice(-29), // Keep last 30 points
+              { ...data.payload, timestamp: Date.now() }
+            ])
+          }
+
+          // Handle alerts
+          if (data.type === 'alert') {
+            setMonitoringData(prev => ({
+              ...prev,
+              alerts: [data.payload, ...(prev?.alerts || [])]
+            }))
+          }
+
+          setLastUpdated(new Date())
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error)
+        }
+      }
+
+      wsRef.current.onclose = () => {
+        console.log('WebSocket disconnected')
+        setWebSocketConnected(false)
+        setConnectionQuality('disconnected')
+
+        // Attempt to reconnect if real-time is enabled
+        if (realTimeEnabled) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket()
+          }, 3000)
+        }
+      }
+
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setConnectionQuality('poor')
+      }
+
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error)
+      setConnectionQuality('disconnected')
+
+      // Fallback to polling
+      if (realTimeEnabled) {
+        setTimeout(() => {
+          fetchMonitoringData()
+        }, 5000)
+      }
+    }
+  }, [session, realTimeEnabled])
 
   // Handle URL-based tab navigation
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['overview', 'alerts', 'performance', 'insights'].includes(tab)) {
+    if (tab && ['overview', 'alerts', 'performance', 'insights', 'realtime'].includes(tab)) {
       setSelectedView(tab)
     }
   }, [searchParams])
 
-  // Fetch monitoring data
+  // Initialize WebSocket and data fetching
   useEffect(() => {
     if (session) {
       fetchMonitoringData()
+      if (realTimeEnabled) {
+        connectWebSocket()
+      }
     }
-  }, [session, selectedTimeframe])
 
-  // Real-time updates
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (realTimeEnabled && session) {
-      interval = setInterval(() => {
-        fetchMonitoringData()
-      }, 5000)
-    }
     return () => {
-      if (interval) clearInterval(interval)
+      if (wsRef.current) {
+        wsRef.current.close()
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
     }
-  }, [realTimeEnabled, session, selectedTimeframe])
+  }, [session, connectWebSocket])
+
+  // Handle real-time toggle
+  useEffect(() => {
+    if (realTimeEnabled && session) {
+      connectWebSocket()
+    } else {
+      if (wsRef.current) {
+        wsRef.current.close()
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+    }
+  }, [realTimeEnabled, session, connectWebSocket])
 
   const fetchMonitoringData = async () => {
     try {
@@ -169,25 +284,50 @@ export default function MonitoringDashboard() {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-4xl font-bold text-white mb-2">
-                  Real-Time Monitoring
-                </h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-green-500/20 rounded-lg">
+                    <Activity className="w-6 h-6 text-green-400" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-white">Advanced Monitoring</h1>
+                  <Badge className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-blue-500/20 text-green-300 font-medium border border-green-500/30">
+                    Real-time Intelligence
+                  </Badge>
+                </div>
                 <p className="text-gray-400">
-                  Live system metrics and performance monitoring
+                  Live system metrics with WebSocket streaming and AI-powered insights
                 </p>
               </div>
-              
-              <div className="flex items-center gap-4">
+
+              <div className="flex items-center gap-3">
+                {/* WebSocket Connection Status */}
+                <div className="flex items-center gap-2 bg-gray-900/50 backdrop-blur-xl rounded-lg px-4 py-2 border border-gray-700">
+                  {webSocketConnected ? (
+                    <>
+                      <Wifi className="w-4 h-4 text-green-400" />
+                      <span className="text-green-300 text-sm">WebSocket Connected</span>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-4 h-4 text-red-400" />
+                      <span className="text-red-300 text-sm">Disconnected</span>
+                      <div className="w-2 h-2 bg-red-400 rounded-full" />
+                    </>
+                  )}
+                </div>
+
                 {/* Real-time toggle */}
-                <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-2 border border-gray-700">
+                <div className="flex items-center gap-2 bg-gray-900/50 backdrop-blur-xl rounded-lg px-4 py-2 border border-gray-700">
                   <span className="text-gray-400 text-sm">Real-time</span>
                   <Switch
                     checked={realTimeEnabled}
                     onCheckedChange={setRealTimeEnabled}
                     className="data-[state=checked]:bg-green-600"
                   />
-                  {realTimeEnabled && (
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  {realTimeEnabled ? (
+                    <Play className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Pause className="w-4 h-4 text-gray-400" />
                   )}
                 </div>
 
@@ -220,10 +360,72 @@ export default function MonitoringDashboard() {
               </div>
             </div>
 
+            {/* Cross-Feature Navigation */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <button
+                onClick={() => router.push('/executive')}
+                className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Award className="w-5 h-5 text-indigo-400" />
+                  <span className="text-indigo-300 font-medium">Executive Center</span>
+                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-indigo-400 transition-colors" />
+                </div>
+                <p className="text-gray-400 text-sm">Strategic intelligence dashboard</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/analytics')}
+                className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Brain className="w-5 h-5 text-blue-400" />
+                  <span className="text-blue-300 font-medium">Predictive Analytics</span>
+                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                </div>
+                <p className="text-gray-400 text-sm">AI-powered forecasting</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/optimization')}
+                className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Zap className="w-5 h-5 text-purple-400" />
+                  <span className="text-purple-300 font-medium">Model Optimization</span>
+                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-purple-400 transition-colors" />
+                </div>
+                <p className="text-gray-400 text-sm">AI model selection & tuning</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/usage')}
+                className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <BarChart3 className="w-5 h-5 text-yellow-400" />
+                  <span className="text-yellow-300 font-medium">Usage Analytics</span>
+                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-yellow-400 transition-colors" />
+                </div>
+                <p className="text-gray-400 text-sm">Detailed consumption analysis</p>
+              </button>
+            </div>
+
             {/* Last updated */}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
-              Last updated: {lastUpdated.toLocaleTimeString()}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Clock className="w-4 h-4" />
+                Last updated: {lastUpdated.toLocaleTimeString()}
+                {webSocketConnected && (
+                  <Badge className="ml-2 px-2 py-1 bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                    Live
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Server className="w-3 h-3" />
+                <span>Connection: {connectionQuality}</span>
+              </div>
             </div>
           </motion.div>
 
@@ -360,31 +562,41 @@ export default function MonitoringDashboard() {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="bg-gray-900/50 border border-gray-700 p-1 mb-6">
-              <TabsTrigger 
-                value="overview" 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+            <TabsList className="bg-gray-900/50 backdrop-blur-xl border border-gray-700 p-1 mb-6">
+              <TabsTrigger
+                value="overview"
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger 
-                value="alerts" 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              <TabsTrigger
+                value="realtime"
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+              >
+                <Wifi className="w-4 h-4 mr-2" />
+                Real-time Stream
+                {webSocketConnected && (
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-2" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="alerts"
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
               >
                 <Bell className="w-4 h-4 mr-2" />
                 Alerts ({alerts.filter((a: any) => a.isActive).length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="performance" 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              <TabsTrigger
+                value="performance"
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Performance
               </TabsTrigger>
-              <TabsTrigger 
-                value="insights" 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              <TabsTrigger
+                value="insights"
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
               >
                 <Brain className="w-4 h-4 mr-2" />
                 Insights
@@ -448,6 +660,166 @@ export default function MonitoringDashboard() {
                           </Badge>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Real-time Stream Tab */}
+            <TabsContent value="realtime" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Live Metrics Feed */}
+                <Card className="bg-gradient-to-br from-green-900/20 to-blue-800/20 backdrop-blur-xl border border-green-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Wifi className="w-5 h-5 text-green-400" />
+                      Live Metrics Stream
+                      {webSocketConnected && (
+                        <Badge className="px-2 py-1 bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                          Connected
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Real-time metrics via WebSocket connection
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {webSocketConnected ? (
+                      <div className="space-y-3 max-h-80 overflow-y-auto">
+                        {realTimeMetrics.slice(-10).reverse().map((metric, index) => (
+                          <motion.div
+                            key={metric.timestamp || index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="p-3 bg-gray-800/30 rounded-lg border border-gray-700"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-green-400 text-sm font-medium">
+                                {new Date(metric.timestamp || Date.now()).toLocaleTimeString()}
+                              </span>
+                              <Badge className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-xs">
+                                Live
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-400">Load:</span>
+                                <span className="text-white ml-2">{metric.currentLoad?.toFixed(1) || 0}%</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Response:</span>
+                                <span className="text-white ml-2">{metric.avgResponseTime || 0}ms</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Errors:</span>
+                                <span className="text-white ml-2">{metric.errorRate?.toFixed(2) || 0}%</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Uptime:</span>
+                                <span className="text-white ml-2">{metric.uptime?.toFixed(1) || 99.9}%</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+
+                        {realTimeMetrics.length === 0 && (
+                          <div className="text-center py-8">
+                            <Activity className="w-12 h-12 text-gray-600 mx-auto mb-4 animate-pulse" />
+                            <p className="text-gray-400">Waiting for real-time data...</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <WifiOff className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                        <p className="text-red-300 font-medium mb-2">WebSocket Disconnected</p>
+                        <p className="text-gray-400 text-sm mb-4">
+                          Enable real-time monitoring to see live metrics
+                        </p>
+                        <Button
+                          onClick={() => setRealTimeEnabled(true)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          Start Real-time
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Connection Status & Stats */}
+                <Card className="bg-gray-900/50 backdrop-blur-xl border border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Server className="w-5 h-5 text-blue-400" />
+                      Connection Statistics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-gray-800/30 rounded-lg">
+                        <div className="text-xs text-gray-400 mb-1">Connection Status</div>
+                        <div className={`text-sm font-medium ${
+                          webSocketConnected ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {webSocketConnected ? 'Connected' : 'Disconnected'}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-800/30 rounded-lg">
+                        <div className="text-xs text-gray-400 mb-1">Quality</div>
+                        <div className={`text-sm font-medium capitalize ${
+                          connectionQuality === 'excellent' ? 'text-green-400' :
+                          connectionQuality === 'good' ? 'text-blue-400' :
+                          connectionQuality === 'poor' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {connectionQuality}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-800/30 rounded-lg">
+                        <div className="text-xs text-gray-400 mb-1">Data Points</div>
+                        <div className="text-sm font-medium text-white">
+                          {realTimeMetrics.length}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-800/30 rounded-lg">
+                        <div className="text-xs text-gray-400 mb-1">Update Rate</div>
+                        <div className="text-sm font-medium text-white">
+                          Real-time
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gauge className="w-4 h-4 text-green-400" />
+                        <span className="text-green-300 font-medium text-sm">System Performance</span>
+                      </div>
+                      <p className="text-green-200 text-xs">
+                        WebSocket connection provides sub-second latency for real-time monitoring.
+                        All metrics are streamed directly from the monitoring infrastructure.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="text-white font-medium text-sm">Recent Events</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {[
+                          { time: 'Just now', event: 'WebSocket connection established', type: 'success' },
+                          { time: '30s ago', event: 'Monitoring started', type: 'info' },
+                          { time: '1m ago', event: 'Real-time mode enabled', type: 'info' }
+                        ].map((event, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-800/30 rounded text-xs">
+                            <span className="text-gray-400">{event.time}</span>
+                            <span className="text-gray-300">{event.event}</span>
+                            <div className={`w-2 h-2 rounded-full ${
+                              event.type === 'success' ? 'bg-green-400' : 'bg-blue-400'
+                            }`} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
