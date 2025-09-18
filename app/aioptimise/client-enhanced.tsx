@@ -728,12 +728,38 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     }
   }, [currentThread?.id])
 
+  // Helper function to check if project settings are overriding dropdown
+  const isProjectSettingsActive = () => {
+    return projectContext?.defaultModel && projectContext?.defaultProvider &&
+           MODELS.find(m => m.id === projectContext.defaultModel && m.provider === projectContext.defaultProvider)
+  }
+
+  // Helper function to get effective model based on priority
+  const getEffectiveModel = async (text: string, modelOverride?: ModelOption): Promise<ModelOption> => {
+    // Priority 1: Model override (for specific calls)
+    if (modelOverride) return modelOverride
+
+    // Priority 2: Project context settings (defaultModel/defaultProvider)
+    if (projectContext?.defaultModel && projectContext?.defaultProvider) {
+      // Find the model from MODELS array that matches project settings
+      const projectModel = MODELS.find(m =>
+        m.id === projectContext.defaultModel && m.provider === projectContext.defaultProvider
+      )
+      if (projectModel) {
+        return projectModel
+      }
+    }
+
+    // Priority 3: UI dropdown selection (fallback when no project settings)
+    return autoOptimize ? await selectOptimalModel(text) : selectedModel
+  }
+
   // Handlers
   const handleSendMessage = async (text: string, mode: string, modelOverride?: ModelOption) => {
     if (!text.trim() && attachments.length === 0) return
     
-    // Check API keys
-    const modelToUse = modelOverride || (autoOptimize ? await selectOptimalModel(text) : selectedModel)
+    // Get the effective model using priority system
+    const modelToUse = await getEffectiveModel(text, modelOverride)
     if (modelToUse.requiresApiKey && !hasValidKey(modelToUse.provider)) {
       toast.error(`Please configure ${modelToUse.provider.toUpperCase()} API key first`)
       router.push('/settings/api-keys')
@@ -1965,26 +1991,39 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                 
                 {/* Integrated Model Selection & Auto-Optimize */}
                 <div className="flex items-center gap-3">
-                  {/* Model Selection with Auto-Optimize Integration */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Model:</span>
-                    <div className="relative">
-                      <Select
-                        value={autoOptimize ? "auto" : selectedModel.id}
-                        onValueChange={(value) => {
-                          if (value === "auto") {
-                            setAutoOptimize(true)
-                          } else {
-                            setAutoOptimize(false)
-                            const model = MODELS.find(m => m.id === value)
-                            if (model && isModelAvailable(model)) {
-                              setSelectedModel(model)
+                  {isProjectSettingsActive() ? (
+                    // Show project settings model (disabled state)
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Model:</span>
+                      <div className="flex items-center gap-2 px-3 py-1 bg-gray-800/50 border border-gray-700 rounded-md opacity-75">
+                        {getProviderIcon(projectContext.defaultProvider, "w-4 h-4")}
+                        <span className="text-xs text-gray-300">
+                          {MODELS.find(m => m.id === projectContext.defaultModel)?.name || projectContext.defaultModel}
+                        </span>
+                        <span className="text-xs text-indigo-400">(Project Setting)</span>
+                      </div>
+                    </div>
+                  ) : (
+                    // Show normal dropdown when no project settings
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Model:</span>
+                      <div className="relative">
+                        <Select
+                          value={autoOptimize ? "auto" : selectedModel.id}
+                          onValueChange={(value) => {
+                            if (value === "auto") {
+                              setAutoOptimize(true)
                             } else {
-                              toast.error('This model requires API key configuration')
+                              setAutoOptimize(false)
+                              const model = MODELS.find(m => m.id === value)
+                              if (model && isModelAvailable(model)) {
+                                setSelectedModel(model)
+                              } else {
+                                toast.error('This model requires API key configuration')
+                              }
                             }
-                          }
-                        }}
-                      >
+                          }}
+                        >
                         <SelectTrigger className="w-44 bg-gray-800/50 border-gray-700 text-white h-7">
                           <div className="flex items-center gap-2">
                             {autoOptimize ? (
@@ -2038,9 +2077,10 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
+                        </Select>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
