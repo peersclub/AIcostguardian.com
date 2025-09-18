@@ -20,11 +20,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
     // Fetch initial unread count
     fetchUnreadCount()
 
-    // Set up WebSocket for real-time updates
-    const ws = setupWebSocket()
+    // Use polling for production compatibility (Vercel doesn't support WebSocket)
+    const interval = setInterval(fetchUnreadCount, 30000) // Poll every 30 seconds
 
     return () => {
-      if (ws) ws.close()
+      clearInterval(interval)
     }
   }, [])
 
@@ -47,46 +47,6 @@ export function NotificationBell({ className }: NotificationBellProps) {
     }
   }
 
-  const setupWebSocket = () => {
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const ws = new WebSocket(`${protocol}//${window.location.host}/api/notifications/websocket`)
-
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data)
-        
-        if (message.type === 'new_notification') {
-          setUnreadCount(prev => prev + 1)
-          setHasNewNotification(true)
-          
-          // Reset animation after 1 second
-          setTimeout(() => setHasNewNotification(false), 1000)
-          
-          if (message.data?.priority === 'CRITICAL') {
-            setHasCritical(true)
-          }
-        } else if (message.type === 'notification_read') {
-          setUnreadCount(prev => Math.max(0, prev - 1))
-        } else if (message.type === 'unread_count') {
-          setUnreadCount(message.count || 0)
-        }
-      }
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
-        // Fall back to polling
-        const interval = setInterval(fetchUnreadCount, 30000)
-        return () => clearInterval(interval)
-      }
-
-      return ws
-    } catch (error) {
-      console.error('Failed to setup WebSocket:', error)
-      // Fall back to polling
-      const interval = setInterval(fetchUnreadCount, 30000)
-      return { close: () => clearInterval(interval) }
-    }
-  }
 
   const handleMarkAllRead = async () => {
     try {
