@@ -21,10 +21,12 @@ interface ApiKey {
 
 const PROVIDERS = [
   { id: 'openai', name: 'OpenAI' },
-  { id: 'anthropic', name: 'Claude' },
-  { id: 'google', name: 'Gemini' },
+  { id: 'claude', name: 'Claude' },
+  { id: 'gemini', name: 'Gemini' },
+  { id: 'grok', name: 'Grok' },
   { id: 'mistral', name: 'Mistral' },
   { id: 'perplexity', name: 'Perplexity' },
+  { id: 'cohere', name: 'Cohere' },
 ]
 
 export default function ApiKeyManager() {

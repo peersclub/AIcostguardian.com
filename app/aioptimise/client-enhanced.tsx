@@ -178,12 +178,45 @@ const getProviderIcon = (provider: string, className: string = "w-4 h-4") => {
 const MODELS: ModelOption[] = [
   {
     id: 'gpt-4o',
+    name: 'GPT-4o',
+    provider: 'openai',
+    contextLength: 128000,
+    inputCost: 0.005,
+    outputCost: 0.015,
+    speed: 'medium',
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    provider: 'openai',
+    contextLength: 128000,
+    inputCost: 0.00015,
+    outputCost: 0.0006,
+    speed: 'fast',
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'gpt-4-turbo',
     name: 'GPT-4 Turbo',
     provider: 'openai',
     contextLength: 128000,
     inputCost: 0.01,
     outputCost: 0.03,
     speed: 'medium',
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'gpt-3.5-turbo',
+    name: 'GPT-3.5 Turbo',
+    provider: 'openai',
+    contextLength: 16385,
+    inputCost: 0.0005,
+    outputCost: 0.0015,
+    speed: 'fast',
     capabilities: ['reasoning', 'coding', 'analysis', 'creative'],
     requiresApiKey: true
   },
@@ -199,6 +232,28 @@ const MODELS: ModelOption[] = [
     requiresApiKey: true
   },
   {
+    id: 'claude-3.5-sonnet',
+    name: 'Claude 3.5 Sonnet',
+    provider: 'claude',
+    contextLength: 200000,
+    inputCost: 0.003,
+    outputCost: 0.015,
+    speed: 'medium',
+    capabilities: ['reasoning', 'coding', 'analysis', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'claude-3.5-haiku',
+    name: 'Claude 3.5 Haiku',
+    provider: 'claude',
+    contextLength: 200000,
+    inputCost: 0.0008,
+    outputCost: 0.004,
+    speed: 'fast',
+    capabilities: ['reasoning', 'coding', 'analysis'],
+    requiresApiKey: true
+  },
+  {
     id: 'claude-3-sonnet',
     name: 'Claude 3 Sonnet',
     provider: 'claude',
@@ -207,6 +262,28 @@ const MODELS: ModelOption[] = [
     outputCost: 0.015,
     speed: 'medium',
     capabilities: ['reasoning', 'coding', 'analysis', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    provider: 'gemini',
+    contextLength: 2000000,
+    inputCost: 0.0035,
+    outputCost: 0.0105,
+    speed: 'medium',
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative', 'vision'],
+    requiresApiKey: true
+  },
+  {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    provider: 'gemini',
+    contextLength: 1000000,
+    inputCost: 0.00035,
+    outputCost: 0.00105,
+    speed: 'fast',
+    capabilities: ['reasoning', 'analysis', 'creative', 'vision'],
     requiresApiKey: true
   },
   {
@@ -221,12 +298,56 @@ const MODELS: ModelOption[] = [
     requiresApiKey: true
   },
   {
-    id: 'grok-1',
-    name: 'Grok',
-    provider: 'grok',
-    contextLength: 8192,
+    id: 'mistral-large',
+    name: 'Mistral Large',
+    provider: 'mistral',
+    contextLength: 32000,
+    inputCost: 0.008,
+    outputCost: 0.024,
+    speed: 'medium',
+    capabilities: ['reasoning', 'coding', 'analysis', 'creative'],
+    requiresApiKey: true
+  },
+  {
+    id: 'mistral-medium',
+    name: 'Mistral Medium',
+    provider: 'mistral',
+    contextLength: 32000,
+    inputCost: 0.0027,
+    outputCost: 0.0081,
+    speed: 'fast',
+    capabilities: ['reasoning', 'coding', 'analysis'],
+    requiresApiKey: true
+  },
+  {
+    id: 'pplx-7b-online',
+    name: 'Perplexity 7B Online',
+    provider: 'perplexity',
+    contextLength: 4096,
+    inputCost: 0.0007,
+    outputCost: 0.0028,
+    speed: 'fast',
+    capabilities: ['reasoning', 'analysis', 'web-search'],
+    requiresApiKey: true
+  },
+  {
+    id: 'pplx-70b-online',
+    name: 'Perplexity 70B Online',
+    provider: 'perplexity',
+    contextLength: 4096,
     inputCost: 0.001,
-    outputCost: 0.002,
+    outputCost: 0.001,
+    speed: 'medium',
+    capabilities: ['reasoning', 'analysis', 'web-search'],
+    requiresApiKey: true
+  },
+  {
+    id: 'grok-beta',
+    name: 'Grok Beta',
+    provider: 'grok',
+    contextLength: 131072,
+    inputCost: 0.000005,
+    outputCost: 0.000015,
     speed: 'fast',
     capabilities: ['reasoning', 'humor', 'real-time'],
     requiresApiKey: true
@@ -754,13 +875,29 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     return autoOptimize ? await selectOptimalModel(text) : selectedModel
   }
 
+  // Helper function to map provider for API key validation (anthropic -> claude)
+  const getApiKeyProvider = (provider: string): string => {
+    // Map display providers to API key providers
+    const providerMap: Record<string, string> = {
+      'anthropic': 'claude',  // Map anthropic to claude for consistency
+      'gemini': 'gemini',     // Gemini provider maps to itself
+      'openai': 'openai',
+      'mistral': 'mistral',
+      'perplexity': 'perplexity',
+      'grok': 'grok',
+      'cohere': 'cohere'
+    }
+    return providerMap[provider] || provider
+  }
+
   // Handlers
   const handleSendMessage = async (text: string, mode: string, modelOverride?: ModelOption) => {
     if (!text.trim() && attachments.length === 0) return
     
     // Get the effective model using priority system
     const modelToUse = await getEffectiveModel(text, modelOverride)
-    if (modelToUse.requiresApiKey && !hasValidKey(modelToUse.provider)) {
+    const apiKeyProvider = getApiKeyProvider(modelToUse.provider)
+    if (modelToUse.requiresApiKey && !hasValidKey(apiKeyProvider as Provider)) {
       toast.error(`Please configure ${modelToUse.provider.toUpperCase()} API key first`)
       router.push('/settings/api-keys')
       return
@@ -938,8 +1075,8 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     const analysis = promptAnalysis || analyzePrompt(prompt, selectedMode)
     
     // Filter models based on API key availability
-    const availableModels = MODELS.filter(model => 
-      !model.requiresApiKey || hasValidKey(model.provider)
+    const availableModels = MODELS.filter(model =>
+      !model.requiresApiKey || hasValidKey(getApiKeyProvider(model.provider) as Provider)
     )
     
     if (availableModels.length === 0) {
@@ -951,7 +1088,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       if (analysis.complexity === 'expert') {
         return availableModels.find(m => m.id === 'claude-3-opus') || availableModels[0]
       }
-      return availableModels.find(m => m.id === 'claude-3-sonnet') || availableModels[0]
+      return availableModels.find(m => m.id === 'claude-3.5-sonnet') || availableModels.find(m => m.id === 'claude-3-sonnet') || availableModels[0]
     }
     
     if (selectedMode === 'creative') {
@@ -1091,7 +1228,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   }, [messages])
 
   const isModelAvailable = (model: ModelOption) => {
-    return !model.requiresApiKey || hasValidKey(model.provider)
+    return !model.requiresApiKey || hasValidKey(getApiKeyProvider(model.provider) as Provider)
   }
 
   // Render
