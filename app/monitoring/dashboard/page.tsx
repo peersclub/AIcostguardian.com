@@ -93,7 +93,7 @@ export default function MonitoringDashboard() {
 
           // Update real-time metrics
           if (data.type === 'metrics') {
-            setMonitoringData(prev => ({
+            setMonitoringData((prev: any) => ({
               ...prev,
               metrics: { ...prev?.metrics, ...data.payload }
             }))
@@ -105,7 +105,7 @@ export default function MonitoringDashboard() {
 
           // Handle alerts
           if (data.type === 'alert') {
-            setMonitoringData(prev => ({
+            setMonitoringData((prev: any) => ({
               ...prev,
               alerts: [data.payload, ...(prev?.alerts || [])]
             }))

@@ -67,6 +67,7 @@ interface PredictionData {
   daily: any
   weekly: any
   monthly: any
+  [key: string]: any
 }
 
 interface AccuracyMetrics {
