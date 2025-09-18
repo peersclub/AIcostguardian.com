@@ -95,7 +95,7 @@ async function testSharingIntegration() {
     console.log(`✅ Successfully retrieved shared thread`)
     console.log(`   Thread ID: ${sharedThread.id}`)
     console.log(`   Message Count: ${sharedThread.messageCount}`)
-    console.log(`   Has Messages: ${sharedThread.messages?.length || 0}`)
+    console.log(`   Has Messages: ${(sharedThread as any).messages?.length || 0}`)
 
     // 6. Test adding a collaborator
     const collaboratorEmail = 'collaborator@test.com'
