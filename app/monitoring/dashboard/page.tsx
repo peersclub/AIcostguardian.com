@@ -70,16 +70,6 @@ export default function MonitoringDashboard() {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  if (status === 'loading') {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-500"></div>
-    </div>
-  }
-
-  if (!session) {
-    redirect('/auth/signin?callbackUrl=/monitoring/dashboard')
-  }
-
   const fetchMonitoringData = useCallback(async () => {
     try {
       const response = await fetch('/api/monitoring/metrics')
@@ -144,6 +134,16 @@ export default function MonitoringDashboard() {
       }
     }
   }, [realTimeEnabled, startPolling])
+
+  if (status === 'loading') {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-500"></div>
+    </div>
+  }
+
+  if (!session) {
+    redirect('/auth/signin?callbackUrl=/monitoring/dashboard')
+  }
 
   const getConnectionIcon = () => {
     if (!connected) return <Signal className="w-4 h-4 text-red-500" />
