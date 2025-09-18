@@ -359,7 +359,7 @@ export function ModeSettings({
                   </Label>
                   <Select
                     value={customSettings.preferredProvider}
-                    onValueChange={(value) => 
+                    onValueChange={(value) =>
                       setCustomSettings({ ...customSettings, preferredProvider: value })
                     }
                   >
@@ -369,8 +369,8 @@ export function ModeSettings({
                     <SelectContent className="bg-gray-800 border-gray-600">
                       <SelectItem value="auto" className="text-gray-300 hover:bg-gray-700/50">Auto-select</SelectItem>
                       <SelectItem value="openai" className="text-gray-300 hover:bg-gray-700/50">OpenAI</SelectItem>
-                      <SelectItem value="anthropic" className="text-gray-300 hover:bg-gray-700/50">Anthropic</SelectItem>
-                      <SelectItem value="google" className="text-gray-300 hover:bg-gray-700/50">Google</SelectItem>
+                      <SelectItem value="claude" className="text-gray-300 hover:bg-gray-700/50">Anthropic</SelectItem>
+                      <SelectItem value="gemini" className="text-gray-300 hover:bg-gray-700/50">Google</SelectItem>
                       <SelectItem value="perplexity" className="text-gray-300 hover:bg-gray-700/50">Perplexity</SelectItem>
                     </SelectContent>
                   </Select>
