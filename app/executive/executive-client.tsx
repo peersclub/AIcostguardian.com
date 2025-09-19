@@ -540,29 +540,62 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                     </div>
 
                     <div className="space-y-4">
-                      {businessInsights.slice(0, 3).map((insight, index) => (
-                        <div key={index} className="p-4 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <Badge className={`px-2 py-1 text-xs font-medium ${getPriorityColor(insight.priority)}`}>
-                                {insight.priority}
-                              </Badge>
-                              <h4 className="text-white font-medium">{insight.title}</h4>
+                      {businessInsights.length > 0 ? (
+                        businessInsights.slice(0, 3).map((insight, index) => (
+                          <div key={index} className="p-4 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <Badge className={`px-2 py-1 text-xs font-medium ${getPriorityColor(insight.priority)}`}>
+                                  {insight.priority}
+                                </Badge>
+                                <h4 className="text-white font-medium">{insight.title}</h4>
+                              </div>
+                              <span className="text-gray-400 text-xs">{insight.confidence}% confidence</span>
                             </div>
-                            <span className="text-gray-400 text-xs">{insight.confidence}% confidence</span>
+                            <p className="text-gray-300 text-sm mb-3">{insight.message}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="text-green-400 font-medium">{insight.impact}</span>
+                                <span className="text-gray-400 ml-2">• {insight.timeframe}</span>
+                              </div>
+                              <Button size="sm" className="px-3 py-1 bg-indigo-600 text-white hover:bg-indigo-700 text-xs">
+                                {insight.action}
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-gray-300 text-sm mb-3">{insight.message}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                              <span className="text-green-400 font-medium">{insight.impact}</span>
-                              <span className="text-gray-400 ml-2">• {insight.timeframe}</span>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <Brain className="w-12 h-12 text-gray-500 mb-4" />
+                          <div className="text-gray-400 mb-2">Building Strategic Intelligence</div>
+                          <div className="text-sm text-gray-500 max-w-xs">
+                            AI insights will appear here as your organization generates more usage data.
+                          </div>
+                          <div className="mt-4 grid grid-cols-1 gap-3 w-full">
+                            <div className="p-3 bg-gray-800/20 rounded-lg border border-gray-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <TrendingUp className="w-4 h-4 text-green-400" />
+                                <span className="text-green-300 text-sm font-medium">Cost Optimization</span>
+                              </div>
+                              <div className="text-xs text-gray-400">Monitor spend across AI providers</div>
                             </div>
-                            <Button size="sm" className="px-3 py-1 bg-indigo-600 text-white hover:bg-indigo-700 text-xs">
-                              {insight.action}
-                            </Button>
+                            <div className="p-3 bg-gray-800/20 rounded-lg border border-gray-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Shield className="w-4 h-4 text-blue-400" />
+                                <span className="text-blue-300 text-sm font-medium">Risk Management</span>
+                              </div>
+                              <div className="text-xs text-gray-400">Automated governance and compliance</div>
+                            </div>
+                            <div className="p-3 bg-gray-800/20 rounded-lg border border-gray-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Lightbulb className="w-4 h-4 text-yellow-400" />
+                                <span className="text-yellow-300 text-sm font-medium">Smart Recommendations</span>
+                              </div>
+                              <div className="text-xs text-gray-400">AI-driven performance insights</div>
+                            </div>
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
 
@@ -575,28 +608,61 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                       </h3>
                     </div>
 
-                    <div className="space-y-4">
-                      {providers.slice(0, 4).map((provider, index) => (
-                        <div key={provider.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {getAIProviderLogo(provider.id, 'w-6 h-6')}
-                            <div>
-                              <div className="text-sm font-medium text-white">{provider.name}</div>
-                              <div className="text-xs text-gray-400">{provider.share.toFixed(1)}% share</div>
+                    {providers.length > 0 ? (
+                      <div className="space-y-4">
+                        {providers.slice(0, 4).map((provider, index) => (
+                          <div key={provider.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {getAIProviderLogo(provider.id, 'w-6 h-6')}
+                              <div>
+                                <div className="text-sm font-medium text-white">{provider.name}</div>
+                                <div className="text-xs text-gray-400">{provider.share.toFixed(1)}% share</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-sm font-medium flex items-center gap-1 ${
+                                provider.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                              }`}>
+                                {provider.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                {provider.change > 0 ? '+' : ''}{provider.change.toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-gray-400">{formatCurrency(provider.spend)}</div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className={`text-sm font-medium flex items-center gap-1 ${
-                              provider.trend === 'up' ? 'text-green-400' : 'text-red-400'
-                            }`}>
-                              {provider.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                              {provider.change > 0 ? '+' : ''}{provider.change.toFixed(1)}%
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <Globe className="w-12 h-12 text-gray-500 mb-4" />
+                        <div className="text-gray-400 mb-2">Building Provider Performance</div>
+                        <div className="text-sm text-gray-500 max-w-xs">
+                          Provider analytics will appear here as your team starts using different AI providers.
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 gap-3 w-full">
+                          <div className="p-3 bg-gradient-to-br from-blue-900/20 to-blue-800/20 rounded-lg border border-blue-500/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Activity className="w-4 h-4 text-blue-400" />
+                              <span className="text-blue-300 font-medium text-sm">Performance Tracking</span>
                             </div>
-                            <div className="text-xs text-gray-400">{formatCurrency(provider.spend)}</div>
+                            <p className="text-blue-200 text-xs">Monitor response times and reliability across providers</p>
+                          </div>
+                          <div className="p-3 bg-gradient-to-br from-green-900/20 to-green-800/20 rounded-lg border border-green-500/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <TrendingUp className="w-4 h-4 text-green-400" />
+                              <span className="text-green-300 font-medium text-sm">Cost Comparison</span>
+                            </div>
+                            <p className="text-green-200 text-xs">Compare costs and efficiency between AI providers</p>
+                          </div>
+                          <div className="p-3 bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-lg border border-purple-500/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <BarChart3 className="w-4 h-4 text-purple-400" />
+                              <span className="text-purple-300 font-medium text-sm">Usage Analytics</span>
+                            </div>
+                            <p className="text-purple-200 text-xs">Analyze provider usage patterns and trends</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </>
@@ -619,35 +685,75 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {businessInsights.map((insight, index) => (
-                      <div key={index} className="p-6 bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              <Badge className={`px-2 py-1 text-xs font-medium ${getPriorityColor(insight.priority)}`}>
-                                {insight.priority}
-                              </Badge>
-                              <span className="text-gray-400 text-xs capitalize">{insight.category}</span>
+                  {businessInsights.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {businessInsights.map((insight, index) => (
+                        <div key={index} className="p-6 bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <Badge className={`px-2 py-1 text-xs font-medium ${getPriorityColor(insight.priority)}`}>
+                                  {insight.priority}
+                                </Badge>
+                                <span className="text-gray-400 text-xs capitalize">{insight.category}</span>
+                              </div>
+                              <h4 className="text-white font-semibold mb-2">{insight.title}</h4>
+                              <p className="text-gray-300 text-sm">{insight.message}</p>
                             </div>
-                            <h4 className="text-white font-semibold mb-2">{insight.title}</h4>
-                            <p className="text-gray-300 text-sm">{insight.message}</p>
+                            <div className="text-right">
+                              <div className="text-green-400 font-semibold">{insight.impact}</div>
+                              <div className="text-gray-400 text-xs">{insight.confidence}% confidence</div>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-green-400 font-semibold">{insight.impact}</div>
-                            <div className="text-gray-400 text-xs">{insight.confidence}% confidence</div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400 text-sm">Timeline: {insight.timeframe}</span>
+                            <Button size="sm" className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
+                              {insight.action}
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400 text-sm">Timeline: {insight.timeframe}</span>
-                          <Button size="sm" className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
-                            {insight.action}
-                          </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Lightbulb className="w-16 h-16 text-gray-500 mb-6" />
+                      <div className="text-gray-400 mb-3 text-lg font-medium">Generating Business Intelligence</div>
+                      <div className="text-sm text-gray-500 max-w-md">
+                        AI-powered insights will appear here as your organization accumulates more usage data and patterns.
+                      </div>
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+                        <div className="p-4 bg-gradient-to-br from-indigo-900/20 to-indigo-800/20 rounded-lg border border-indigo-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <TrendingUp className="w-5 h-5 text-indigo-400" />
+                            <span className="text-indigo-300 font-medium">Pattern Recognition</span>
+                          </div>
+                          <p className="text-indigo-200 text-sm">Identify usage patterns and optimization opportunities across your AI operations</p>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-lg border border-purple-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Target className="w-5 h-5 text-purple-400" />
+                            <span className="text-purple-300 font-medium">Strategic Recommendations</span>
+                          </div>
+                          <p className="text-purple-200 text-sm">Get AI-driven recommendations to improve efficiency and reduce costs</p>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-blue-900/20 to-blue-800/20 rounded-lg border border-blue-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <BarChart3 className="w-5 h-5 text-blue-400" />
+                            <span className="text-blue-300 font-medium">Predictive Analytics</span>
+                          </div>
+                          <p className="text-blue-200 text-sm">Forecast future costs and usage trends based on historical data</p>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-green-900/20 to-green-800/20 rounded-lg border border-green-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Shield className="w-5 h-5 text-green-400" />
+                            <span className="text-green-300 font-medium">Risk Assessment</span>
+                          </div>
+                          <p className="text-green-200 text-sm">Monitor and assess risks related to AI spend and usage compliance</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -780,53 +886,88 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    {forecasts.map((forecast, index) => (
-                      <Card key={index} className={`backdrop-blur-sm border ${
-                        forecast.status === 'over-budget'
-                          ? 'bg-red-900/20 border-red-500/30'
-                          : 'bg-gray-800/30 border-gray-700'
-                      }`}>
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-white font-semibold">{forecast.period}</h4>
-                            <Badge className={`px-2 py-1 text-xs font-medium ${getStatusColor(forecast.status)}`}>
-                              {forecast.status}
-                            </Badge>
-                          </div>
-
-                          <div className="text-center mb-4">
-                            <div className="text-2xl font-bold text-white">{formatCurrency(forecast.spend)}</div>
-                            <div className="text-sm text-gray-400">Projected Spend</div>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-400 text-sm">Confidence</span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all"
-                                  style={{ width: `${forecast.confidence}%` }}
-                                />
-                              </div>
-                              <span className="text-gray-300 text-sm">{forecast.confidence}%</span>
+                  {forecasts.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                      {forecasts.map((forecast, index) => (
+                        <Card key={index} className={`backdrop-blur-sm border ${
+                          forecast.status === 'over-budget'
+                            ? 'bg-red-900/20 border-red-500/30'
+                            : 'bg-gray-800/30 border-gray-700'
+                        }`}>
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-white font-semibold">{forecast.period}</h4>
+                              <Badge className={`px-2 py-1 text-xs font-medium ${getStatusColor(forecast.status)}`}>
+                                {forecast.status}
+                              </Badge>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
 
-                  <div className="p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                            <div className="text-center mb-4">
+                              <div className="text-2xl font-bold text-white">{formatCurrency(forecast.spend)}</div>
+                              <div className="text-sm text-gray-400">Projected Spend</div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-400 text-sm">Confidence</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all"
+                                    style={{ width: `${forecast.confidence}%` }}
+                                  />
+                                </div>
+                                <span className="text-gray-300 text-sm">{forecast.confidence}%</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center mb-6">
+                      <Clock className="w-16 h-16 text-gray-500 mb-6" />
+                      <div className="text-gray-400 mb-3 text-lg font-medium">Building Financial Forecasts</div>
+                      <div className="text-sm text-gray-500 max-w-md">
+                        AI-powered financial predictions will appear here as your organization generates more usage data for analysis.
+                      </div>
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl">
+                        <div className="p-4 bg-gradient-to-br from-blue-900/20 to-blue-800/20 rounded-lg border border-blue-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Calendar className="w-5 h-5 text-blue-400" />
+                            <span className="text-blue-300 font-medium">Monthly Forecasts</span>
+                          </div>
+                          <p className="text-blue-200 text-sm">Predict monthly AI spending based on usage patterns and trends</p>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-purple-900/20 to-purple-800/20 rounded-lg border border-purple-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <TrendingUp className="w-5 h-5 text-purple-400" />
+                            <span className="text-purple-300 font-medium">Budget Tracking</span>
+                          </div>
+                          <p className="text-purple-200 text-sm">Monitor spending against budgets with intelligent alerts</p>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-green-900/20 to-green-800/20 rounded-lg border border-green-500/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Target className="w-5 h-5 text-green-400" />
+                            <span className="text-green-300 font-medium">Cost Optimization</span>
+                          </div>
+                          <p className="text-green-200 text-sm">Identify potential savings opportunities in AI operations</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {forecasts.length > 0 && (
+                    <div className="p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Lightbulb className="w-5 h-5 text-indigo-400" />
                       <span className="text-indigo-300 font-medium">Forecast Accuracy</span>
                     </div>
-                    <p className="text-indigo-200 text-sm">
-                      Current model accuracy: {executiveMetrics.forecastAccuracy.toFixed(1)}% based on 90-day historical data.
-                      Savings opportunity of {formatCurrency(executiveMetrics.savingsOpportunity)} identified through optimization.
-                    </p>
-                  </div>
+                      <p className="text-indigo-200 text-sm">
+                        Current model accuracy: {executiveMetrics.forecastAccuracy.toFixed(1)}% based on 90-day historical data.
+                        Savings opportunity of {formatCurrency(executiveMetrics.savingsOpportunity)} identified through optimization.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
