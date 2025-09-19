@@ -42,6 +42,7 @@ import {
   Globe,
   Zap
 } from 'lucide-react'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { apiKeyManager, KeyType, ApiKey } from '@/lib/api-key-manager'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -109,7 +110,10 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
         <DialogHeader>
           <DialogTitle>API Key Details</DialogTitle>
           <DialogDescription>
-            Manage and test your {apiKey.provider} API key
+            <div className="flex items-center gap-2">
+              {getAIProviderLogo(apiKey.provider.toLowerCase(), 'w-4 h-4')}
+              <span>Manage and test your {apiKey.provider} API key</span>
+            </div>
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +142,10 @@ const KeyDetailsModal = ({ apiKey, onClose }: KeyDetailsModalProps) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Provider</p>
-              <p className="font-medium text-foreground">{apiKey.provider}</p>
+              <div className="flex items-center gap-2">
+                {getAIProviderLogo(apiKey.provider.toLowerCase(), 'w-5 h-5')}
+                <p className="font-medium text-foreground">{apiKey.provider}</p>
+              </div>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Type</p>

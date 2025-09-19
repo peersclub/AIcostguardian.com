@@ -16,7 +16,17 @@ import {
   Users,
   Folder,
   Edit3,
-  Lightbulb
+  Lightbulb,
+  MessageSquare,
+  Code,
+  Search,
+  PenTool,
+  BarChart3,
+  Zap,
+  Headphones,
+  GraduationCap,
+  Cog,
+  FileText
 } from 'lucide-react';
 
 interface ThreadContext {
@@ -83,18 +93,19 @@ export function ContextPanel({ threadId, className = '' }: ContextPanelProps) {
   };
 
   const getProjectTypeIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      'GENERAL': '💬',
-      'DEVELOPMENT': '💻',
-      'RESEARCH': '🔬',
-      'CONTENT_CREATION': '✍️',
-      'ANALYSIS': '📊',
-      'BRAINSTORMING': '💡',
-      'SUPPORT': '🎧',
-      'TRAINING': '🎓',
-      'CUSTOM': '⚙️'
+    const iconComponents: Record<string, React.ComponentType<{ className?: string }>> = {
+      'GENERAL': MessageSquare,
+      'DEVELOPMENT': Code,
+      'RESEARCH': Search,
+      'CONTENT_CREATION': PenTool,
+      'ANALYSIS': BarChart3,
+      'BRAINSTORMING': Lightbulb,
+      'SUPPORT': Headphones,
+      'TRAINING': GraduationCap,
+      'CUSTOM': Cog
     };
-    return icons[type] || '📝';
+    const IconComponent = iconComponents[type] || FileText;
+    return <IconComponent className="h-4 w-4 text-gray-400" />;
   };
 
   if (loading) {
@@ -170,7 +181,7 @@ export function ContextPanel({ threadId, className = '' }: ContextPanelProps) {
             <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <span className="text-base">{getProjectTypeIcon(context.projectType)}</span>
+                  {getProjectTypeIcon(context.projectType)}
                   <span>
                     {context.projectName || 'Project Context'}
                   </span>

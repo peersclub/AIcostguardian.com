@@ -28,7 +28,13 @@ import {
   Database,
   Cpu,
   Globe,
-  Activity
+  Activity,
+  Sparkles,
+  Code,
+  Search,
+  Palette,
+  FileText,
+  Sliders
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +43,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -132,11 +140,106 @@ export function ProviderOptimizationModal({
     presencePenalty: 0,
     frequencyPenalty: 0,
     systemPrompt: '',
+    instructions: '',
     rateLimiting: true,
     caching: true,
     fallbackModel: '',
-    costLimit: 100
+    costLimit: 100,
+    optimizationMode: 'balanced',
+    autoThinkDeep: true,
+    projectMode: 'standard'
   })
+
+  // Auto Think Deep optimization modes
+  const optimizationModes = [
+    {
+      id: 'quality',
+      name: 'Quality First',
+      icon: Sparkles,
+      description: 'Prioritize response quality over cost',
+      color: 'text-violet-500',
+      features: {
+        preferHighQualityModels: true,
+        allowHigherCosts: true,
+        enableAdvancedFeatures: true
+      }
+    },
+    {
+      id: 'balanced',
+      name: 'Balanced',
+      icon: Brain,
+      description: 'Optimal balance of quality, speed, and cost',
+      color: 'text-blue-500',
+      features: {
+        smartModelSelection: true,
+        costOptimization: true,
+        performanceOptimization: true
+      }
+    },
+    {
+      id: 'budget',
+      name: 'Budget Focused',
+      icon: DollarSign,
+      description: 'Minimize costs while maintaining quality',
+      color: 'text-green-500',
+      features: {
+        preferCostEffectiveModels: true,
+        aggressiveCaching: true,
+        strictBudgetLimits: true
+      }
+    },
+    {
+      id: 'speed',
+      name: 'Speed Optimized',
+      icon: Zap,
+      description: 'Fastest response times with good quality',
+      color: 'text-yellow-500',
+      features: {
+        preferFastModels: true,
+        minimizeLatency: true,
+        streamOptimization: true
+      }
+    }
+  ]
+
+  // Project-level modes for user-friendly options
+  const projectModes = [
+    {
+      id: 'standard',
+      name: 'Standard Chat',
+      icon: MessageSquare,
+      description: 'General conversations and Q&A',
+      color: 'text-blue-500'
+    },
+    {
+      id: 'coding',
+      name: 'Code Assistant',
+      icon: Code,
+      description: 'Programming help and code generation',
+      color: 'text-green-500'
+    },
+    {
+      id: 'research',
+      name: 'Research Mode',
+      icon: Search,
+      description: 'Deep analysis and information gathering',
+      color: 'text-orange-500'
+    },
+    {
+      id: 'creative',
+      name: 'Creative Writing',
+      icon: Palette,
+      description: 'Content creation and creative tasks',
+      color: 'text-pink-500'
+    },
+    {
+      id: 'documentation',
+      name: 'Documentation',
+      icon: FileText,
+      description: 'Technical writing and documentation',
+      color: 'text-purple-500'
+    }
+  ]
 
   useEffect(() => {
     if (isOpen) {
@@ -301,14 +404,157 @@ export function ProviderOptimizationModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {step === 1 && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Model Configuration */}
+            <Tabs defaultValue="optimization" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 p-1">
+                <TabsTrigger value="optimization" className="text-gray-300 data-[state=active]:text-white">Auto Think Deep</TabsTrigger>
+                <TabsTrigger value="project" className="text-gray-300 data-[state=active]:text-white">Project Settings</TabsTrigger>
+                <TabsTrigger value="advanced" className="text-gray-300 data-[state=active]:text-white">Advanced</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="optimization" className="space-y-6">
+                {/* Auto Think Deep - Optimization Modes */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-purple-400" />
-                    Model Configuration
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    Auto Think Deep - Intelligent Optimization
                   </h3>
+                  <p className="text-gray-400 text-sm">
+                    Let AI automatically optimize model selection, parameters, and costs based on your priorities.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {optimizationModes.map((mode) => {
+                      const Icon = mode.icon
+                      return (
+                        <div
+                          key={mode.id}
+                          className={`p-4 cursor-pointer transition-all duration-200 border-2 rounded-lg ${
+                            settings.optimizationMode === mode.id
+                              ? 'border-purple-500 bg-gradient-to-br from-purple-500/20 to-violet-500/20'
+                              : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                          }`}
+                          onClick={() => setSettings(prev => ({ ...prev, optimizationMode: mode.id }))}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              settings.optimizationMode === mode.id
+                                ? 'bg-gradient-to-r from-purple-500/20 to-violet-500/20'
+                                : 'bg-gray-700/50'
+                            }`}>
+                              <Icon className={`h-5 w-5 ${mode.color}`} />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm text-white">{mode.name}</h4>
+                              <p className="text-xs text-gray-400 mt-1">{mode.description}</p>
+                            </div>
+                            {settings.optimizationMode === mode.id && (
+                              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 mt-2 animate-pulse" />
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Brain className="w-5 h-5 text-purple-400" />
+                      <div>
+                        <Label className="text-white font-medium">Enable Auto Think Deep</Label>
+                        <p className="text-gray-400 text-sm">Automatically optimize based on selected mode</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.autoThinkDeep}
+                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoThinkDeep: checked }))}
+                      disabled={isLocked}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="project" className="space-y-6">
+                {/* Project-Level User-Friendly Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-400" />
+                    Project Mode & Instructions
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Configure user-friendly settings for your project team.
+                  </p>
+
+                  {/* Project Mode Selection */}
+                  <div className="space-y-3">
+                    <Label className="text-gray-300">Project Mode</Label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {projectModes.map((mode) => {
+                        const Icon = mode.icon
+                        return (
+                          <div
+                            key={mode.id}
+                            className={`flex items-center p-3 cursor-pointer transition-all rounded-lg border ${
+                              settings.projectMode === mode.id
+                                ? 'border-blue-500 bg-blue-500/10'
+                                : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
+                            }`}
+                            onClick={() => setSettings(prev => ({ ...prev, projectMode: mode.id }))}
+                          >
+                            <Icon className={`w-4 h-4 mr-3 ${mode.color}`} />
+                            <div className="flex-1">
+                              <div className="text-white text-sm font-medium">{mode.name}</div>
+                              <div className="text-gray-400 text-xs">{mode.description}</div>
+                            </div>
+                            {settings.projectMode === mode.id && (
+                              <CheckCircle className="w-4 h-4 text-blue-400" />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Project Instructions */}
+                  <div className="space-y-3">
+                    <Label className="text-gray-300">Project Instructions</Label>
+                    <Textarea
+                      value={settings.instructions}
+                      onChange={(e) => setSettings(prev => ({ ...prev, instructions: e.target.value }))}
+                      placeholder="Provide specific instructions for your project team on how to use AI effectively..."
+                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 min-h-[100px]"
+                      disabled={isLocked}
+                    />
+                    <p className="text-gray-500 text-xs">
+                      These instructions will guide team members on the intended use of AI for this project.
+                    </p>
+                  </div>
+
+                  {/* System Prompt */}
+                  <div className="space-y-3">
+                    <Label className="text-gray-300">Custom System Prompt</Label>
+                    <Textarea
+                      value={settings.systemPrompt}
+                      onChange={(e) => setSettings(prev => ({ ...prev, systemPrompt: e.target.value }))}
+                      placeholder="Define the AI's role and behavior for this project..."
+                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 min-h-[80px]"
+                      disabled={isLocked}
+                    />
+                    <p className="text-gray-500 text-xs">
+                      This system prompt will be applied to all AI interactions in this project.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-6">
+                {/* Advanced Configuration */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Model Configuration */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-purple-400" />
+                      Model Configuration
+                    </h3>
 
                   <div className="space-y-4">
                     <div>
@@ -358,15 +604,15 @@ export function ProviderOptimizationModal({
                         disabled={isLocked}
                       />
                     </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Cost & Performance */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-400" />
-                    Cost & Performance
-                  </h3>
+                  {/* Cost & Performance */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-green-400" />
+                      Cost & Performance
+                    </h3>
 
                   <div className="space-y-4">
                     <div>
@@ -396,30 +642,37 @@ export function ProviderOptimizationModal({
                         onCheckedChange={(checked) => setSettings(prev => ({ ...prev, rateLimiting: checked }))}
                         disabled={isLocked}
                       />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
+            </Tabs>
+          )}
 
-              {/* Expected Impact */}
-              <div className="p-6 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                <h4 className="text-white font-medium mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
-                  Expected Impact
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{model.savings}%</div>
-                    <div className="text-gray-400 text-sm">Cost Reduction</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">+15%</div>
-                    <div className="text-gray-400 text-sm">Performance</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-400">92%</div>
-                    <div className="text-gray-400 text-sm">Confidence</div>
-                  </div>
+          {/* Expected Impact - Show for all tabs */}
+          {step === 1 && (
+            <div className="p-6 bg-purple-500/10 border border-purple-500/30 rounded-lg mt-6">
+              <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-400" />
+                Expected Impact with Auto Think Deep
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">{model.savings}%</div>
+                  <div className="text-gray-400 text-sm">Cost Reduction</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">+25%</div>
+                  <div className="text-gray-400 text-sm">Smart Selection</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-400">95%</div>
+                  <div className="text-gray-400 text-sm">AI Confidence</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-400">Auto</div>
+                  <div className="text-gray-400 text-sm">Optimization</div>
                 </div>
               </div>
             </div>

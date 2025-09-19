@@ -132,7 +132,7 @@ export function NotificationItem({
         )}
         {recommendation && (
           <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300">
-            💡 {recommendation}
+            {recommendation}
           </div>
         )}
       </div>

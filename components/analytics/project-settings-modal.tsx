@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { getAIProviderLogo } from '@/components/ui/ai-logos'
 
 interface Recommendation {
   id: string
@@ -116,15 +117,6 @@ export default function ProjectSettingsModal({
     }).format(amount)
   }
 
-  const getProviderIcon = (provider: string) => {
-    const iconProps = "w-5 h-5"
-    switch (provider) {
-      case 'openai': return <div className={`${iconProps} bg-green-500 rounded`} />
-      case 'anthropic': return <div className={`${iconProps} bg-orange-500 rounded`} />
-      case 'google': return <div className={`${iconProps} bg-blue-500 rounded`} />
-      default: return <div className={`${iconProps} bg-gray-500 rounded`} />
-    }
-  }
 
   if (!isOpen || !recommendation) return null
 
@@ -248,14 +240,29 @@ export default function ProjectSettingsModal({
                         }>
                           <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white mt-2">
                             <div className="flex items-center gap-2">
-                              {getProviderIcon(settings.provider)}
+                              {getAIProviderLogo(settings.provider, 'w-5 h-5')}
                               <SelectValue />
                             </div>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="openai">OpenAI</SelectItem>
-                            <SelectItem value="anthropic">Anthropic</SelectItem>
-                            <SelectItem value="google">Google</SelectItem>
+                            <SelectItem value="openai">
+                              <div className="flex items-center gap-2">
+                                {getAIProviderLogo('openai', 'w-4 h-4')}
+                                OpenAI
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="anthropic">
+                              <div className="flex items-center gap-2">
+                                {getAIProviderLogo('anthropic', 'w-4 h-4')}
+                                Anthropic
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="google">
+                              <div className="flex items-center gap-2">
+                                {getAIProviderLogo('google', 'w-4 h-4')}
+                                Google
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -504,7 +511,7 @@ export default function ProjectSettingsModal({
                 {step === 'settings' && (
                   <Button
                     onClick={handleConfirm}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
                   >
                     Review Settings
                   </Button>
@@ -522,7 +529,7 @@ export default function ProjectSettingsModal({
                     <Button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
                     >
                       {isSaving ? (
                         <>
