@@ -207,11 +207,11 @@ export function ModeSettings({
     if (!adminOverrides?.adminOverrides) return {};
 
     const overriddenSettings = adminOverrides.adminOverrides;
-    const changes = {};
+    const changes: Record<string, any> = {};
 
     Object.keys(customSettings).forEach(key => {
-      if (overriddenSettings[key] !== undefined && customSettings[key] !== overriddenSettings[key]) {
-        changes[key] = customSettings[key];
+      if ((overriddenSettings as any)[key] !== undefined && (customSettings as any)[key] !== (overriddenSettings as any)[key]) {
+        changes[key] = (customSettings as any)[key];
       }
     });
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/lib/auth-config';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic'
 
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin/owner to view requests
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER' && !user.isSuperAdmin) {
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && !user.isSuperAdmin) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
