@@ -158,8 +158,26 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
     try {
       setIsLoading(true)
 
-      // Generate comprehensive model optimization data based on real AI models
-      const mockModels: AIModel[] = [
+      // Fetch real optimization data from API
+      const response = await fetch('/api/optimization/data')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch optimization data')
+      }
+
+      const { models, strategies, performanceMetrics } = result.data
+
+      // Set the real data
+      setModels(models)
+      setStrategies(strategies)
+      setPerformanceMetrics(performanceMetrics)
+
+      // Legacy mock models (keeping for reference):
+      /*const mockModels: AIModel[] = [
         {
           id: 'gpt-4',
           name: 'GPT-4',
@@ -302,9 +320,11 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
         uptime: 99.7
       }
 
-      setModels(mockModels)
-      setStrategies(mockStrategies)
-      setPerformanceMetrics(mockPerformanceMetrics)
+      // Data has already been set above from API
+      // setModels(mockModels)
+      // setStrategies(mockStrategies)
+      // setPerformanceMetrics(mockPerformanceMetrics)
+      */
 
     } catch (error) {
       console.error('Failed to fetch optimization data:', error)
