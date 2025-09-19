@@ -66,6 +66,12 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
+import {
+  ProviderOptimizationModal,
+  ModelDetailsModal,
+  StrategyModal,
+  ComingSoonModal
+} from '@/components/optimization/optimization-modals'
 
 interface ModelOptimizationClientProps {
   initialSession?: Session | null
@@ -127,6 +133,15 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
   const [models, setModels] = useState<AIModel[]>([])
   const [strategies, setStrategies] = useState<OptimizationStrategy[]>([])
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null)
+
+  // Modal states
+  const [showProviderModal, setShowProviderModal] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [showStrategyModal, setShowStrategyModal] = useState(false)
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<AIModel | null>(null)
+  const [selectedStrategy, setSelectedStrategy] = useState<OptimizationStrategy | null>(null)
+  const [comingSoonType, setComingSoonType] = useState<'strategies' | 'plan'>('strategies')
 
   useEffect(() => {
     const tab = searchParams.get('tab')
@@ -674,8 +689,8 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                           <Button
                             size="sm"
                             onClick={() => {
-                              console.log(`Optimizing model: ${model.name}`)
-                              // Implementation would trigger model optimization
+                              setSelectedModel(model)
+                              setShowProviderModal(true)
                             }}
                             className="flex-1 bg-purple-600 hover:bg-purple-700"
                           >
@@ -685,8 +700,8 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              console.log(`Viewing details for model: ${model.name}`)
-                              // Implementation would show detailed model information
+                              setSelectedModel(model)
+                              setShowDetailsModal(true)
                             }}
                             className="border-gray-700 text-gray-300"
                           >
@@ -760,7 +775,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                             ) : (
                               <Button
                                 size="sm"
-                                onClick={() => handleOptimize(strategy.id)}
+                                onClick={() => {
+                                  setSelectedStrategy(strategy)
+                                  setShowStrategyModal(true)
+                                }}
                                 disabled={isOptimizing}
                                 className="bg-purple-600 hover:bg-purple-700"
                               >
@@ -920,7 +938,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                               </span>
                               <Button
                                 size="sm"
-                                onClick={() => handleOptimize(strategy.id)}
+                                onClick={() => {
+                                  setSelectedStrategy(strategy)
+                                  setShowProviderModal(true)
+                                }}
                                 className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs"
                               >
                                 Apply
@@ -952,8 +973,8 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                               <Button
                                 size="sm"
                                 onClick={() => {
-                                  console.log(`Planning strategy: ${strategy.name}`)
-                                  // Implementation would navigate to planning interface
+                                  setComingSoonType('plan')
+                                  setShowComingSoonModal(true)
                                 }}
                                 className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs"
                               >
@@ -1091,6 +1112,52 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {selectedModel && (
+        <ProviderOptimizationModal
+          isOpen={showProviderModal}
+          onClose={() => {
+            setShowProviderModal(false)
+            setSelectedModel(null)
+          }}
+          provider={selectedModel.provider}
+          model={selectedModel}
+        />
+      )}
+
+      {selectedModel && (
+        <ModelDetailsModal
+          isOpen={showDetailsModal}
+          onClose={() => {
+            setShowDetailsModal(false)
+            setSelectedModel(null)
+          }}
+          model={selectedModel}
+        />
+      )}
+
+      {selectedStrategy && (
+        <StrategyModal
+          isOpen={showStrategyModal}
+          onClose={() => {
+            setShowStrategyModal(false)
+            setSelectedStrategy(null)
+          }}
+          strategy={selectedStrategy}
+        />
+      )}
+
+      <ComingSoonModal
+        isOpen={showComingSoonModal}
+        onClose={() => setShowComingSoonModal(false)}
+        title={comingSoonType === 'plan' ? 'Planning Tools' : 'Custom Strategies'}
+        description={comingSoonType === 'plan'
+          ? 'Advanced planning and simulation tools are coming soon.'
+          : 'Custom strategy implementation tools are being developed.'
+        }
+        type={comingSoonType}
+      />
     </TooltipProvider>
   )
 }
