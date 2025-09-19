@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Zap,
   Brain,
@@ -114,9 +114,10 @@ interface PerformanceMetrics {
 export default function ModelOptimizationClient({ initialSession }: ModelOptimizationClientProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const activeSession = session || initialSession
 
-  const [selectedView, setSelectedView] = useState('models')
+  const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'models')
   const [selectedProvider, setSelectedProvider] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
@@ -126,6 +127,13 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
   const [models, setModels] = useState<AIModel[]>([])
   const [strategies, setStrategies] = useState<OptimizationStrategy[]>([])
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null)
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['models', 'strategies', 'performance', 'recommendations'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchOptimizationData()
@@ -304,6 +312,50 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
     setIsOptimizing(false)
   }
 
+  const handleExportReport = () => {
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      summary: {
+        totalModels: models.length,
+        totalStrategies: strategies.length,
+        implementedStrategies: strategies.filter(s => s.implemented).length,
+        averageSavingsPotential: strategies.reduce((sum, s) => sum + s.savingsPotential, 0) / strategies.length,
+        averagePerformanceImpact: strategies.reduce((sum, s) => sum + s.performanceImpact, 0) / strategies.length
+      },
+      models: models.map(model => ({
+        name: model.name,
+        provider: model.provider,
+        type: model.type,
+        costPer1kTokens: model.costPer1kTokens,
+        performance: model.performance,
+        quality: model.quality,
+        recommendation: model.recommendation,
+        savings: model.savings,
+        currentUsage: model.currentUsage
+      })),
+      strategies: strategies.map(strategy => ({
+        name: strategy.name,
+        description: strategy.description,
+        impact: strategy.impact,
+        difficulty: strategy.difficulty,
+        category: strategy.category,
+        savingsPotential: strategy.savingsPotential,
+        performanceImpact: strategy.performanceImpact,
+        implemented: strategy.implemented,
+        confidence: strategy.confidence
+      })),
+      performanceMetrics: performanceMetrics
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `optimization-report-${Date.now()}.json`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
   const formatCurrency = (value: number) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
     if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`
@@ -420,7 +472,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                     </TooltipContent>
                   </Tooltip>
 
-                  <Button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2">
+                  <Button
+                    onClick={handleExportReport}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2"
+                  >
                     <Download className="w-4 h-4" />
                     Export Report
                   </Button>
@@ -428,10 +483,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
               </div>
 
               {/* Cross-Feature Navigation */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-6">
                 <button
                   onClick={() => router.push('/executive')}
-                  className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all"
+                  className="group p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Award className="w-5 h-5 text-indigo-400" />
@@ -443,7 +498,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/analytics')}
-                  className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
+                  className="group p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Brain className="w-5 h-5 text-blue-400" />
@@ -455,7 +510,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/monitoring/dashboard')}
-                  className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all"
+                  className="group p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Activity className="w-5 h-5 text-green-400" />
@@ -467,7 +522,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/usage')}
-                  className="group p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all"
+                  className="group p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <BarChart3 className="w-5 h-5 text-yellow-400" />
@@ -484,7 +539,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                   {['models', 'strategies', 'performance', 'recommendations'].map((view) => (
                     <button
                       key={view}
-                      onClick={() => setSelectedView(view)}
+                      onClick={() => {
+                        setSelectedView(view)
+                        router.push(`/optimization?tab=${view}`, { scroll: false })
+                      }}
                       className={`px-4 py-2 rounded-md font-medium transition-all capitalize ${
                         selectedView === view
                           ? 'bg-purple-600 text-white shadow-lg'
@@ -566,7 +624,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-8">
                           <div>
                             <div className="text-xs text-gray-400 mb-1">Cost per 1K tokens</div>
                             <div className="text-lg font-bold text-white">{formatCurrency(model.costPer1kTokens)}</div>
@@ -613,10 +671,25 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                         </div>
 
                         <div className="flex gap-2">
-                          <Button size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              console.log(`Optimizing model: ${model.name}`)
+                              // Implementation would trigger model optimization
+                            }}
+                            className="flex-1 bg-purple-600 hover:bg-purple-700"
+                          >
                             Optimize
                           </Button>
-                          <Button size="sm" variant="outline" className="border-gray-700 text-gray-300">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              console.log(`Viewing details for model: ${model.name}`)
+                              // Implementation would show detailed model information
+                            }}
+                            className="border-gray-700 text-gray-300"
+                          >
                             Details
                           </Button>
                         </div>
@@ -702,7 +775,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gray-800/30 rounded-lg">
+                        <div className="p-6 bg-gray-800/30 rounded-lg">
                           <span className="text-gray-400 text-xs uppercase tracking-wide">Category</span>
                           <p className="text-gray-300 text-sm capitalize">{strategy.category}</p>
                         </div>
@@ -833,7 +906,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {strategies.filter(s => s.difficulty === 'easy' && !s.implemented).map((strategy) => (
-                          <div key={strategy.id} className="p-3 bg-gray-700/30 rounded-lg">
+                          <div key={strategy.id} className="p-6 bg-gray-700/30 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-white font-medium text-sm">{strategy.name}</span>
                               <Badge className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-xs">
@@ -845,7 +918,11 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                               <span className="text-green-400 text-xs font-medium">
                                 {strategy.savingsPotential}% savings
                               </span>
-                              <Button size="sm" className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs">
+                              <Button
+                                size="sm"
+                                onClick={() => handleOptimize(strategy.id)}
+                                className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs"
+                              >
                                 Apply
                               </Button>
                             </div>
@@ -860,7 +937,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {strategies.filter(s => s.impact === 'high' && !s.implemented).map((strategy) => (
-                          <div key={strategy.id} className="p-3 bg-gray-700/30 rounded-lg">
+                          <div key={strategy.id} className="p-6 bg-gray-700/30 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-white font-medium text-sm">{strategy.name}</span>
                               <Badge className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-xs">
@@ -872,7 +949,14 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                               <span className="text-green-400 text-xs font-medium">
                                 {strategy.savingsPotential}% savings
                               </span>
-                              <Button size="sm" className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  console.log(`Planning strategy: ${strategy.name}`)
+                                  // Implementation would navigate to planning interface
+                                }}
+                                className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs"
+                              >
                                 Plan
                               </Button>
                             </div>
@@ -882,7 +966,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                     </Card>
                   </div>
 
-                  <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                  <div className="mt-6 p-6 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Target className="w-4 h-4 text-purple-400" />
                       <span className="text-purple-300 font-medium text-sm">Optimization Summary</span>
@@ -914,10 +998,10 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                 <h3 className="text-lg font-semibold text-white">Optimization Action Center</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <button
                   onClick={() => router.push('/executive')}
-                  className="group p-4 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg border border-indigo-500/30 hover:border-indigo-400/50 transition-all"
+                  className="group p-6 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg border border-indigo-500/30 hover:border-indigo-400/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Award className="w-5 h-5 text-indigo-400" />
@@ -928,7 +1012,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/analytics')}
-                  className="group p-4 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-lg border border-blue-500/30 hover:border-blue-400/50 transition-all"
+                  className="group p-6 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-lg border border-blue-500/30 hover:border-blue-400/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Brain className="w-5 h-5 text-blue-400" />
@@ -939,7 +1023,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/monitoring/dashboard')}
-                  className="group p-4 bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all"
+                  className="group p-6 bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Activity className="w-5 h-5 text-green-400" />
@@ -950,7 +1034,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
 
                 <button
                   onClick={() => router.push('/settings/api-keys')}
-                  className="group p-4 bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all"
+                  className="group p-6 bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Settings className="w-5 h-5 text-yellow-400" />
@@ -972,9 +1056,9 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                 <Building2 className="w-5 h-5 text-indigo-400" />
                 Enterprise Center
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <Link href="/executive" className="group">
-                  <div className="p-4 bg-gradient-to-br from-amber-900/30 to-orange-900/30 rounded-lg border border-amber-500/30 hover:border-amber-400/50 transition-all group-hover:scale-105">
+                  <div className="p-6 bg-gradient-to-br from-amber-900/30 to-orange-900/30 rounded-lg border border-amber-500/30 hover:border-amber-400/50 transition-all group-hover:scale-105">
                     <div className="flex items-center gap-3 mb-2">
                       <Award className="w-5 h-5 text-amber-400" />
                       <span className="text-amber-300 font-medium">Executive Center</span>
@@ -984,7 +1068,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                 </Link>
 
                 <Link href="/analytics" className="group">
-                  <div className="p-4 bg-gradient-to-br from-blue-900/30 to-indigo-900/30 rounded-lg border border-blue-500/30 hover:border-blue-400/50 transition-all group-hover:scale-105">
+                  <div className="p-6 bg-gradient-to-br from-blue-900/30 to-indigo-900/30 rounded-lg border border-blue-500/30 hover:border-blue-400/50 transition-all group-hover:scale-105">
                     <div className="flex items-center gap-3 mb-2">
                       <Brain className="w-5 h-5 text-blue-400" />
                       <span className="text-blue-300 font-medium">Predictive Analytics</span>
@@ -994,7 +1078,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                 </Link>
 
                 <Link href="/monitoring/dashboard" className="group">
-                  <div className="p-4 bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all group-hover:scale-105">
+                  <div className="p-6 bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all group-hover:scale-105">
                     <div className="flex items-center gap-3 mb-2">
                       <Activity className="w-5 h-5 text-green-400" />
                       <span className="text-green-300 font-medium">Advanced Monitoring</span>

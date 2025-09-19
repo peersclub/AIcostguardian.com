@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   TrendingUp,
   TrendingDown,
@@ -112,10 +112,11 @@ interface ForecastData {
 export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDashboardClientProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const activeSession = session || initialSession
 
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
-  const [selectedView, setSelectedView] = useState('overview')
+  const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'overview')
   const [isLoading, setIsLoading] = useState(true)
   const [executiveData, setExecutiveData] = useState<any>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -123,6 +124,13 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
   useEffect(() => {
     fetchExecutiveData()
   }, [selectedTimeframe])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'insights', 'performance', 'forecasts'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
 
   const fetchExecutiveData = async () => {
     try {
@@ -146,6 +154,63 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
     setIsRefreshing(true)
     await fetchExecutiveData()
     setIsRefreshing(false)
+  }
+
+  const handleExportExecutiveReport = () => {
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      timeframe: selectedTimeframe,
+      executiveMetrics: {
+        totalSpend: executiveMetrics.totalSpend,
+        monthlyBudget: executiveMetrics.monthlyBudget,
+        budgetUtilization: executiveMetrics.budgetUtilization,
+        costPerEmployee: executiveMetrics.costPerEmployee,
+        efficiency: executiveMetrics.efficiency,
+        riskScore: executiveMetrics.riskScore
+      },
+      businessInsights: businessInsights.map(insight => ({
+        type: insight.type,
+        title: insight.title,
+        message: insight.message,
+        metric: insight.metric,
+        priority: insight.priority,
+        confidence: insight.confidence,
+        timeframe: insight.timeframe,
+        category: insight.category
+      })),
+      providerPerformance: providers.map(provider => ({
+        id: provider.id,
+        name: provider.name,
+        spend: provider.spend,
+        share: provider.share,
+        performance: provider.performance,
+        reliability: provider.reliability,
+        costEfficiency: provider.costEfficiency,
+        trend: provider.trend
+      })),
+      forecasts: forecasts.map((forecast: any, index) => ({
+        period: `Period ${index + 1}`,
+        predicted: forecast.value || forecast.predicted || 0,
+        actual: forecast.baseline || forecast.actual || 0,
+        variance: forecast.variance || 0
+      })),
+      summary: {
+        totalProviders: providers.length,
+        totalInsights: businessInsights.length,
+        highPriorityInsights: businessInsights.filter(i => i.priority === 'high').length,
+        averageEfficiency: providers.reduce((sum, p) => sum + p.costEfficiency, 0) / providers.length,
+        totalForecastAccuracy: forecasts.length > 0 ?
+          forecasts.reduce((sum, f) => sum + (f.confidence || 0), 0) / forecasts.length : 0
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `executive-report-${Date.now()}.json`
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
   const executiveMetrics: ExecutiveMetrics = executiveData?.executiveMetrics || {
@@ -264,7 +329,10 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                     <TooltipContent>Sync latest data</TooltipContent>
                   </Tooltip>
 
-                  <Button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2">
+                  <Button
+                    onClick={handleExportExecutiveReport}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+                  >
                     <Download className="w-4 h-4" />
                     Executive Report
                   </Button>
@@ -272,9 +340,9 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
               </div>
 
               {/* Quick Navigation */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <Link href="/analytics/usage" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <BarChart3 className="w-5 h-5 text-indigo-400" />
                       <span className="text-indigo-300 font-medium">Predictive Analytics</span>
@@ -285,7 +353,7 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                 </Link>
 
                 <Link href="/monitoring/dashboard" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Activity className="w-5 h-5 text-green-400" />
                       <span className="text-green-300 font-medium">Advanced Monitoring</span>
@@ -296,7 +364,7 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                 </Link>
 
                 <Link href="/optimization" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Zap className="w-5 h-5 text-purple-400" />
                       <span className="text-purple-300 font-medium">Model Optimization</span>
@@ -307,7 +375,7 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                 </Link>
 
                 <Link href="/usage" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Gauge className="w-5 h-5 text-yellow-400" />
                       <span className="text-yellow-300 font-medium">Usage Analytics</span>
@@ -323,7 +391,10 @@ export default function ExecutiveDashboardClient({ initialSession }: ExecutiveDa
                 {['overview', 'insights', 'performance', 'forecasts'].map((view) => (
                   <button
                     key={view}
-                    onClick={() => setSelectedView(view)}
+                    onClick={() => {
+                      setSelectedView(view)
+                      router.push(`/executive?tab=${view}`, { scroll: false })
+                    }}
                     className={`px-4 py-2 rounded-md font-medium transition-all capitalize ${
                       selectedView === view
                         ? 'bg-indigo-600 text-white shadow-lg'

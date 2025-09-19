@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   TrendingUp,
   TrendingDown,
@@ -108,10 +108,11 @@ interface OptimizationRecommendation {
 export default function PredictiveAnalyticsClient({ initialSession }: PredictiveAnalyticsClientProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const activeSession = session || initialSession
 
   const [selectedPeriod, setSelectedPeriod] = useState('monthly')
-  const [selectedView, setSelectedView] = useState('forecasts')
+  const [selectedView, setSelectedView] = useState(searchParams.get('tab') || 'forecasts')
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isAutoRefresh, setIsAutoRefresh] = useState(false)
@@ -123,6 +124,13 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
   useEffect(() => {
     fetchPredictiveData()
   }, [selectedPeriod])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['forecasts', 'trends', 'accuracy', 'recommendations'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -319,7 +327,30 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                     <TooltipContent>Sync latest predictions</TooltipContent>
                   </Tooltip>
 
-                  <Button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      const data = {
+                        type: 'analytics_report',
+                        tab: selectedView,
+                        period: selectedPeriod,
+                        exportDate: new Date().toISOString(),
+                        predictions,
+                        accuracy,
+                        trendAnalysis,
+                        recommendations
+                      }
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const link = document.createElement('a')
+                      link.href = url
+                      link.download = `analytics-report-${selectedView}-${new Date().toISOString().split('T')[0]}.json`
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="px-4 py-2 bg-gray-800/50 backdrop-blur-xl border border-gray-600 text-white rounded-lg hover:bg-gray-700/50 hover:border-indigo-500/50 transition-all font-medium flex items-center gap-2"
+                  >
                     <Download className="w-4 h-4" />
                     Export Report
                   </Button>
@@ -327,9 +358,9 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
               </div>
 
               {/* Quick Navigation */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-6">
                 <Link href="/executive" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Award className="w-5 h-5 text-indigo-400" />
                       <span className="text-indigo-300 font-medium">Executive Center</span>
@@ -340,7 +371,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/monitoring/dashboard" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-green-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Activity className="w-5 h-5 text-green-400" />
                       <span className="text-green-300 font-medium">Advanced Monitoring</span>
@@ -351,7 +382,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/optimization" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Zap className="w-5 h-5 text-purple-400" />
                       <span className="text-purple-300 font-medium">Model Optimization</span>
@@ -362,7 +393,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/usage" className="group">
-                  <div className="p-4 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all">
+                  <div className="p-6 bg-gray-900/50 backdrop-blur-xl rounded-lg border border-gray-700 hover:border-yellow-500/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <BarChart3 className="w-5 h-5 text-yellow-400" />
                       <span className="text-yellow-300 font-medium">Usage Analytics</span>
@@ -379,7 +410,10 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                   {['forecasts', 'trends', 'accuracy', 'recommendations'].map((view) => (
                     <button
                       key={view}
-                      onClick={() => setSelectedView(view)}
+                      onClick={() => {
+                        setSelectedView(view)
+                        router.push(`/analytics?tab=${view}`, { scroll: false })
+                      }}
                       className={`px-4 py-2 rounded-md font-medium transition-all capitalize ${
                         selectedView === view
                           ? 'bg-blue-600 text-white shadow-lg'
@@ -540,7 +574,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                     {trendAnalysis && (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                          <div className="p-4 bg-gray-800/30 rounded-lg border border-gray-700">
+                          <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700">
                             <div className="flex items-center gap-3 mb-3">
                               {trendAnalysis.direction === 'up' ? (
                                 <TrendingUp className="w-6 h-6 text-green-400" />
@@ -580,7 +614,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                             Contributing Factors
                           </h4>
                           {trendAnalysis.factors.map((factor, index) => (
-                            <div key={index} className="p-3 bg-gray-800/20 rounded-lg border border-gray-700">
+                            <div key={index} className="p-6 bg-gray-800/20 rounded-lg border border-gray-700">
                               <p className="text-gray-300 text-sm">{factor}</p>
                             </div>
                           ))}
@@ -746,13 +780,20 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                           </div>
 
                           <div className="text-right ml-4">
-                            <Button size="sm" className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                // Implementation would go here - for now show success state
+                                console.log(`Implementing recommendation: ${rec.title}`)
+                              }}
+                              className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
+                            >
                               Implement
                             </Button>
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gray-700/20 rounded-lg">
+                        <div className="p-6 bg-gray-700/20 rounded-lg">
                           <span className="text-gray-400 text-xs uppercase tracking-wide">Category</span>
                           <p className="text-gray-300 text-sm capitalize">{rec.category}</p>
                         </div>
@@ -775,9 +816,9 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 <h3 className="text-lg font-semibold text-white">Analytics Action Center</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <Link href="/executive" className="group">
-                  <div className="p-4 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg border border-indigo-500/30 hover:border-indigo-400/50 transition-all">
+                  <div className="p-6 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg border border-indigo-500/30 hover:border-indigo-400/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Award className="w-5 h-5 text-indigo-400" />
                       <span className="text-indigo-300 font-medium">Executive Dashboard</span>
@@ -787,7 +828,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/monitoring/dashboard" className="group">
-                  <div className="p-4 bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all">
+                  <div className="p-6 bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-lg border border-green-500/30 hover:border-green-400/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Activity className="w-5 h-5 text-green-400" />
                       <span className="text-green-300 font-medium">Live Monitoring</span>
@@ -797,7 +838,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/optimization" className="group">
-                  <div className="p-4 bg-gradient-to-br from-purple-900/30 to-purple-800/30 rounded-lg border border-purple-500/30 hover:border-purple-400/50 transition-all">
+                  <div className="p-6 bg-gradient-to-br from-purple-900/30 to-purple-800/30 rounded-lg border border-purple-500/30 hover:border-purple-400/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Zap className="w-5 h-5 text-purple-400" />
                       <span className="text-purple-300 font-medium">Model Optimization</span>
@@ -807,7 +848,7 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                 </Link>
 
                 <Link href="/settings/api-keys" className="group">
-                  <div className="p-4 bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all">
+                  <div className="p-6 bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all">
                     <div className="flex items-center gap-3 mb-2">
                       <Settings className="w-5 h-5 text-yellow-400" />
                       <span className="text-yellow-300 font-medium">Configuration</span>
