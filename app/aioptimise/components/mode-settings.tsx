@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   Settings,
   Target,
   Code,
@@ -44,7 +44,9 @@ import {
   Sparkles,
   Monitor,
   Moon,
-  Sun
+  Sun,
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -152,6 +154,77 @@ export function ModeSettings({
   const [open, setOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState(currentMode);
   const [customSettings, setCustomSettings] = useState(settings);
+  const [adminOverrides, setAdminOverrides] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showChangeRequest, setShowChangeRequest] = useState(false);
+
+  // Fetch admin overrides when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchAdminOverrides();
+    }
+  }, [open]);
+
+  const fetchAdminOverrides = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/project-settings');
+      const data = await response.json();
+
+      if (data.hasOverrides) {
+        setAdminOverrides(data.organizationSettings);
+      }
+    } catch (error) {
+      console.error('Error fetching admin overrides:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangeRequest = async (requestMessage: string) => {
+    try {
+      const response = await fetch('/api/admin/change-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestMessage,
+          currentSettings: customSettings,
+          requestedChanges: getRequestedChanges()
+        })
+      });
+
+      if (response.ok) {
+        setShowChangeRequest(false);
+        // Show success message or notification
+      }
+    } catch (error) {
+      console.error('Error submitting change request:', error);
+    }
+  };
+
+  const getRequestedChanges = () => {
+    // Compare current settings with admin overrides to determine what user wants to change
+    if (!adminOverrides?.adminOverrides) return {};
+
+    const overriddenSettings = adminOverrides.adminOverrides;
+    const changes = {};
+
+    Object.keys(customSettings).forEach(key => {
+      if (overriddenSettings[key] !== undefined && customSettings[key] !== overriddenSettings[key]) {
+        changes[key] = customSettings[key];
+      }
+    });
+
+    return changes;
+  };
+
+  const isSettingLocked = (settingKey: string) => {
+    return adminOverrides?.adminOverrides && adminOverrides.adminOverrides[settingKey] !== undefined;
+  };
+
+  const getLockedValue = (settingKey: string) => {
+    return adminOverrides?.adminOverrides?.[settingKey];
+  };
 
   const handleModeSelect = (modeId: string) => {
     setSelectedMode(modeId as any);
@@ -248,16 +321,38 @@ export function ModeSettings({
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="show-metrics" className="text-sm text-gray-300">
-                      Show Metrics Panel
-                    </Label>
-                    <Switch
-                      id="show-metrics"
-                      checked={customSettings.showMetrics}
-                      onCheckedChange={(checked) => 
-                        setCustomSettings({ ...customSettings, showMetrics: checked })
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="show-metrics" className="text-sm text-gray-300">
+                        Show Metrics Panel
+                      </Label>
+                      {isSettingLocked('showMetrics') && (
+                        <div className="flex items-center gap-1 text-xs text-orange-400">
+                          <Lock className="h-3 w-3" />
+                          <span>Admin Override</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="show-metrics"
+                        checked={isSettingLocked('showMetrics') ? getLockedValue('showMetrics') : customSettings.showMetrics}
+                        disabled={isSettingLocked('showMetrics')}
+                        onCheckedChange={(checked) =>
+                          setCustomSettings({ ...customSettings, showMetrics: checked })
+                        }
+                      />
+                      {isSettingLocked('showMetrics') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowChangeRequest(true)}
+                          className="h-6 px-2 text-xs text-indigo-400 hover:text-indigo-300"
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Request Change
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -529,6 +624,86 @@ export function ModeSettings({
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Admin Override Banner */}
+        {adminOverrides?.adminOverrides && (
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-400 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-orange-300">Settings Locked by Administrator</h4>
+                <p className="text-xs text-orange-200/80 mt-1">
+                  Some settings have been overridden by your organization administrator.
+                  {adminOverrides.overrideReason && (
+                    <span className="block mt-1">
+                      <strong>Reason:</strong> {adminOverrides.overrideReason}
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-orange-200/60 mt-2">
+                  Overridden by {adminOverrides.overriddenByUser?.name} on{' '}
+                  {new Date(adminOverrides.overriddenAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Change Request Modal */}
+        {showChangeRequest && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl">
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="h-5 w-5 text-indigo-400" />
+                  <h3 className="text-lg font-semibold text-white">Request Settings Change</h3>
+                </div>
+
+                <p className="text-sm text-gray-400 mb-4">
+                  Submit a request to your administrator to modify the locked settings.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="change-message" className="text-sm text-gray-300">
+                      Message to Administrator
+                    </Label>
+                    <textarea
+                      id="change-message"
+                      placeholder="Please explain why you need these settings changed..."
+                      className="w-full mt-2 px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500/20 resize-none"
+                      rows={4}
+                      onChange={(e) => {
+                        // Store message in state if needed
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowChangeRequest(false)}
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const message = (document.getElementById('change-message') as HTMLTextAreaElement)?.value;
+                      if (message) {
+                        handleChangeRequest(message);
+                      }
+                    }}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white"
+                  >
+                    Submit Request
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
           <Button 
