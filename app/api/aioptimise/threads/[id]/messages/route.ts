@@ -84,11 +84,17 @@ export async function GET(
     const hasMore = messages.length > limit;
     const messageList = hasMore ? messages.slice(0, -1) : messages;
 
+    // Normalize message roles to lowercase for frontend compatibility
+    const normalizedMessages = messageList.map(message => ({
+      ...message,
+      role: message.role.toLowerCase() as 'user' | 'assistant' | 'system',
+    }));
+
     // Get the cursor for next page (last message in current page)
     const nextCursor = messageList.length > 0 ? messageList[messageList.length - 1].id : null;
 
     return NextResponse.json({
-      messages: messageList,
+      messages: normalizedMessages,
       hasMore,
       nextCursor: hasMore ? nextCursor : null,
     });
