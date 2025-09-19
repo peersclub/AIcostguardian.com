@@ -238,29 +238,29 @@ export default function ProjectSettingsModal({
                         <Select value={settings.provider} onValueChange={(value) =>
                           setSettings(prev => ({ ...prev, provider: value }))
                         }>
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white mt-2">
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20 mt-2">
                             <div className="flex items-center gap-2">
-                              {getAIProviderLogo(settings.provider, 'w-5 h-5')}
-                              <SelectValue />
+                              {getAIProviderLogo(settings.provider, 'w-4 h-4')}
+                              <SelectValue placeholder="Select AI Provider" />
                             </div>
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="openai">
+                          <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
+                            <SelectItem value="openai" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
                               <div className="flex items-center gap-2">
                                 {getAIProviderLogo('openai', 'w-4 h-4')}
-                                OpenAI
+                                <span>OpenAI</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="anthropic">
+                            <SelectItem value="anthropic" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
                               <div className="flex items-center gap-2">
                                 {getAIProviderLogo('anthropic', 'w-4 h-4')}
-                                Anthropic
+                                <span>Anthropic</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="google">
+                            <SelectItem value="google" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
                               <div className="flex items-center gap-2">
                                 {getAIProviderLogo('google', 'w-4 h-4')}
-                                Google
+                                <span>Google</span>
                               </div>
                             </SelectItem>
                           </SelectContent>
@@ -274,28 +274,28 @@ export default function ProjectSettingsModal({
                         <Select value={settings.model} onValueChange={(value) =>
                           setSettings(prev => ({ ...prev, model: value }))
                         }>
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white mt-2">
-                            <SelectValue />
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20 mt-2">
+                            <SelectValue placeholder="Select Model" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
                             {settings.provider === 'openai' && (
                               <>
-                                <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                                <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                                <SelectItem value="gpt-4o" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-4o</SelectItem>
+                                <SelectItem value="gpt-4o-mini" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-4o Mini</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-3.5 Turbo</SelectItem>
                               </>
                             )}
                             {settings.provider === 'anthropic' && (
                               <>
-                                <SelectItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</SelectItem>
-                                <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
-                                <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                                <SelectItem value="claude-3.5-sonnet" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3.5 Sonnet</SelectItem>
+                                <SelectItem value="claude-3-haiku" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3 Haiku</SelectItem>
+                                <SelectItem value="claude-3-opus" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3 Opus</SelectItem>
                               </>
                             )}
                             {settings.provider === 'google' && (
                               <>
-                                <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                                <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                                <SelectItem value="gemini-1.5-pro" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Gemini 1.5 Pro</SelectItem>
+                                <SelectItem value="gemini-1.5-flash" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Gemini 1.5 Flash</SelectItem>
                               </>
                             )}
                           </SelectContent>
@@ -389,13 +389,13 @@ export default function ProjectSettingsModal({
                             optimizationLevel: value
                           }))}
                         >
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white mt-2">
-                            <SelectValue />
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20 mt-2">
+                            <SelectValue placeholder="Select Optimization Level" />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="conservative">Conservative</SelectItem>
-                            <SelectItem value="balanced">Balanced</SelectItem>
-                            <SelectItem value="aggressive">Aggressive</SelectItem>
+                          <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
+                            <SelectItem value="conservative" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Conservative</SelectItem>
+                            <SelectItem value="balanced" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Balanced</SelectItem>
+                            <SelectItem value="aggressive" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Aggressive</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

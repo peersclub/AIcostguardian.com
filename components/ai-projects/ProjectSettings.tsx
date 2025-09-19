@@ -21,8 +21,22 @@ import {
   Folder,
   Zap,
   Shield,
-  Hash
+  Hash,
+  Info,
+  MessageSquare,
+  Code,
+  Search,
+  PenTool,
+  BarChart3,
+  Lightbulb,
+  Headphones,
+  GraduationCap,
+  Cog,
+  FileText,
+  Building,
+  HelpCircle
 } from 'lucide-react';
+import { getAIProviderLogo } from '@/components/ui/ai-logos';
 
 interface ThreadContext {
   id: string;
@@ -340,7 +354,7 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                 onClick={onClose}
                 className="w-8 h-8 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 hover:text-white transition-colors flex items-center justify-center"
               >
-                ✕
+                <Zap className="h-4 w-4 rotate-45" />
               </button>
             </div>
           </div>
@@ -445,14 +459,34 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-gray-600">
-                              {metadata.projectTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                  <div>
-                                    <div className="font-medium">{type.label}</div>
-                                    <div className="text-xs text-gray-400">{type.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                              {metadata.projectTypes.map((type) => {
+                                const getProjectTypeIcon = (typeValue: string) => {
+                                  const iconMap = {
+                                    'GENERAL': MessageSquare,
+                                    'DEVELOPMENT': Code,
+                                    'RESEARCH': Search,
+                                    'CONTENT_CREATION': PenTool,
+                                    'ANALYSIS': BarChart3,
+                                    'BRAINSTORMING': Lightbulb,
+                                    'SUPPORT': Headphones,
+                                    'TRAINING': GraduationCap,
+                                    'CUSTOM': Cog
+                                  } as const;
+                                  const IconComponent = iconMap[typeValue as keyof typeof iconMap] || FileText;
+                                  return <IconComponent className="h-4 w-4 text-gray-400" />;
+                                };
+                                return (
+                                  <SelectItem key={type.value} value={type.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                                    <div className="flex items-center gap-3">
+                                      {getProjectTypeIcon(type.value)}
+                                      <div>
+                                        <div className="font-medium">{type.label}</div>
+                                        <div className="text-xs text-gray-400">{type.description}</div>
+                                      </div>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -469,14 +503,32 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                               <SelectValue placeholder="Select category..." />
                             </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-gray-600">
-                              {metadata.categories.map((category) => (
-                                <SelectItem key={category.value} value={category.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                  <div className="flex items-center gap-2">
-                                    <span>{category.icon}</span>
-                                    <span>{category.label}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                              {metadata.categories.map((category) => {
+                                const getCategoryIcon = (iconName: string) => {
+                                  const iconMap = {
+                                    '💻': Code,
+                                    '🔬': Search,
+                                    '✍️': PenTool,
+                                    '📊': BarChart3,
+                                    '🎧': Headphones,
+                                    '💡': Lightbulb,
+                                    '🎓': GraduationCap,
+                                    '💬': MessageSquare,
+                                    '🏢': Building,
+                                    '⚙️': Cog
+                                  } as const;
+                                  const IconComponent = iconMap[iconName as keyof typeof iconMap] || FileText;
+                                  return <IconComponent className="h-4 w-4 text-gray-400" />;
+                                };
+                                return (
+                                  <SelectItem key={category.value} value={category.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                                    <div className="flex items-center gap-2">
+                                      {getCategoryIcon(category.icon)}
+                                      <span>{category.label}</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -555,7 +607,14 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                             onValueChange={handleProviderChange}
                           >
                             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20">
-                              <SelectValue />
+                              <div className="flex items-center gap-2">
+                                {context.defaultProvider === 'auto' ? (
+                                  <Zap className="w-4 h-4 text-indigo-400" />
+                                ) : (
+                                  getAIProviderLogo(context.defaultProvider || '', 'w-4 h-4')
+                                )}
+                                <SelectValue />
+                              </div>
                             </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-gray-600">
                               {/* Auto-Optimize Option */}
@@ -574,9 +633,12 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
 
                               {metadata.providers.map((provider) => (
                                 <SelectItem key={provider.value} value={provider.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                  <div>
-                                    <div className="font-medium">{provider.label}</div>
-                                    <div className="text-xs text-gray-400">{provider.description}</div>
+                                  <div className="flex items-center gap-3">
+                                    {getAIProviderLogo(provider.value, 'w-4 h-4')}
+                                    <div>
+                                      <div className="font-medium">{provider.label}</div>
+                                      <div className="text-xs text-gray-400">{provider.description}</div>
+                                    </div>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -590,7 +652,14 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                             onValueChange={(value) => updateContext({ defaultModel: value })}
                           >
                             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20">
-                              <SelectValue />
+                              <div className="flex items-center gap-2">
+                                {context.defaultModel === 'auto' ? (
+                                  <Zap className="w-4 h-4 text-indigo-400" />
+                                ) : (
+                                  getAIProviderLogo(context.defaultProvider || '', 'w-4 h-4')
+                                )}
+                                <SelectValue />
+                              </div>
                             </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-gray-600">
                               {/* Auto-Optimize Option */}
@@ -611,9 +680,12 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
 
                               {getFilteredModels().map((model) => (
                                 <SelectItem key={model.value} value={model.value} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                  <div>
-                                    <div className="font-medium">{model.label}</div>
-                                    <div className="text-xs text-gray-400">{model.description}</div>
+                                  <div className="flex items-center gap-3">
+                                    {getAIProviderLogo(model.provider, 'w-4 h-4')}
+                                    <div>
+                                      <div className="font-medium">{model.label}</div>
+                                      <div className="text-xs text-gray-400">{model.description}</div>
+                                    </div>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -647,7 +719,16 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-white" htmlFor="maxTokens">Max Tokens</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-white" htmlFor="maxTokens">Max Tokens</Label>
+                              <div className="group relative">
+                                <Info className="h-4 w-4 text-gray-400 hover:text-gray-300 cursor-help" />
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-xs text-gray-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                                  Maximum number of tokens the AI can generate in a single response
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                              </div>
+                            </div>
                             <Select
                               value={context.maxTokens?.toString() || ''}
                               onValueChange={(value) => updateContext({ maxTokens: parseInt(value) })}
@@ -658,14 +739,26 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                               <SelectContent className="bg-gray-800 border-gray-600">
                                 {metadata.maxTokensPresets.map((preset) => (
                                   <SelectItem key={preset.value} value={preset.value.toString()} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                    {preset.label}
+                                    <div>
+                                      <div className="font-medium">{preset.label}</div>
+                                      <div className="text-xs text-gray-400">{preset.description}</div>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-white" htmlFor="contextWindow">Context Window</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-white" htmlFor="contextWindow">Context Window</Label>
+                              <div className="group relative">
+                                <Info className="h-4 w-4 text-gray-400 hover:text-gray-300 cursor-help" />
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-xs text-gray-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                                  Amount of conversation history the AI can remember and reference
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                              </div>
+                            </div>
                             <Select
                               value={context.contextWindow?.toString() || ''}
                               onValueChange={(value) => updateContext({ contextWindow: parseInt(value) })}
@@ -676,7 +769,10 @@ export function ProjectSettings({ threadId, isOpen, onClose, onSave }: ProjectSe
                               <SelectContent className="bg-gray-800 border-gray-600">
                                 {metadata.contextWindowPresets.map((preset) => (
                                   <SelectItem key={preset.value} value={preset.value.toString()} className="text-white hover:bg-gray-700 focus:bg-gray-700">
-                                    {preset.label}
+                                    <div>
+                                      <div className="font-medium">{preset.label}</div>
+                                      <div className="text-xs text-gray-400">{preset.description}</div>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
