@@ -940,7 +940,7 @@ export default function ModelOptimizationClient({ initialSession }: ModelOptimiz
                                 size="sm"
                                 onClick={() => {
                                   setSelectedStrategy(strategy)
-                                  setShowProviderModal(true)
+                                  setShowStrategyModal(true)
                                 }}
                                 className="h-6 px-2 bg-purple-600 hover:bg-purple-700 text-xs"
                               >
