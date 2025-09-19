@@ -58,6 +58,19 @@ interface Collaborator {
   isOnline?: boolean;
 }
 
+interface OrganizationMember {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+  role: string;
+  department?: string;
+  jobTitle?: string;
+  lastActiveAt?: string;
+  isCurrentUser?: boolean;
+  isAlreadyCollaborator?: boolean;
+}
+
 interface ShareOptions {
   requireAuth: boolean;
   allowEdit: boolean;
@@ -80,6 +93,8 @@ interface ShareThreadDialogProps {
   onRemoveCollaborator: (collaboratorId: string) => Promise<void>;
   onUpdateCollaboratorRole: (collaboratorId: string, role: string) => Promise<void>;
   collaborators: Collaborator[];
+  organizationMembers?: OrganizationMember[];
+  onInviteOrganizationMember?: (memberId: string, role: string) => Promise<void>;
 }
 
 export function ShareThreadDialog({
@@ -92,8 +107,12 @@ export function ShareThreadDialog({
   onRemoveCollaborator,
   onUpdateCollaboratorRole,
   collaborators = [],
+  organizationMembers = [],
+  onInviteOrganizationMember,
 }: ShareThreadDialogProps) {
   const [activeTab, setActiveTab] = useState('link');
+  const [orgMembersLoading, setOrgMembersLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [shareUrl, setShareUrl] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [isSharing, setIsSharing] = useState(false);
@@ -109,6 +128,7 @@ export function ShareThreadDialog({
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'VIEWER' | 'EDITOR'>('VIEWER');
   const [isInviting, setIsInviting] = useState(false);
+  const [invitingMemberIds, setInvitingMemberIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (thread.isShared && thread.shareId) {
@@ -215,6 +235,55 @@ export function ShareThreadDialog({
     }
   };
 
+  const handleInviteOrganizationMember = async (memberId: string, role: string) => {
+    setInvitingMemberIds(prev => new Set(prev).add(memberId));
+    try {
+      const response = await fetch(`/api/aioptimise/threads/${thread.id}/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          memberId,
+          role,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send invitation');
+      }
+
+      const result = await response.json();
+      toast.success(result.message || 'Invitation sent successfully!');
+
+      // Call the optional callback if provided
+      if (onInviteOrganizationMember) {
+        await onInviteOrganizationMember(memberId, role);
+      }
+    } catch (error) {
+      console.error('Failed to invite member:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to send invitation');
+    } finally {
+      setInvitingMemberIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(memberId);
+        return newSet;
+      });
+    }
+  };
+
+  const filteredOrgMembers = organizationMembers.filter(member => {
+    if (member.isCurrentUser || member.isAlreadyCollaborator) return false;
+    if (!searchTerm) return true;
+    return (
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'ADMIN':
@@ -249,10 +318,14 @@ export function ShareThreadDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-gray-800">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-900/50 border border-gray-800">
             <TabsTrigger value="link" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
               <Link className="h-4 w-4 mr-2" />
               Share Link
+            </TabsTrigger>
+            <TabsTrigger value="members" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite Team ({filteredOrgMembers.length})
             </TabsTrigger>
             <TabsTrigger value="collaborators" className="text-gray-300 data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300">
               <Users className="h-4 w-4 mr-2" />
@@ -343,6 +416,122 @@ export function ShareThreadDialog({
                 </Button>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="members" className="mt-4 space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-200">Organization Members</Label>
+                <div className="text-xs text-gray-400">
+                  {filteredOrgMembers.length} members available to invite
+                </div>
+              </div>
+
+              {organizationMembers.length > 0 && (
+                <Input
+                  placeholder="Search members by name, email, or department..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-gray-900/50 text-gray-200 border-gray-700 focus:border-indigo-500/50"
+                />
+              )}
+            </div>
+
+            <ScrollArea className="h-[300px] border rounded-lg border-gray-700">
+              {organizationMembers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <AlertCircle className="h-12 w-12 text-gray-500 mb-3" />
+                  <p className="text-sm text-gray-400">
+                    No organization members found. Make sure you're part of an organization.
+                  </p>
+                </div>
+              ) : filteredOrgMembers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <Users className="h-12 w-12 text-gray-500 mb-3" />
+                  <p className="text-sm text-gray-400">
+                    {searchTerm ? 'No members match your search.' : 'All team members are already collaborators or invited.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-3">
+                  {filteredOrgMembers.map((member) => {
+                    const isInviting = invitingMemberIds.has(member.id);
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={member.image} />
+                            <AvatarFallback className="bg-indigo-500/20 text-indigo-300 text-sm">
+                              {member.name?.[0] || member.email[0].toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-200">
+                                {member.name || member.email}
+                              </span>
+                              <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
+                                {member.role}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              {member.jobTitle && (
+                                <span>{member.jobTitle}</span>
+                              )}
+                              {member.department && member.jobTitle && (
+                                <span>•</span>
+                              )}
+                              {member.department && (
+                                <span>{member.department}</span>
+                              )}
+                            </div>
+                            {member.lastActiveAt && (
+                              <span className="text-xs text-gray-500">
+                                Last active {formatDistanceToNow(new Date(member.lastActiveAt))} ago
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            defaultValue="VIEWER"
+                            onValueChange={(role) => handleInviteOrganizationMember(member.id, role)}
+                            disabled={isInviting}
+                          >
+                            <SelectTrigger className="w-24 h-8 bg-gray-900/50 border-gray-600 text-gray-300">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-900 border-gray-700">
+                              <SelectItem value="VIEWER" className="text-gray-300 hover:bg-gray-800">
+                                <div className="flex items-center gap-2">
+                                  <Eye className="h-3 w-3" />
+                                  Viewer
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="EDITOR" className="text-gray-300 hover:bg-gray-800">
+                                <div className="flex items-center gap-2">
+                                  <Edit3 className="h-3 w-3" />
+                                  Editor
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {isInviting && (
+                            <div className="flex items-center gap-2 text-xs text-indigo-400">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Inviting...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="collaborators" className="mt-4 space-y-4">

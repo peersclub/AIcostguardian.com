@@ -2178,7 +2178,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                         </SelectTrigger>
                         <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
                           {/* Auto-Optimize Option */}
-                          <SelectItem value="auto" className="hover:bg-gray-800/50 py-3">
+                          <SelectItem value="auto" className="hover:bg-gray-800/50 py-3 pl-2">
                             <div className="flex items-center gap-3 w-full">
                               <Zap className="w-4 h-4 text-indigo-400 flex-shrink-0" />
                               <div className="flex flex-col min-w-0 flex-1">
@@ -2200,7 +2200,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                               key={model.id}
                               value={model.id}
                               disabled={!isModelAvailable(model)}
-                              className="hover:bg-gray-800/50"
+                              className="hover:bg-gray-800/50 pl-2"
                             >
                               <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2">
