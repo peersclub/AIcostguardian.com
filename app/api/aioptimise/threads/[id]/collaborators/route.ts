@@ -26,7 +26,7 @@ export async function GET(
             collaborators: {
               some: {
                 userId: session.user.id,
-                status: 'ACCEPTED'
+                acceptedAt: { not: null }
               }
             }
           }
@@ -42,10 +42,10 @@ export async function GET(
     }
 
     // Get all collaborators for the thread
-    const collaborators = await prisma.aIThreadCollaborator.findMany({
+    const collaborators = await prisma.threadCollaborator.findMany({
       where: {
         threadId: params.id,
-        status: 'ACCEPTED',
+        acceptedAt: { not: null },
       },
       include: {
         user: {
@@ -58,7 +58,7 @@ export async function GET(
         }
       },
       orderBy: {
-        joinedAt: 'desc',
+        acceptedAt: 'desc',
       }
     });
 
@@ -85,7 +85,7 @@ export async function GET(
         id: collab.id,
         user: collab.user,
         role: collab.role,
-        joinedAt: collab.joinedAt,
+        joinedAt: collab.acceptedAt,
         isOwner: false,
       }))
     ];
@@ -130,7 +130,7 @@ export async function POST(
               some: {
                 userId: session.user.id,
                 role: 'ADMIN',
-                status: 'ACCEPTED'
+                acceptedAt: { not: null }
               }
             }
           }
@@ -159,7 +159,7 @@ export async function POST(
     }
 
     // Check if user is already a collaborator
-    const existingCollaborator = await prisma.aIThreadCollaborator.findUnique({
+    const existingCollaborator = await prisma.threadCollaborator.findUnique({
       where: {
         threadId_userId: {
           threadId: params.id,
@@ -176,32 +176,18 @@ export async function POST(
     }
 
     // Create collaboration record (no invitation needed for direct add)
-    await prisma.aIThreadCollaborator.create({
+    await prisma.threadCollaborator.create({
       data: {
         threadId: params.id,
         userId: user.id,
         role: role as 'VIEWER' | 'EDITOR',
         invitedBy: session.user.id,
-        status: 'ACCEPTED',
+        acceptedAt: new Date(),
         invitedAt: new Date(),
-        joinedAt: new Date(),
       }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'added_collaborator',
-        metadata: {
-          addedUserId: user.id,
-          addedUserName: user.name,
-          addedUserEmail: user.email,
-          role: role,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     return NextResponse.json({
       success: true,
@@ -247,7 +233,7 @@ export async function PUT(
               some: {
                 userId: session.user.id,
                 role: 'ADMIN',
-                status: 'ACCEPTED'
+                acceptedAt: { not: null }
               }
             }
           }
@@ -263,7 +249,7 @@ export async function PUT(
     }
 
     // Find the collaborator
-    const collaborator = await prisma.aIThreadCollaborator.findUnique({
+    const collaborator = await prisma.threadCollaborator.findUnique({
       where: {
         id: collaboratorId,
         threadId: params.id,
@@ -283,26 +269,12 @@ export async function PUT(
     }
 
     // Update the collaborator's role
-    await prisma.aIThreadCollaborator.update({
+    await prisma.threadCollaborator.update({
       where: { id: collaboratorId },
       data: { role: role as 'VIEWER' | 'EDITOR' | 'ADMIN' }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'updated_collaborator_role',
-        metadata: {
-          collaboratorId: collaboratorId,
-          collaboratorName: collaborator.user.name,
-          collaboratorEmail: collaborator.user.email,
-          oldRole: collaborator.role,
-          newRole: role,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     return NextResponse.json({
       success: true,
@@ -349,7 +321,7 @@ export async function DELETE(
               some: {
                 userId: session.user.id,
                 role: 'ADMIN',
-                status: 'ACCEPTED'
+                acceptedAt: { not: null }
               }
             }
           }
@@ -365,7 +337,7 @@ export async function DELETE(
     }
 
     // Find the collaborator
-    const collaborator = await prisma.aIThreadCollaborator.findUnique({
+    const collaborator = await prisma.threadCollaborator.findUnique({
       where: {
         id: collaboratorId,
         threadId: params.id,
@@ -385,24 +357,11 @@ export async function DELETE(
     }
 
     // Remove the collaborator
-    await prisma.aIThreadCollaborator.delete({
+    await prisma.threadCollaborator.delete({
       where: { id: collaboratorId }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'removed_collaborator',
-        metadata: {
-          removedUserId: collaborator.userId,
-          removedUserName: collaborator.user.name,
-          removedUserEmail: collaborator.user.email,
-          role: collaborator.role,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     return NextResponse.json({
       success: true,

@@ -91,7 +91,7 @@ export async function POST(
     }
 
     // Check if member is already a collaborator
-    const existingCollaborator = await prisma.aIThreadCollaborator.findUnique({
+    const existingCollaborator = await prisma.threadCollaborator.findUnique({
       where: {
         threadId_userId: {
           threadId: params.id,
@@ -108,31 +108,18 @@ export async function POST(
     }
 
     // Create the collaboration invitation
-    await prisma.aIThreadCollaborator.create({
+    await prisma.threadCollaborator.create({
       data: {
         threadId: params.id,
         userId: memberId,
         role: role as 'VIEWER' | 'EDITOR',
         invitedBy: session.user.id,
         invitedAt: new Date(),
-        status: 'PENDING', // They need to accept the invitation
+        // acceptedAt is null for pending invitations
       }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'invited_collaborator',
-        metadata: {
-          invitedUserId: memberId,
-          invitedUserName: member.name,
-          invitedUserEmail: member.email,
-          role: role,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     // Send notification to the invited user
     try {
@@ -163,7 +150,7 @@ export async function POST(
         threadId: params.id,
         userId: memberId,
         role: role,
-        status: 'PENDING',
+        acceptedAt: null,
         invitedAt: new Date(),
       }
     });
@@ -211,10 +198,10 @@ export async function GET(
     }
 
     // Get pending invitations
-    const pendingInvitations = await prisma.aIThreadCollaborator.findMany({
+    const pendingInvitations = await prisma.threadCollaborator.findMany({
       where: {
         threadId: params.id,
-        status: 'PENDING',
+        acceptedAt: null,
       },
       include: {
         user: {
@@ -225,7 +212,7 @@ export async function GET(
             image: true,
           }
         },
-        invitedByUser: {
+        inviter: {
           select: {
             id: true,
             name: true,
@@ -243,9 +230,9 @@ export async function GET(
         id: invitation.id,
         user: invitation.user,
         role: invitation.role,
-        invitedBy: invitation.invitedByUser,
+        invitedBy: invitation.inviter,
         invitedAt: invitation.invitedAt,
-        status: invitation.status,
+        status: invitation.acceptedAt ? 'ACCEPTED' : 'PENDING',
       }))
     });
 

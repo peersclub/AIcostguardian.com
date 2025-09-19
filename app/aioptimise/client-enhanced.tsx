@@ -17,8 +17,8 @@ import {
   Pin, Trash2, MoreVertical, Edit2, Tag, X, Check,
   FileText, Image as ImageIcon, Code, Hash, MessageSquare,
   TrendingUp, AlertCircle, Lightbulb, BookOpen, Menu,
-  Globe, Database, Upload, Eye, EyeOff, Clock, Wifi,
-  WifiOff, User, Bot, Loader2, ChevronDown, Maximize2,
+  Globe, Database, Upload, Eye, EyeOff, Clock,
+  User, Bot, Loader2, ChevronDown, Maximize2, MessageSquareOff,
   Shield, Key, ExternalLink, Palette, ChevronUp, ArrowLeft, Folder
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -580,7 +580,8 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   const [threads, setThreads] = useState<any[]>([])
   const [currentThread, setCurrentThread] = useState<any>(null)
   const [threadsLoading, setThreadsLoading] = useState(false)
-  
+  const [isAbsorberMode, setIsAbsorberMode] = useState(false)
+
   // Thread management
   const {
     pinThread,
@@ -842,10 +843,52 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     }
   }
 
+  // Absorber mode functions
+  const fetchAbsorberMode = async (threadId: string) => {
+    if (!threadId) return
+
+    try {
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/absorber`)
+      if (response.ok) {
+        const data = await response.json()
+        setIsAbsorberMode(data.aiAbsorberMode || false)
+      }
+    } catch (error) {
+      console.error('Error fetching absorber mode:', error)
+    }
+  }
+
+  const toggleAbsorberMode = async (enabled: boolean) => {
+    if (!currentThread?.id) return
+
+    try {
+      const response = await fetch(`/api/aioptimise/threads/${currentThread.id}/absorber`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ absorberMode: enabled }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setIsAbsorberMode(data.aiAbsorberMode)
+        toast.success(data.message)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to toggle absorber mode')
+      }
+    } catch (error) {
+      console.error('Error toggling absorber mode:', error)
+      toast.error('Failed to toggle absorber mode')
+    }
+  }
+
   // Load context when thread changes
   useEffect(() => {
     if (currentThread?.id) {
       loadProjectContext(currentThread.id)
+      fetchAbsorberMode(currentThread.id)
     }
   }, [currentThread?.id])
 
@@ -1270,9 +1313,9 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                   <h2 className="text-lg font-semibold text-white">Conversations</h2>
                   <div className="flex items-center gap-2">
                     {wsConnected ? (
-                      <Wifi className="w-4 h-4 text-green-400" />
+                      <MessageSquare className="w-4 h-4 text-green-400" />
                     ) : (
-                      <WifiOff className="w-4 h-4 text-red-400" />
+                      <MessageSquareOff className="w-4 h-4 text-red-400" />
                     )}
                     <Button
                       onClick={() => createThread()}
@@ -2031,7 +2074,11 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                         handleSendMessage(input, selectedMode)
                       }
                     }}
-                    placeholder={`Message AIOptimise (${selectedMode} mode)...`}
+                    placeholder={
+                      isAbsorberMode
+                        ? "AI Absorber Mode: Type your message - AI will listen but not respond..."
+                        : `Message AIOptimise (${selectedMode} mode)...`
+                    }
                     className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none min-h-[20px] max-h-[120px] py-0 min-w-0 overflow-hidden leading-5"
                     style={{
                       height: Math.min(Math.max(20, input.split('\n').length * 20), 120)
@@ -2072,6 +2119,41 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+
+                    {/* AI Absorber Mode Toggle */}
+                    {currentThread?.id && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => toggleAbsorberMode(!isAbsorberMode)}
+                              disabled={isLoading || isStreaming}
+                              className={cn(
+                                "h-8 w-8 transition-all",
+                                isAbsorberMode
+                                  ? "text-orange-400 bg-orange-500/20 hover:text-orange-300 hover:bg-orange-500/30"
+                                  : "text-gray-400 hover:text-white"
+                              )}
+                            >
+                              {isAbsorberMode ? (
+                                <MessageSquareOff className="w-4 h-4" />
+                              ) : (
+                                <MessageSquare className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {isAbsorberMode
+                                ? "Disable AI Absorber Mode - AI will respond"
+                                : "Enable AI Absorber Mode - AI will listen but not respond"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
 
                     {/* Send Button */}
                     <TooltipProvider>

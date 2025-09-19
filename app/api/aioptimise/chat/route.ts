@@ -112,6 +112,63 @@ export async function POST(request: NextRequest) {
       currentThreadId = newThread.id;
     }
 
+    // Check if the thread has AI absorber mode enabled
+    const threadData = await prisma.aIThread.findUnique({
+      where: { id: currentThreadId },
+      select: {
+        aiAbsorberMode: true,
+        title: true,
+        userId: true,
+        collaborators: {
+          where: {
+            userId: user.id,
+            acceptedAt: { not: null }
+          }
+        }
+      }
+    });
+
+    // Verify user has access to the thread
+    if (!threadData || (threadData.userId !== user.id && threadData.collaborators.length === 0)) {
+      return NextResponse.json({ error: 'Thread not found or insufficient permissions' }, { status: 404 });
+    }
+
+    // Create user message in database (always save the message regardless of absorber mode)
+    const userMessage = await prisma.aIMessage.create({
+      data: {
+        threadId: currentThreadId,
+        role: MessageRole.USER,
+        content: message,
+        selectedModel: 'N/A',
+        selectedProvider: 'N/A',
+        modelReason: threadData.aiAbsorberMode ? 'Absorber mode enabled - AI not responding' : 'Processing...',
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        cost: 0,
+      },
+    });
+
+    // If absorber mode is enabled, return early without AI response
+    if (threadData.aiAbsorberMode) {
+      // Update thread with the new message
+      await prisma.aIThread.update({
+        where: { id: currentThreadId },
+        data: {
+          lastMessageAt: new Date(),
+          messageCount: { increment: 1 },
+        },
+      });
+
+      return NextResponse.json({
+        threadId: currentThreadId,
+        messageId: userMessage.id,
+        absorberMode: true,
+        message: 'Message saved. AI Absorber mode is enabled - AI is listening but not responding.',
+        content: message
+      });
+    }
+
     // Get user preferences
     const preferences = await prisma.promptPreference.findUnique({
       where: { userId: user.id },
@@ -166,19 +223,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user message in database
-    const userMessage = await prisma.aIMessage.create({
+    // Update user message with final model selection details
+    await prisma.aIMessage.update({
+      where: { id: userMessage.id },
       data: {
-        threadId: currentThreadId,
-        role: MessageRole.USER,
-        content: message,
         selectedModel: selectedModel.model,
         selectedProvider: selectedModel.provider,
         modelReason: modelReason,
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        cost: 0,
       },
     });
 

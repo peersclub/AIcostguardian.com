@@ -18,13 +18,13 @@ export async function POST(
     }
 
     // Check if there's a pending invitation for this user
-    const invitation = await prisma.aIThreadCollaborator.findUnique({
+    const invitation = await prisma.threadCollaborator.findUnique({
       where: {
         threadId_userId: {
           threadId: params.id,
           userId: session.user.id,
         },
-        status: 'PENDING',
+        acceptedAt: null,
       },
       include: {
         thread: {
@@ -40,7 +40,7 @@ export async function POST(
             }
           }
         },
-        invitedByUser: {
+        inviter: {
           select: {
             id: true,
             name: true,
@@ -58,28 +58,16 @@ export async function POST(
     }
 
     // Accept the invitation by updating the status
-    const updatedCollaboration = await prisma.aIThreadCollaborator.update({
+    const updatedCollaboration = await prisma.threadCollaborator.update({
       where: {
         id: invitation.id,
       },
       data: {
-        status: 'ACCEPTED',
-        joinedAt: new Date(),
+        acceptedAt: new Date(),
       }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'joined_thread',
-        metadata: {
-          role: invitation.role,
-          invitedBy: invitation.invitedByUser?.name || invitation.invitedByUser?.email,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     // Send notification to the thread owner and inviter
     const notificationTargets = new Set([
@@ -87,7 +75,7 @@ export async function POST(
       invitation.invitedBy
     ]);
 
-    for (const targetUserId of notificationTargets) {
+    for (const targetUserId of Array.from(notificationTargets)) {
       if (targetUserId && targetUserId !== session.user.id) {
         try {
           await notificationService.sendNotification({
@@ -118,8 +106,7 @@ export async function POST(
         threadId: params.id,
         userId: session.user.id,
         role: invitation.role,
-        status: 'ACCEPTED',
-        joinedAt: new Date(),
+        acceptedAt: new Date(),
       },
       thread: {
         id: invitation.thread.id,
@@ -148,13 +135,13 @@ export async function DELETE(
     }
 
     // Check if there's a pending invitation for this user
-    const invitation = await prisma.aIThreadCollaborator.findUnique({
+    const invitation = await prisma.threadCollaborator.findUnique({
       where: {
         threadId_userId: {
           threadId: params.id,
           userId: session.user.id,
         },
-        status: 'PENDING',
+        acceptedAt: null,
       },
       include: {
         thread: {
@@ -170,7 +157,7 @@ export async function DELETE(
             }
           }
         },
-        invitedByUser: {
+        inviter: {
           select: {
             id: true,
             name: true,
@@ -188,24 +175,13 @@ export async function DELETE(
     }
 
     // Decline the invitation by deleting the record
-    await prisma.aIThreadCollaborator.delete({
+    await prisma.threadCollaborator.delete({
       where: {
         id: invitation.id,
       }
     });
 
-    // Log the activity
-    await prisma.aIThreadActivity.create({
-      data: {
-        threadId: params.id,
-        userId: session.user.id,
-        action: 'declined_invitation',
-        metadata: {
-          role: invitation.role,
-          invitedBy: invitation.invitedByUser?.name || invitation.invitedByUser?.email,
-        }
-      }
-    });
+    // TODO: Add activity logging when AIThreadActivity model is available
 
     // Send notification to the inviter
     if (invitation.invitedBy && invitation.invitedBy !== session.user.id) {

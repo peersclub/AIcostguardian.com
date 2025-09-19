@@ -713,6 +713,7 @@ model AIThread {
   shareId           String?   @unique
   metadata          Json?
   mode              ChatMode  @default(STANDARD)
+  aiAbsorberMode    Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   

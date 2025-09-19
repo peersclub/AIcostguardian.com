@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Send, 
-  Mic, 
-  MicOff, 
-  Paperclip, 
+import {
+  Send,
+  Mic,
+  MicOff,
+  Paperclip,
   StopCircle,
   Settings,
   Bot,
@@ -19,7 +19,9 @@ import {
   Brain,
   TrendingUp,
   AlertCircle,
-  Zap
+  Zap,
+  WifiOff,
+  Wifi
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ModelSelector } from './model-selector';
@@ -40,6 +42,9 @@ interface ChatControlsProps {
   isVoiceActive: boolean;
   mode?: 'standard' | 'focus' | 'coding' | 'research' | 'creative';
   promptAnalysisEnabled?: boolean;
+  threadId?: string;
+  isAbsorberMode?: boolean;
+  onAbsorberModeToggle?: (enabled: boolean) => void;
 }
 
 export function ChatControls({
@@ -56,6 +61,9 @@ export function ChatControls({
   isVoiceActive,
   mode = 'standard',
   promptAnalysisEnabled = true,
+  threadId,
+  isAbsorberMode = false,
+  onAbsorberModeToggle,
 }: ChatControlsProps) {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -522,6 +530,41 @@ export function ChatControls({
                   />
                 </Button>
               </motion.div>
+
+              {/* AI Absorber Mode Toggle */}
+              {threadId && onAbsorberModeToggle && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                >
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => onAbsorberModeToggle(!isAbsorberMode)}
+                    title={isAbsorberMode ? "Disable AI Absorber Mode - AI will respond" : "Enable AI Absorber Mode - AI will listen but not respond"}
+                    className={cn(
+                      "transition-all duration-200 bg-violet-900/30 border-violet-500/30 hover:bg-violet-800/40 hover:border-violet-400/50 text-violet-300 group relative overflow-hidden",
+                      isAbsorberMode && "bg-orange-500 text-white border-orange-400"
+                    )}
+                  >
+                    {isAbsorberMode ? (
+                      <WifiOff className="h-4 w-4 relative z-10" />
+                    ) : (
+                      <Wifi className="h-4 w-4 relative z-10" />
+                    )}
+                    <motion.div
+                      className={cn(
+                        "absolute inset-0",
+                        isAbsorberMode ? "bg-orange-600" : "bg-gradient-to-r from-violet-600 to-purple-600",
+                        "opacity-0 group-hover:opacity-20"
+                      )}
+                      animate={isAbsorberMode ? { opacity: [0.2, 0.4, 0.2] } : {}}
+                      transition={{ repeat: isAbsorberMode ? Infinity : 0, duration: 1.5 }}
+                    />
+                  </Button>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Textarea */}
