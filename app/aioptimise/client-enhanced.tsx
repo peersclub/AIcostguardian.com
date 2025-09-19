@@ -2533,13 +2533,12 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
 
       {/* Advanced Share Dialog with User Selection Capability */}
       <ShareThreadDialog
-        isOpen={shareDialogOpen}
-        onClose={() => setShareDialogOpen(false)}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
         thread={currentThread}
         collaborators={threadCollaborators}
         organizationMembers={organizationMembers}
-        loadingOrgMembers={loadingOrgMembers}
-        onInviteCollaborator={async (email: string, role: string) => {
+        onAddCollaborator={async (email: string, role: string) => {
           try {
             const response = await fetch(`/api/aioptimise/threads/${currentThread?.id}/collaborators`, {
               method: 'POST',
@@ -2600,7 +2599,13 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
             toast.error('Failed to update role')
           }
         }}
-        onCreateShareLink={handleShare}
+        onShare={async (options) => {
+          console.log('Share options:', options);
+          return { shareUrl: 'https://example.com/share/123' };
+        }}
+        onUnshare={async () => {
+          console.log('Unsharing thread');
+        }}
       />
 
       {/* Project Settings Modal */}

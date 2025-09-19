@@ -12,7 +12,9 @@ import {
   Lightbulb,
   Shield,
   ArrowRight,
-  Info
+  Info,
+  Scale,
+  Zap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -239,10 +241,7 @@ export default function ProjectSettingsModal({
                           setSettings(prev => ({ ...prev, provider: value }))
                         }>
                           <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-indigo-500 focus:ring-indigo-500/20 mt-2">
-                            <div className="flex items-center gap-2">
-                              {getAIProviderLogo(settings.provider, 'w-4 h-4')}
-                              <SelectValue placeholder="Select AI Provider" />
-                            </div>
+                            <SelectValue placeholder="Select AI Provider" />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
                             <SelectItem value="openai" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
@@ -280,22 +279,62 @@ export default function ProjectSettingsModal({
                           <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
                             {settings.provider === 'openai' && (
                               <>
-                                <SelectItem value="gpt-4o" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-4o</SelectItem>
-                                <SelectItem value="gpt-4o-mini" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-4o Mini</SelectItem>
-                                <SelectItem value="gpt-3.5-turbo" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">GPT-3.5 Turbo</SelectItem>
+                                <SelectItem value="gpt-4o" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('gpt-4', 'w-4 h-4')}
+                                    <span>GPT-4o</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="gpt-4o-mini" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('gpt-4', 'w-4 h-4')}
+                                    <span>GPT-4o Mini</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="gpt-3.5-turbo" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('gpt-3.5', 'w-4 h-4')}
+                                    <span>GPT-3.5 Turbo</span>
+                                  </div>
+                                </SelectItem>
                               </>
                             )}
                             {settings.provider === 'anthropic' && (
                               <>
-                                <SelectItem value="claude-3.5-sonnet" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3.5 Sonnet</SelectItem>
-                                <SelectItem value="claude-3-haiku" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3 Haiku</SelectItem>
-                                <SelectItem value="claude-3-opus" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Claude 3 Opus</SelectItem>
+                                <SelectItem value="claude-3.5-sonnet" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('claude', 'w-4 h-4')}
+                                    <span>Claude 3.5 Sonnet</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="claude-3-haiku" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('claude', 'w-4 h-4')}
+                                    <span>Claude 3 Haiku</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="claude-3-opus" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('claude', 'w-4 h-4')}
+                                    <span>Claude 3 Opus</span>
+                                  </div>
+                                </SelectItem>
                               </>
                             )}
                             {settings.provider === 'google' && (
                               <>
-                                <SelectItem value="gemini-1.5-pro" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Gemini 1.5 Pro</SelectItem>
-                                <SelectItem value="gemini-1.5-flash" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Gemini 1.5 Flash</SelectItem>
+                                <SelectItem value="gemini-1.5-pro" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('gemini', 'w-4 h-4')}
+                                    <span>Gemini 1.5 Pro</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="gemini-1.5-flash" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                                  <div className="flex items-center gap-2">
+                                    {getAIProviderLogo('gemini', 'w-4 h-4')}
+                                    <span>Gemini 1.5 Flash</span>
+                                  </div>
+                                </SelectItem>
                               </>
                             )}
                           </SelectContent>
@@ -393,9 +432,24 @@ export default function ProjectSettingsModal({
                             <SelectValue placeholder="Select Optimization Level" />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700 shadow-2xl">
-                            <SelectItem value="conservative" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Conservative</SelectItem>
-                            <SelectItem value="balanced" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Balanced</SelectItem>
-                            <SelectItem value="aggressive" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">Aggressive</SelectItem>
+                            <SelectItem value="conservative" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                              <div className="flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-blue-400" />
+                                <span>Conservative</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="balanced" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                              <div className="flex items-center gap-2">
+                                <Scale className="w-4 h-4 text-green-400" />
+                                <span>Balanced</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="aggressive" className="text-white hover:bg-gray-800/50 focus:bg-gray-800/50">
+                              <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-orange-400" />
+                                <span>Aggressive</span>
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
