@@ -54,6 +54,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ShareThreadDialog } from './components/share-thread-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
@@ -571,6 +572,10 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     expireDate: '',
     password: ''
   })
+
+  // Thread collaboration state
+  const [organizationMembers, setOrganizationMembers] = useState<any[]>([])
+  const [loadingOrgMembers, setLoadingOrgMembers] = useState(false)
   
   // File upload state
   const [isDragging, setIsDragging] = useState(false)
@@ -811,6 +816,20 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     e.preventDefault()
     setIsDragging(false)
   }, [])
+
+  // Load organization members when share dialog opens
+  useEffect(() => {
+    if (shareDialogOpen && organizationMembers.length === 0) {
+      loadOrganizationMembers()
+    }
+  }, [shareDialogOpen, organizationMembers.length])
+
+  // Load thread collaborators when current thread changes
+  useEffect(() => {
+    if (currentThread?.id) {
+      loadThreadCollaborators(currentThread.id)
+    }
+  }, [currentThread?.id])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -1229,6 +1248,42 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       }
     } catch (error) {
       toast.error('Failed to create share link')
+    }
+  }
+
+  // Load organization members for user selection in sharing
+  const loadOrganizationMembers = async () => {
+    if (loadingOrgMembers) return
+
+    setLoadingOrgMembers(true)
+    try {
+      const response = await fetch('/api/organization/members')
+      if (response.ok) {
+        const data = await response.json()
+        setOrganizationMembers(data.members || [])
+      } else {
+        console.error('Failed to load organization members')
+      }
+    } catch (error) {
+      console.error('Error loading organization members:', error)
+    } finally {
+      setLoadingOrgMembers(false)
+    }
+  }
+
+  // Thread-specific collaborators state
+  const [threadCollaborators, setThreadCollaborators] = useState<any[]>([])
+
+  // Load current thread collaborators
+  const loadThreadCollaborators = async (threadId: string) => {
+    try {
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/collaborators`)
+      if (response.ok) {
+        const data = await response.json()
+        setThreadCollaborators(data.collaborators || [])
+      }
+    } catch (error) {
+      console.error('Error loading thread collaborators:', error)
     }
   }
 
@@ -2476,84 +2531,77 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
         </AnimatePresence>
       </div>
 
-      {/* Enhanced Share Dialog with Glassmorphism */}
-      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900/90 backdrop-blur-xl border border-gray-700/50">
-          <DialogHeader>
-            <DialogTitle className="text-white">Share Conversation</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Create a shareable link for this conversation with custom permissions.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-gray-300">Public Access</label>
-                <Switch
-                  checked={shareSettings.publicAccess}
-                  onCheckedChange={(checked) => 
-                    setShareSettings(prev => ({ ...prev, publicAccess: checked }))
-                  }
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-gray-300">Allow Editing</label>
-                <Switch
-                  checked={shareSettings.allowEditing}
-                  onCheckedChange={(checked) => 
-                    setShareSettings(prev => ({ ...prev, allowEditing: checked }))
-                  }
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Expire Date (Optional)</label>
-                <Input
-                  type="date"
-                  value={shareSettings.expireDate}
-                  onChange={(e) => 
-                    setShareSettings(prev => ({ ...prev, expireDate: e.target.value }))
-                  }
-                  className="bg-gray-800/50 border-gray-700 text-white"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Password Protection (Optional)</label>
-                <Input
-                  type="password"
-                  placeholder="Enter password..."
-                  value={shareSettings.password}
-                  onChange={(e) => 
-                    setShareSettings(prev => ({ ...prev, password: e.target.value }))
-                  }
-                  className="bg-gray-800/50 border-gray-700 text-white"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShareDialogOpen(false)}
-                className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleShare}
-                disabled={!currentThread}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Create Link
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Advanced Share Dialog with User Selection Capability */}
+      <ShareThreadDialog
+        isOpen={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        thread={currentThread}
+        collaborators={threadCollaborators}
+        organizationMembers={organizationMembers}
+        loadingOrgMembers={loadingOrgMembers}
+        onInviteCollaborator={async (email: string, role: string) => {
+          try {
+            const response = await fetch(`/api/aioptimise/threads/${currentThread?.id}/collaborators`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, role })
+            })
+
+            if (response.ok) {
+              toast.success('Invitation sent successfully')
+              if (currentThread?.id) {
+                loadThreadCollaborators(currentThread.id)
+              }
+            } else {
+              const error = await response.json()
+              toast.error(error.message || 'Failed to send invitation')
+            }
+          } catch (error) {
+            toast.error('Failed to send invitation')
+          }
+        }}
+        onRemoveCollaborator={async (collaboratorId: string) => {
+          try {
+            const response = await fetch(`/api/aioptimise/threads/${currentThread?.id}/collaborators/${collaboratorId}`, {
+              method: 'DELETE'
+            })
+
+            if (response.ok) {
+              toast.success('Collaborator removed successfully')
+              if (currentThread?.id) {
+                loadThreadCollaborators(currentThread.id)
+              }
+            } else {
+              const error = await response.json()
+              toast.error(error.message || 'Failed to remove collaborator')
+            }
+          } catch (error) {
+            toast.error('Failed to remove collaborator')
+          }
+        }}
+        onUpdateCollaboratorRole={async (collaboratorId: string, newRole: string) => {
+          try {
+            const response = await fetch(`/api/aioptimise/threads/${currentThread?.id}/collaborators/${collaboratorId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: newRole })
+            })
+
+            if (response.ok) {
+              toast.success('Role updated successfully')
+              if (currentThread?.id) {
+                loadThreadCollaborators(currentThread.id)
+              }
+            } else {
+              const error = await response.json()
+              toast.error(error.message || 'Failed to update role')
+            }
+          } catch (error) {
+            toast.error('Failed to update role')
+          }
+        }}
+        onCreateShareLink={handleShare}
+      />
 
       {/* Project Settings Modal */}
       {showProjectSettings && currentThread && (
