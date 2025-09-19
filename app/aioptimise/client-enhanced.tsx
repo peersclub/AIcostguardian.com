@@ -2532,11 +2532,17 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       </div>
 
       {/* Advanced Share Dialog with User Selection Capability */}
-      <ShareThreadDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        thread={currentThread}
-        collaborators={threadCollaborators}
+      {currentThread && (
+        <ShareThreadDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          thread={{
+            id: currentThread.id,
+            title: currentThread.title,
+            isShared: currentThread.isShared || false,
+            shareId: currentThread.shareId
+          }}
+          collaborators={threadCollaborators}
         organizationMembers={organizationMembers}
         onAddCollaborator={async (email: string, role: string) => {
           try {
@@ -2607,6 +2613,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
           console.log('Unsharing thread');
         }}
       />
+      )}
 
       {/* Project Settings Modal */}
       {showProjectSettings && currentThread && (
