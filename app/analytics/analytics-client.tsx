@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Session } from 'next-auth'
 import { motion, AnimatePresence } from 'framer-motion'
+import CostForecastChart from '@/components/analytics/cost-forecast-chart'
+import ProjectSettingsModal from '@/components/analytics/project-settings-modal'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -117,6 +119,8 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isAutoRefresh, setIsAutoRefresh] = useState(false)
   const [predictions, setPredictions] = useState<PredictionData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedRecommendation, setSelectedRecommendation] = useState<any>(null)
   const [accuracy, setAccuracy] = useState<AccuracyMetrics | null>(null)
   const [trendAnalysis, setTrendAnalysis] = useState<TrendAnalysis | null>(null)
   const [recommendations, setRecommendations] = useState<OptimizationRecommendation[]>([])
@@ -534,24 +538,13 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                   </Card>
                 </div>
 
-                {/* Forecast Chart Placeholder */}
-                <Card className="bg-gray-900/50 backdrop-blur-xl border border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <LineChart className="w-5 h-5 text-blue-400" />
-                      Cost Forecast Visualization
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="h-64 bg-gray-800/30 rounded-lg border border-gray-700 flex items-center justify-center">
-                      <div className="text-center">
-                        <BarChart3 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400 text-lg font-medium">Interactive Forecast Chart</p>
-                        <p className="text-gray-500 text-sm">Advanced visualization would be integrated here</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Cost Forecast Visualization */}
+                <CostForecastChart
+                  predictions={predictions as any}
+                  accuracy={accuracy}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                />
               </motion.div>
             )}
 
@@ -783,8 +776,22 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
                             <Button
                               size="sm"
                               onClick={() => {
-                                // Implementation would go here - for now show success state
-                                console.log(`Implementing recommendation: ${rec.title}`)
+                                setSelectedRecommendation({
+                                  ...rec,
+                                  settings: {
+                                    provider: rec.category === 'model-optimization' ? 'anthropic' : 'openai',
+                                    model: rec.category === 'model-optimization' ? 'claude-3-haiku' : 'gpt-4o-mini',
+                                    maxTokens: rec.category === 'token-optimization' ? 2048 : 4096,
+                                    temperature: 0.7,
+                                    costLimit: rec.savingsPotential * 2,
+                                    enableAutoOptimization: true,
+                                    optimizationLevel: rec.impact === 'high' ? 'aggressive' : 'balanced',
+                                    fallbackModels: [],
+                                    customPromptTemplate: '',
+                                    reason: `Implementing ${rec.title} to achieve ${formatCurrency(rec.savingsPotential)} in savings`
+                                  }
+                                })
+                                setIsModalOpen(true)
                               }}
                               className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
                             >
@@ -860,6 +867,46 @@ export default function PredictiveAnalyticsClient({ initialSession }: Predictive
             </motion.div>
           </div>
         </div>
+
+        {/* Project Settings Modal */}
+        <ProjectSettingsModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedRecommendation(null)
+          }}
+          recommendation={selectedRecommendation}
+          onImplement={async (settings) => {
+            try {
+              // Call API to save project settings with admin override
+              const response = await fetch('/api/analytics/project-settings', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  recommendationId: selectedRecommendation?.id,
+                  settings: settings,
+                  adminOverride: true,
+                  implementedBy: session?.user?.email || 'admin'
+                }),
+              })
+
+              if (!response.ok) {
+                throw new Error('Failed to implement settings')
+              }
+
+              // Show success message or refresh data
+              console.log('Settings implemented successfully')
+
+              // You could refresh the recommendations or show a toast notification here
+              // await fetchPredictiveData()
+            } catch (error) {
+              console.error('Failed to implement settings:', error)
+              throw error
+            }
+          }}
+        />
       </div>
     </TooltipProvider>
   )
