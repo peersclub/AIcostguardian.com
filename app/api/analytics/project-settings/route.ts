@@ -53,24 +53,27 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Log the implementation in activity logs if we have activity tracking
+    // Log the implementation in audit logs for tracking
     try {
-      await prisma.aIThreadActivity.create({
+      await prisma.auditLog.create({
         data: {
-          threadId: 'admin-override', // Special thread ID for admin actions
-          userId: session.user.id,
           action: 'admin_settings_override',
+          severity: 'MEDIUM',
+          userId: session.user.id,
+          targetId: user.organization.id,
+          targetType: 'Organization',
           metadata: {
             recommendationId,
             settings,
             organizationId: user.organization.id,
             implementedBy: implementedBy || session.user.email
-          }
+          },
+          success: true
         }
       });
     } catch (activityError) {
       // Activity logging is optional, continue if it fails
-      console.warn('Could not log activity:', activityError);
+      console.warn('Could not log audit activity:', activityError);
     }
 
     return NextResponse.json({
