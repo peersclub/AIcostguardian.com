@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
   DollarSign,
   Activity,
@@ -46,19 +47,19 @@ import {
   ArrowDownRight,
   Loader2
 } from 'lucide-react'
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart as ReChartPie, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart as ReChartPie,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   Area,
   AreaChart,
@@ -105,6 +106,8 @@ const GRADIENT_COLORS = [
 
 export default function UsageRedesigned() {
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
   const [selectedProvider, setSelectedProvider] = useState('all')
   const [selectedView, setSelectedView] = useState('overview')
@@ -113,6 +116,14 @@ export default function UsageRedesigned() {
   const [showDetails, setShowDetails] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isExporting, setIsExporting] = useState(false)
+
+  // URL routing effect
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'providers', 'models', 'trends', 'costs', 'insights'].includes(tab)) {
+      setSelectedView(tab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
@@ -129,7 +140,7 @@ export default function UsageRedesigned() {
           selectedProvider !== 'all' ? `&provider=${selectedProvider}` : ''
         }`
       )
-      
+
       if (response.ok) {
         const data = await response.json()
         setUsageData(data)
@@ -144,20 +155,30 @@ export default function UsageRedesigned() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      const response = await fetch('/api/usage/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeframe: selectedTimeframe })
-      })
-      
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `usage-report-${new Date().toISOString().split('T')[0]}.csv`
-        a.click()
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        timeframe: selectedTimeframe,
+        provider: selectedProvider,
+        usageMetrics: {
+          totalCost: usageData?.totalCost || 0,
+          totalTokens: usageData?.totalTokens || 0,
+          totalRequests: usageData?.totalRequests || 0,
+          budgetUtilization: usageData?.budgetUtilization || 0,
+          monthlyTrend: usageData?.monthlyTrend || 0,
+          avgCostPerRequest: usageData?.avgCostPerRequest || 0
+        },
+        providerBreakdown: usageData?.byProvider || {},
+        modelBreakdown: usageData?.byModel || {},
+        dailyUsage: usageData?.dailyUsage || []
       }
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `usage-analytics-${Date.now()}.json`
+      a.click()
+      window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Export failed:', error)
     } finally {
@@ -205,7 +226,7 @@ export default function UsageRedesigned() {
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20" />
-        <motion.div 
+        <motion.div
           animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 180, 360],
@@ -217,7 +238,7 @@ export default function UsageRedesigned() {
           }}
           className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl"
         />
-        <motion.div 
+        <motion.div
           animate={{
             scale: [1, 1.3, 1],
             rotate: [360, 180, 0],
@@ -233,7 +254,7 @@ export default function UsageRedesigned() {
 
       <div className="relative z-10 min-h-screen">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -250,7 +271,7 @@ export default function UsageRedesigned() {
                   <p className="text-gray-400 mt-1">Track and optimize your AI spending</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 {/* Search */}
                 <div className="relative">
@@ -260,7 +281,7 @@ export default function UsageRedesigned() {
                     placeholder="Search models, providers..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="pl-10 pr-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
 
@@ -268,7 +289,7 @@ export default function UsageRedesigned() {
                 <select
                   value={selectedTimeframe}
                   onChange={(e) => setSelectedTimeframe(e.target.value)}
-                  className="px-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="7d">Last 7 days</option>
                   <option value="30d">Last 30 days</option>
@@ -280,7 +301,7 @@ export default function UsageRedesigned() {
                 <select
                   value={selectedProvider}
                   onChange={(e) => setSelectedProvider(e.target.value)}
-                  className="px-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-4 py-2 bg-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="all">All Providers</option>
                   <option value="openai">OpenAI</option>
@@ -293,7 +314,7 @@ export default function UsageRedesigned() {
                 <button
                   onClick={() => fetchUsageData()}
                   disabled={isLoading}
-                  className="p-2 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-lg text-white hover:bg-gray-800 transition-colors"
+                  className="p-2 bg-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-lg text-white hover:bg-gray-800 transition-colors"
                 >
                   <RefreshCw className={cn("w-5 h-5", isLoading && "animate-spin")} />
                 </button>
@@ -314,11 +335,14 @@ export default function UsageRedesigned() {
             </div>
 
             {/* View Tabs */}
-            <div className="flex space-x-1 bg-gray-900/30 backdrop-blur-xl rounded-xl p-1">
+            <div className="flex space-x-1 bg-gray-900/50 backdrop-blur-xl rounded-xl p-1 border border-gray-700 shadow-2xl">
               {['overview', 'providers', 'models', 'trends', 'costs', 'insights'].map((view) => (
                 <button
                   key={view}
-                  onClick={() => setSelectedView(view)}
+                  onClick={() => {
+                    setSelectedView(view)
+                    router.push(`/usage?tab=${view}`, { scroll: false })
+                  }}
                   className={cn(
                     "px-6 py-2 rounded-lg font-medium transition-all capitalize",
                     selectedView === view
@@ -344,16 +368,16 @@ export default function UsageRedesigned() {
 
           {/* Content */}
           {!isLoading && selectedView === 'overview' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Key Metrics */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
               >
                 {/* Total Spend */}
-                <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 backdrop-blur-xl rounded-2xl border border-green-500/20 p-6">
+                <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 backdrop-blur-xl rounded-2xl border border-green-500/20 shadow-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-green-500/20 rounded-xl">
                       <DollarSign className="w-6 h-6 text-green-400" />
@@ -367,7 +391,7 @@ export default function UsageRedesigned() {
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 bg-gray-800 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full"
                           style={{ width: `${Math.min((usageData?.budgetUtilization || 0), 100)}%` }}
                         />
@@ -380,7 +404,7 @@ export default function UsageRedesigned() {
                 </div>
 
                 {/* Total Requests */}
-                <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 backdrop-blur-xl rounded-2xl border border-blue-500/20 p-6">
+                <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 backdrop-blur-xl rounded-2xl border border-blue-500/20 shadow-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-blue-500/20 rounded-xl">
                       <Activity className="w-6 h-6 text-blue-400" />
@@ -399,7 +423,7 @@ export default function UsageRedesigned() {
                 </div>
 
                 {/* Total Tokens */}
-                <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-6">
+                <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/20 shadow-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-purple-500/20 rounded-xl">
                       <Cpu className="w-6 h-6 text-purple-400" />
@@ -418,7 +442,7 @@ export default function UsageRedesigned() {
                 </div>
 
                 {/* Active Models */}
-                <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 backdrop-blur-xl rounded-2xl border border-orange-500/20 p-6">
+                <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 backdrop-blur-xl rounded-2xl border border-orange-500/20 shadow-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-orange-500/20 rounded-xl">
                       <Layers className="w-6 h-6 text-orange-400" />
@@ -440,13 +464,13 @@ export default function UsageRedesigned() {
               </motion.div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Usage Trend Chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="lg:col-span-2 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                  className="lg:col-span-2 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-6"
                 >
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -462,7 +486,7 @@ export default function UsageRedesigned() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <ResponsiveContainer width="100%" height={300}>
                     <AreaChart data={usageData?.dailyUsage || []}>
                       <defs>
@@ -472,18 +496,18 @@ export default function UsageRedesigned() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis 
-                        dataKey="date" 
+                      <XAxis
+                        dataKey="date"
                         stroke="#9ca3af"
                         tick={{ fill: '#9ca3af', fontSize: 12 }}
                       />
-                      <YAxis 
+                      <YAxis
                         stroke="#9ca3af"
                         tick={{ fill: '#9ca3af', fontSize: 12 }}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1f2937', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
                           border: '1px solid #374151',
                           borderRadius: '8px'
                         }}
@@ -505,13 +529,13 @@ export default function UsageRedesigned() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                  className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-6"
                 >
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-6">
                     <PieChart className="w-5 h-5 text-indigo-400" />
                     Provider Share
                   </h3>
-                  
+
                   <ResponsiveContainer width="100%" height={250}>
                     <ReChartPie>
                       <Pie
@@ -530,21 +554,21 @@ export default function UsageRedesigned() {
                           <Cell key={`cell-${index}`} fill={PROVIDER_COLORS[provider] || '#6b7280'} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1f2937', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
                           border: '1px solid #374151',
                           borderRadius: '8px'
                         }}
                       />
                     </ReChartPie>
                   </ResponsiveContainer>
-                  
+
                   <div className="space-y-2 mt-4">
                     {Object.entries(usageData?.byProvider || {}).map(([provider, data]: [string, any]) => (
                       <div key={provider} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div 
+                          <div
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: PROVIDER_COLORS[provider] || '#6b7280' }}
                           />
@@ -564,7 +588,7 @@ export default function UsageRedesigned() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -579,8 +603,8 @@ export default function UsageRedesigned() {
                     {showDetails ? 'Hide' : 'Show'} Details
                   </button>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(usageData?.byModel || {}).slice(0, 6).map(([model, data]: [string, any], index) => (
                     <motion.div
                       key={model}
@@ -598,7 +622,7 @@ export default function UsageRedesigned() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-xs text-gray-400">Cost</span>
@@ -630,20 +654,164 @@ export default function UsageRedesigned() {
             </div>
           )}
 
-          {/* Other View Content */}
-          {!isLoading && selectedView !== 'overview' && (
+          {/* Providers View */}
+          {!isLoading && selectedView === 'providers' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
             >
-              <Sparkles className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">
-                {selectedView.charAt(0).toUpperCase() + selectedView.slice(1)} View
-              </h3>
-              <p className="text-gray-400 max-w-md mx-auto">
-                Advanced analytics for {selectedView} coming soon. This view will provide detailed insights and visualizations.
-              </p>
+              {Object.keys(usageData?.byProvider || {}).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {Object.entries(usageData?.byProvider || {}).map(([provider, data]: [string, any]) => (
+                    <div
+                      key={provider}
+                      className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-6"
+                    >
+                      <div className="flex items-center gap-3 mb-6">
+                        {getAIProviderLogo(provider, 'w-8 h-8')}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white capitalize">{provider}</h3>
+                          <p className="text-gray-400 text-sm">AI Provider</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Total Cost</span>
+                          <span className="text-white font-semibold">{formatCurrency(data.cost || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Requests</span>
+                          <span className="text-white font-semibold">{formatNumber(data.requests || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Tokens</span>
+                          <span className="text-white font-semibold">{formatNumber(data.tokens || 0)}</span>
+                        </div>
+                        <div className="pt-4 border-t border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-sm">Avg Cost/Request</span>
+                            <span className="text-indigo-400 font-medium">
+                              {formatCurrency((data.cost || 0) / Math.max(data.requests || 1, 1))}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-12 text-center">
+                  <Globe className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No Provider Data</h3>
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    No AI provider usage data found for the selected timeframe. Start using AI services to see your provider analytics here.
+                  </p>
+                  <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    View API Keys
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Models View */}
+          {!isLoading && selectedView === 'models' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              {Object.keys(usageData?.byModel || {}).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {Object.entries(usageData?.byModel || {}).map(([model, data]: [string, any]) => (
+                    <div
+                      key={model}
+                      className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-6"
+                    >
+                      <div className="flex items-center gap-3 mb-6">
+                        {getAIProviderLogo(data.provider || 'openai', 'w-6 h-6')}
+                        <div>
+                          <h3 className="text-sm font-semibold text-white">{model}</h3>
+                          <p className="text-gray-400 text-xs">{data.provider || 'Unknown'}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">Cost</span>
+                          <span className="text-white font-medium">{formatCurrency(data.cost || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">Requests</span>
+                          <span className="text-white font-medium">{formatNumber(data.requests || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">Tokens</span>
+                          <span className="text-white font-medium">{formatNumber(data.tokens || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-12 text-center">
+                  <Brain className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No Model Data</h3>
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    No AI model usage data found. Start making API calls to see detailed model analytics and performance metrics.
+                  </p>
+                  <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Test Models
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Other Views - Trends, Costs, Insights */}
+          {!isLoading && !['overview', 'providers', 'models'].includes(selectedView) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl p-12 text-center"
+            >
+              {selectedView === 'trends' && (
+                <>
+                  <TrendingUp className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Advanced Trends Analysis</h3>
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    Detailed trend analysis with predictive insights, seasonal patterns, and cost forecasting coming soon.
+                  </p>
+                </>
+              )}
+              {selectedView === 'costs' && (
+                <>
+                  <DollarSign className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Cost Optimization Center</h3>
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    Advanced cost analysis, budget alerts, and optimization recommendations to help reduce your AI spending.
+                  </p>
+                </>
+              )}
+              {selectedView === 'insights' && (
+                <>
+                  <Sparkles className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">AI-Powered Insights</h3>
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    Intelligent recommendations, usage patterns, and actionable insights powered by machine learning.
+                  </p>
+                </>
+              )}
+              <div className="flex gap-4 justify-center">
+                <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                  Request Feature
+                </button>
+                <button className="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+                  View Roadmap
+                </button>
+              </div>
             </motion.div>
           )}
         </div>
