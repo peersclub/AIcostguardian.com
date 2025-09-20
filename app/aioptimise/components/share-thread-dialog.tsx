@@ -477,7 +477,7 @@ export function ShareThreadDialog({
                                 {member.role}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <div className="flex items-center gap-2 text-xs text-gray-300">
                               {member.jobTitle && (
                                 <span>{member.jobTitle}</span>
                               )}
@@ -489,7 +489,7 @@ export function ShareThreadDialog({
                               )}
                             </div>
                             {member.lastActiveAt && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 Last active {formatDistanceToNow(new Date(member.lastActiveAt))} ago
                               </span>
                             )}
@@ -504,7 +504,7 @@ export function ShareThreadDialog({
                             <SelectTrigger className="w-24 h-8 bg-gray-900/50 border-gray-600 text-gray-300">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-900 border-gray-700">
+                            <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
                               <SelectItem value="VIEWER" className="text-gray-300 hover:bg-gray-800">
                                 <div className="flex items-center gap-2">
                                   <Eye className="h-3 w-3" />
@@ -546,12 +546,12 @@ export function ShareThreadDialog({
                   className="flex-1 bg-background text-foreground border-border"
                 />
                 <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
-                  <SelectTrigger className="w-32 bg-background text-foreground border-border">
+                  <SelectTrigger className="w-32 bg-gray-900/50 border-gray-600 text-gray-300">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="VIEWER">Viewer</SelectItem>
-                    <SelectItem value="EDITOR">Editor</SelectItem>
+                  <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
+                    <SelectItem value="VIEWER" className="text-gray-300 hover:bg-gray-800">Viewer</SelectItem>
+                    <SelectItem value="EDITOR" className="text-gray-300 hover:bg-gray-800">Editor</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -585,7 +585,7 @@ export function ShareThreadDialog({
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">
-                              {collaborator.name || collaborator.email || 'Unknown User'}
+                              {collaborator.name || collaborator.email || 'Pending User'}
                             </span>
                             {collaborator.isOnline && (
                               <div className="h-2 w-2 bg-green-500 rounded-full" />
@@ -655,15 +655,15 @@ export function ShareThreadDialog({
               <div className="space-y-2">
                 <Label className="text-foreground">Link Expiration</Label>
                 <Select value={expiresIn} onValueChange={setExpiresIn}>
-                  <SelectTrigger className="bg-background text-foreground border-border">
+                  <SelectTrigger className="bg-gray-900/50 border-gray-600 text-gray-300">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="never">Never</SelectItem>
-                    <SelectItem value="1hour">1 Hour</SelectItem>
-                    <SelectItem value="1day">1 Day</SelectItem>
-                    <SelectItem value="1week">1 Week</SelectItem>
-                    <SelectItem value="1month">1 Month</SelectItem>
+                  <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-gray-700">
+                    <SelectItem value="never" className="text-gray-300 hover:bg-gray-800">Never</SelectItem>
+                    <SelectItem value="1hour" className="text-gray-300 hover:bg-gray-800">1 Hour</SelectItem>
+                    <SelectItem value="1day" className="text-gray-300 hover:bg-gray-800">1 Day</SelectItem>
+                    <SelectItem value="1week" className="text-gray-300 hover:bg-gray-800">1 Week</SelectItem>
+                    <SelectItem value="1month" className="text-gray-300 hover:bg-gray-800">1 Month</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
