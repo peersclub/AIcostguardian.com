@@ -55,6 +55,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ShareThreadDialog } from './components/share-thread-dialog'
+import { ThreadEmptyState } from '@/components/ui/thread-empty-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
@@ -1769,6 +1770,26 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                     <span>Loading older messages...</span>
                   </div>
                 </div>
+              )}
+
+              {/* Empty State */}
+              {filteredAndSortedMessages.length === 0 && (
+                <ThreadEmptyState
+                  organizationName={
+                    // Try to get organization name from various sources
+                    (session?.user as any)?.organizationName ||
+                    (session?.user as any)?.organization?.name ||
+                    // Extract from email domain (e.g., "assetworks" from "user@assetworks.ai")
+                    (user.email?.split('@')[1]?.split('.')[0]) ||
+                    'AIOptimise'
+                  }
+                  userName={user.name}
+                  onQuickStart={(prompt) => {
+                    setInput(prompt)
+                    // Optionally auto-send the message
+                    // handleSendMessage(prompt, selectedMode)
+                  }}
+                />
               )}
 
               <AnimatePresence>
