@@ -111,11 +111,11 @@ class ExecutiveMetricsService {
     );
 
     return {
-      efficiency,
-      riskScore,
-      forecastAccuracy,
+      efficiency: Math.round(efficiency * 10) / 10,
+      riskScore: Math.round(riskScore * 10) / 10,
+      forecastAccuracy: Math.round(forecastAccuracy * 10) / 10,
       savingsOpportunity,
-      complianceScore
+      complianceScore: Math.round(complianceScore * 10) / 10
     };
   }
 

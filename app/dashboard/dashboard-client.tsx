@@ -51,6 +51,8 @@ function DashboardV2Content() {
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -82,7 +84,7 @@ function DashboardV2Content() {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/dashboard/metrics?timeframe=${selectedTimeframe}`)
-      
+
       // Check if response is ok before trying to parse JSON
       if (!response.ok) {
         // Try to get error message from response
@@ -101,13 +103,50 @@ function DashboardV2Content() {
         console.error('Dashboard API error:', errorMessage)
         return
       }
-      
+
       const data = await response.json()
       setDashboardData(data)
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSyncData = async () => {
+    try {
+      setIsSyncing(true)
+      setSyncMessage(null)
+
+      // First, refresh dashboard data
+      await fetchDashboardData()
+
+      // Then check for any data synchronization needs
+      const syncResponse = await fetch('/api/sync/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeframe: selectedTimeframe })
+      })
+
+      if (syncResponse.ok) {
+        const syncResult = await syncResponse.json()
+        setSyncMessage(`✅ Data synchronized successfully! ${syncResult.message || ''}`)
+
+        // Refresh data after sync
+        await fetchDashboardData()
+      } else {
+        setSyncMessage('⚠️ Sync completed with warnings. Dashboard data has been refreshed.')
+      }
+
+      // Clear message after 3 seconds
+      setTimeout(() => setSyncMessage(null), 3000)
+
+    } catch (error) {
+      console.error('Sync failed:', error)
+      setSyncMessage('❌ Sync failed. Please try again.')
+      setTimeout(() => setSyncMessage(null), 3000)
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -253,9 +292,13 @@ function DashboardV2Content() {
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-sm text-gray-300">Live Monitoring</span>
                 </div>
-                <button className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  Sync Data
+                <button
+                  onClick={handleSyncData}
+                  disabled={isSyncing}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync Data'}
                 </button>
                 <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2">
                   <Download className="w-4 h-4" />
@@ -263,6 +306,18 @@ function DashboardV2Content() {
                 </button>
               </div>
             </div>
+
+            {/* Sync Message */}
+            {syncMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 p-3 bg-gray-800/50 border border-gray-600 rounded-lg text-sm text-white"
+              >
+                {syncMessage}
+              </motion.div>
+            )}
 
             {/* View Tabs */}
             <div className="flex space-x-1 bg-gray-800/30 rounded-lg p-1">
@@ -355,7 +410,7 @@ function DashboardV2Content() {
                     <span className="text-green-300 text-sm">+{executiveMetrics.monthlyGrowth}% vs last month</span>
                   </div>
                   <div className="mt-3 text-xs text-green-200">
-                    Budget utilization: {executiveMetrics.budgetUtilization}%
+                    Budget utilization: {executiveMetrics.budgetUtilization.toFixed(1)}%
                   </div>
                 </div>
 
@@ -366,7 +421,7 @@ function DashboardV2Content() {
                       <Target className="w-6 h-6 text-blue-400" />
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-white">{executiveMetrics.efficiency}%</div>
+                      <div className="text-2xl font-bold text-white">{executiveMetrics.efficiency.toFixed(1)}%</div>
                       <div className="text-blue-300 text-sm">Efficiency Score</div>
                     </div>
                   </div>
@@ -395,7 +450,7 @@ function DashboardV2Content() {
                     <span className="text-green-300 text-sm">Low Risk Level</span>
                   </div>
                   <div className="mt-3 text-xs text-yellow-200">
-                    Compliance: {executiveMetrics.complianceScore}%
+                    Compliance: {executiveMetrics.complianceScore.toFixed(1)}%
                   </div>
                 </div>
 
@@ -457,7 +512,14 @@ function DashboardV2Content() {
                             <span className="text-green-400 font-medium">{insight.impact}</span>
                             <span className="text-gray-400 ml-2">• {insight.timeframe}</span>
                           </div>
-                          <button className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition-colors">
+                          <button
+                            onClick={() => {
+                              if (insight.action.toLowerCase().includes('review usage logs')) {
+                                router.push('/usage-logs')
+                              }
+                            }}
+                            className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition-colors"
+                          >
                             {insight.action}
                           </button>
                         </div>
@@ -482,7 +544,7 @@ function DashboardV2Content() {
                           {getAIProviderLogo(provider.id, 'w-6 h-6')}
                           <div>
                             <div className="text-sm font-medium text-white">{provider.name}</div>
-                            <div className="text-xs text-gray-400">{provider.share}% share</div>
+                            <div className="text-xs text-gray-400">{provider.share.toFixed(1)}% share</div>
                           </div>
                         </div>
                         <div className="text-right">
@@ -516,29 +578,102 @@ function DashboardV2Content() {
                     Manage Team <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                  {teamMetrics.topDepartments.map((dept: any, index: number) => (
-                    <div key={index} className="p-4 bg-gray-800/30 rounded-lg border border-gray-700">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-medium">{dept.name}</h4>
-                        <span className="text-xs text-gray-400">{dept.users} users</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Spend</span>
-                          <span className="text-white">${(dept.spend / 1000).toFixed(1)}K</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Efficiency</span>
-                          <span className={`${dept.efficiency > 90 ? 'text-green-400' : dept.efficiency > 85 ? 'text-yellow-400' : 'text-red-400'}`}>
-                            {dept.efficiency}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+
+                {teamMetrics.topDepartments.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {teamMetrics.topDepartments.map((dept: any, index: number) => (
+                      <Link key={dept.id} href={`/departments/${dept.slug}`}>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 * index }}
+                          className="p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 transition-all duration-200 cursor-pointer group"
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: dept.color || '#6366f1' }}
+                              />
+                              <h4 className="text-white font-semibold group-hover:text-indigo-300 transition-colors">
+                                {dept.name}
+                              </h4>
+                            </div>
+                            <span className="text-xs text-gray-400 bg-gray-700/50 px-2 py-1 rounded">
+                              {dept.users} users
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-400">Monthly Spend</span>
+                              <span className="text-lg font-bold text-white">
+                                ${dept.spend >= 1000 ? `${(dept.spend / 1000).toFixed(1)}K` : dept.spend.toFixed(2)}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-400">Budget Usage</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      dept.budgetUtilization > 90 ? 'bg-red-500' :
+                                      dept.budgetUtilization > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                                    }`}
+                                    style={{ width: `${Math.min(100, dept.budgetUtilization)}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium text-gray-300">
+                                  {dept.budgetUtilization.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-400">Efficiency</span>
+                              <span className={`text-sm font-bold ${
+                                dept.efficiency >= 90 ? 'text-green-400' :
+                                dept.efficiency >= 75 ? 'text-yellow-400' : 'text-red-400'
+                              }`}>
+                                {dept.efficiency.toFixed(1)}%
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-700">
+                              <span className="text-xs text-gray-500">Avg per user</span>
+                              <span className="text-xs text-gray-400">
+                                ${dept.avgSpendPerUser.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex items-center justify-between">
+                            <span className="text-xs text-gray-500">
+                              {dept.requestCount} requests this month
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-indigo-400 transition-colors" />
+                          </div>
+                        </motion.div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <h4 className="text-lg font-medium text-gray-400 mb-2">No Departments Set Up</h4>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Create departments to organize your team and track usage by department.
+                    </p>
+                    <Link
+                      href="/organization/members"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                    >
+                      <Users className="w-4 h-4" />
+                      Set Up Departments
+                    </Link>
+                  </div>
+                )}
               </motion.div>
             </>
           )}
@@ -584,7 +719,14 @@ function DashboardV2Content() {
 
                           <div className="flex items-center justify-between">
                             <span className="text-gray-400 text-sm">Timeline: {insight.timeframe}</span>
-                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                if (insight.action.toLowerCase().includes('review usage logs')) {
+                                  router.push('/usage-logs')
+                                }
+                              }}
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                            >
                               {insight.action}
                             </button>
                           </div>
@@ -644,7 +786,7 @@ function DashboardV2Content() {
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(provider.status)}`}>
                                 {provider.status}
                               </span>
-                              <span className="text-gray-400 text-sm">{provider.share}% market share</span>
+                              <span className="text-gray-400 text-sm">{provider.share.toFixed(1)}% market share</span>
                             </div>
                           </div>
                         </div>
@@ -662,15 +804,15 @@ function DashboardV2Content() {
 
                       <div className="grid grid-cols-3 gap-6 mb-4">
                         <div className="text-center">
-                          <div className="text-lg font-bold text-white">{provider.performance}%</div>
+                          <div className="text-lg font-bold text-white">{provider.performance.toFixed(1)}%</div>
                           <div className="text-xs text-gray-400">Performance</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-white">{provider.reliability}%</div>
+                          <div className="text-lg font-bold text-white">{provider.reliability.toFixed(1)}%</div>
                           <div className="text-xs text-gray-400">Reliability</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-white">{provider.costEfficiency}%</div>
+                          <div className="text-lg font-bold text-white">{provider.costEfficiency.toFixed(1)}%</div>
                           <div className="text-xs text-gray-400">Cost Efficiency</div>
                         </div>
                       </div>

@@ -216,15 +216,72 @@ export async function GET(request: NextRequest) {
       throughput: performanceMetrics.throughput
     }
 
+    // Get real department data
+    const departments = await prisma.department.findMany({
+      where: {
+        organizationId: organizationId,
+        isActive: true
+      },
+      include: {
+        users: {
+          where: {
+            departmentId: { not: null }
+          }
+        },
+        usageLogs: {
+          where: {
+            timestamp: {
+              gte: startDate
+            }
+          }
+        },
+        budgets: {
+          where: {
+            isActive: true,
+            period: 'MONTHLY'
+          }
+        }
+      }
+    })
+
+    const topDepartments = departments.map(dept => {
+      const deptSpend = dept.usageLogs.reduce((sum, log) => sum + log.cost, 0)
+      const deptUsers = dept.users.length
+      const deptBudget = dept.budgets[0]?.amount || dept.monthlyBudget || 1000
+      const budgetUtilization = (deptSpend / deptBudget) * 100
+
+      // Calculate efficiency based on spend per user and budget utilization
+      const spendPerUser = deptUsers > 0 ? deptSpend / deptUsers : 0
+      const efficiency = Math.max(0, Math.min(100,
+        100 - (budgetUtilization * 0.6) - (spendPerUser > 50 ? 20 : 0) +
+        (dept.usageLogs.length > 10 ? 10 : 0) // Bonus for active usage
+      ))
+
+      return {
+        id: dept.id,
+        name: dept.name,
+        slug: dept.slug,
+        users: deptUsers,
+        spend: Math.round(deptSpend * 100) / 100,
+        budget: deptBudget,
+        budgetUtilization: Math.round(budgetUtilization * 10) / 10,
+        efficiency: Math.round(efficiency * 10) / 10,
+        color: dept.color,
+        icon: dept.icon,
+        avgSpendPerUser: Math.round(spendPerUser * 100) / 100,
+        requestCount: dept.usageLogs.length
+      }
+    }).sort((a, b) => b.spend - a.spend) // Sort by spending
+
     // Prepare team metrics
     const teamMetrics = {
       totalUsers: organization?.users.length || 0,
       activeUsers,
       powerUsers: Math.floor(activeUsers * 0.12), // Top 12% as power users
-      avgUsagePerUser: activeUsers > 0 
-        ? Math.round((totalSpend / activeUsers) * 100) / 100 
+      avgUsagePerUser: activeUsers > 0
+        ? Math.round((totalSpend / activeUsers) * 100) / 100
         : 0,
-      topDepartments: [] // TODO: Implement department tracking
+      topDepartments
     }
 
     // Generate real forecast data
