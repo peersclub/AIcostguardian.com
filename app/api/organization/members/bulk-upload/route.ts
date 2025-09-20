@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
               data: {
                 name: nameIndex !== -1 ? row[nameIndex] || existingUser.name : existingUser.name,
                 role: roleIndex !== -1 ? (row[roleIndex] as any) || existingUser.role : existingUser.role,
-                department: departmentIndex !== -1 ? row[departmentIndex] || existingUser.department : existingUser.department,
+                departmentId: departmentIndex !== -1 ? row[departmentIndex] || existingUser.departmentId : existingUser.departmentId,
                 jobTitle: jobTitleIndex !== -1 ? row[jobTitleIndex] || existingUser.jobTitle : existingUser.jobTitle
               }
             })
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
             email,
             name: nameIndex !== -1 ? row[nameIndex] : null,
             role: role as any,
-            department: departmentIndex !== -1 ? row[departmentIndex] : null,
+            departmentId: departmentIndex !== -1 ? row[departmentIndex] : null,
             jobTitle: jobTitleIndex !== -1 ? row[jobTitleIndex] : null,
             organizationId: user.organizationId!,
             invitedBy: user.email,

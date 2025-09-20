@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         email: member.email,
         name: member.name,
         role: member.role,
-        department: member.department,
+        departmentId: member.departmentId,
         jobTitle: member.jobTitle,
         lastActiveAt: member.lastActiveAt,
         createdAt: member.createdAt,

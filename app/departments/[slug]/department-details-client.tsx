@@ -35,7 +35,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react'
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { getAIProviderLogo } from '@/components/ui/ai-logos'
 import { cn } from '@/lib/utils'
 

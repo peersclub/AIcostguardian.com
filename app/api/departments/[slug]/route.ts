@@ -152,7 +152,7 @@ export async function GET(
       }, {} as Record<string, number>)
 
       const topOperation = Object.entries(operationCounts)
-        .sort(([,a], [,b]) => b - a)[0]
+        .sort(([,a], [,b]) => (b as number) - (a as number))[0]
 
       return {
         user: {

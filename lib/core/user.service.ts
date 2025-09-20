@@ -181,7 +181,7 @@ class UserService {
    */
   async updateUser(
     userId: string, 
-    data: Partial<Pick<User, 'name' | 'image' | 'company' | 'department' | 'jobTitle'>>
+    data: Partial<Pick<User, 'name' | 'image' | 'company' | 'departmentId' | 'jobTitle'>>
   ): Promise<User> {
     return await prisma.user.update({
       where: { id: userId },
