@@ -579,13 +579,13 @@ export function ShareThreadDialog({
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={collaborator.image} />
                           <AvatarFallback className="bg-primary/10 text-foreground text-xs">
-                            {collaborator.name?.[0] || collaborator.email[0].toUpperCase()}
+                            {collaborator.name?.[0] || collaborator.email?.[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">
-                              {collaborator.name || collaborator.email}
+                              {collaborator.name || collaborator.email || 'Unknown User'}
                             </span>
                             {collaborator.isOnline && (
                               <div className="h-2 w-2 bg-green-500 rounded-full" />
