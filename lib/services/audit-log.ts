@@ -690,7 +690,7 @@ export async function generateDeletionComplianceReport(
     retentionPolicyViolations: 0,
     unapprovedDeletions: deletionLogs.filter(log =>
       log.severity === AuditSeverity.CRITICAL &&
-      !log.metadata?.approvedBy
+      !(log.metadata as any)?.approvedBy
     ).length
   }
 

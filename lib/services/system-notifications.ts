@@ -189,7 +189,7 @@ export class SystemNotificationService {
 
       // Add action buttons if provided
       if (data.actions && data.actions.length > 0) {
-        options.actions = data.actions
+        (options as any).actions = data.actions
       }
 
       // Set priority-based properties
