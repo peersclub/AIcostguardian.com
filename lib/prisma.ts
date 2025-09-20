@@ -6,19 +6,37 @@ declare global {
 }
 
 const prismaClientSingleton = () => {
-  // Parse DATABASE_URL for connection pooling configuration
-  const connectionLimit = parseInt(process.env.DATABASE_CONNECTION_LIMIT || '10')
-  
-  return new PrismaClient({
+  // Enhanced connection configuration
+  const connectionLimit = parseInt(process.env.DATABASE_CONNECTION_LIMIT || '20')
+
+  const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     datasources: {
       db: {
         url: process.env.DATABASE_URL
       }
     },
-    // Error handling
+    // Enhanced error handling and performance
     errorFormat: process.env.NODE_ENV === 'production' ? 'minimal' : 'pretty',
   })
+
+  // Add query performance monitoring in development
+  if (process.env.NODE_ENV === 'development') {
+    client.$use(async (params, next) => {
+      const before = Date.now()
+      const result = await next(params)
+      const after = Date.now()
+
+      const queryTime = after - before
+      if (queryTime > 1000) { // Log slow queries > 1s
+        console.log(`🐌 Slow Query: ${params.model}.${params.action} took ${queryTime}ms`)
+      }
+
+      return result
+    })
+  }
+
+  return client
 }
 
 // Configure connection pool via DATABASE_URL parameters
