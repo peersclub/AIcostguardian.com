@@ -55,6 +55,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ShareThreadDialog } from './components/share-thread-dialog'
+import { OrgMessagingInterface } from './components/org-messaging-interface'
 import { ThreadEmptyState } from '@/components/ui/thread-empty-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
@@ -120,6 +121,9 @@ interface Thread {
   sharedWith?: string[]
   tags?: string[]
   metadata?: any
+  collaborators?: CollaboratorStatus[]
+  isShared?: boolean
+  shareId?: string
 }
 
 interface ModelOption {
@@ -577,6 +581,9 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   // Thread collaboration state
   const [organizationMembers, setOrganizationMembers] = useState<any[]>([])
   const [loadingOrgMembers, setLoadingOrgMembers] = useState(false)
+
+  // Messaging interface state
+  const [messagingInterfaceOpen, setMessagingInterfaceOpen] = useState(false)
   
   // File upload state
   const [isDragging, setIsDragging] = useState(false)
@@ -1373,6 +1380,21 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                     ) : (
                       <MessageSquareOff className="w-4 h-4 text-red-400" />
                     )}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={() => setMessagingInterfaceOpen(true)}
+                            size="sm"
+                            variant="outline"
+                            className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 text-gray-300 hover:text-white"
+                          >
+                            <Users className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Team Chat</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Button
                       onClick={() => createThread()}
                       size="sm"
@@ -1458,12 +1480,48 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
                               <span>{thread.messageCount} messages</span>
                               <span>•</span>
                               <span>{formatDate(thread.updatedAt)}</span>
-                              {thread.sharedWith && thread.sharedWith.length > 0 && (
+                              {thread.isShared && (
                                 <>
                                   <span>•</span>
                                   <div className="flex items-center gap-1">
-                                    <Users className="w-3 h-3" />
-                                    <span>{thread.sharedWith.length}</span>
+                                    <Share2 className="w-3 h-3 text-blue-400" />
+                                    <span className="text-blue-400">shared</span>
+                                  </div>
+                                </>
+                              )}
+                              {thread.collaborators && thread.collaborators.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <div className="flex items-center gap-1">
+                                    <div className="flex -space-x-1">
+                                      {thread.collaborators.slice(0, 3).map((collaborator: CollaboratorStatus, index: number) => (
+                                        <TooltipProvider key={collaborator.id}>
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Avatar className="h-4 w-4 border border-gray-700">
+                                                <AvatarImage src={collaborator.avatar} />
+                                                <AvatarFallback className="text-[8px] bg-indigo-600/20 text-indigo-300">
+                                                  {collaborator.name?.[0] || collaborator.email[0]?.toUpperCase()}
+                                                </AvatarFallback>
+                                              </Avatar>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p className="text-xs">
+                                                {collaborator.name || collaborator.email}
+                                                {collaborator.isOnline && (
+                                                  <span className="text-green-400 ml-1">• online</span>
+                                                )}
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ))}
+                                      {thread.collaborators.length > 3 && (
+                                        <div className="h-4 w-4 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center">
+                                          <span className="text-[8px] text-gray-300">+{thread.collaborators.length - 3}</span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </>
                               )}
@@ -2650,6 +2708,13 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
           }}
         />
       )}
+
+      {/* Organizational Messaging Interface */}
+      <OrgMessagingInterface
+        open={messagingInterfaceOpen}
+        onOpenChange={setMessagingInterfaceOpen}
+        organizationMembers={organizationMembers}
+      />
     </div>
   )
 }
