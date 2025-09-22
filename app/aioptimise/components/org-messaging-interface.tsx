@@ -95,37 +95,92 @@ export function OrgMessagingInterface({
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Mock data - in real implementation, this would come from API
-  const [channels] = useState<Channel[]>([
-    {
-      id: '1',
-      name: 'general',
-      description: 'Company-wide announcements and general discussion',
-      type: 'public',
-      memberCount: 25,
-      unreadCount: 3,
-      lastMessage: {
-        content: 'Welcome to the team!',
-        sender: 'John Doe',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString()
-      }
-    },
-    {
-      id: '2',
-      name: 'ai-discussions',
-      description: 'Discuss AI implementations and best practices',
-      type: 'public',
-      memberCount: 12,
-      unreadCount: 0,
-      lastMessage: {
-        content: 'Great insights on the Claude implementation!',
-        sender: 'Sarah Wilson',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-      }
-    }
-  ])
-
+  const [channels, setChannels] = useState<Channel[]>([])
   const [directMessages, setDirectMessages] = useState<DirectMessage[]>([])
+  const [messages, setMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  // Fetch channels from API
+  const fetchChannels = async () => {
+    try {
+      const response = await fetch('/api/messaging/channels')
+      if (response.ok) {
+        const data = await response.json()
+        setChannels(data.channels.map((channel: any) => ({
+          id: channel.id,
+          name: channel.name,
+          description: channel.description,
+          type: channel.type.toLowerCase(),
+          memberCount: channel._count?.members || 0,
+          unreadCount: channel.unreadCount || 0,
+          lastMessage: channel.lastMessageAt ? {
+            content: 'Latest message...',
+            sender: 'System',
+            timestamp: channel.lastMessageAt
+          } : undefined,
+          isPinned: channel.isPinned,
+          isMuted: channel.isMuted
+        })))
+      }
+    } catch (error) {
+      console.error('Failed to fetch channels:', error)
+    }
+  }
+
+  // Fetch message history
+  const fetchMessageHistory = async (recipientId?: string, channelId?: string) => {
+    if (!recipientId && !channelId) return
+
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (recipientId) params.append('recipientId', recipientId)
+      if (channelId) params.append('channelId', channelId)
+      params.append('limit', '50')
+
+      const response = await fetch(`/api/messaging/history?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages)
+      }
+    } catch (error) {
+      console.error('Failed to fetch message history:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Send message
+  const sendMessage = async (content: string, recipientId?: string, channelId?: string) => {
+    try {
+      const response = await fetch('/api/messaging/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          recipientId,
+          channelId,
+          type: 'TEXT'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Add the new message to the local state
+        setMessages(prev => [...prev, data.message])
+        return true
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
+    return false
+  }
+
+  useEffect(() => {
+    if (open) {
+      fetchChannels()
+    }
+  }, [open])
 
   useEffect(() => {
     // Convert organization members to direct message format
@@ -152,32 +207,40 @@ export function OrgMessagingInterface({
   }).filter(member => member.id !== session?.user?.id)
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedUser) return
+    if (!messageInput.trim()) return
+
+    const content = messageInput.trim()
+    setMessageInput('') // Clear input immediately
 
     try {
-      // In real implementation, send message via API
-      const response = await fetch('/api/messaging/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: selectedUser.id,
-          message: messageInput.trim(),
-          type: 'direct'
-        })
-      })
+      const success = await sendMessage(
+        content,
+        selectedUser?.id,
+        selectedTab === 'channels' ? channels.find(c => c.name === 'general')?.id : undefined
+      )
 
-      if (response.ok) {
-        setMessageInput('')
+      if (success) {
         toast.success('Message sent!')
+      } else {
+        toast.error('Failed to send message')
+        setMessageInput(content) // Restore input on failure
       }
     } catch (error) {
       toast.error('Failed to send message')
+      setMessageInput(content) // Restore input on failure
     }
   }
 
   const handleStartDirectMessage = (member: OrganizationMember) => {
     setSelectedUser(member)
     setSelectedTab('direct')
+    fetchMessageHistory(member.id)
+  }
+
+  const handleChannelSelect = (channel: Channel) => {
+    setSelectedUser(null)
+    setSelectedTab('channels')
+    fetchMessageHistory(undefined, channel.id)
   }
 
   if (!open) return null
@@ -320,21 +383,25 @@ export function OrgMessagingInterface({
                   <div
                     key={channel.id}
                     className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors"
+                    onClick={() => handleChannelSelect(channel)}
                   >
                     <Hash className="h-4 w-4 text-gray-400" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-white truncate">
-                          {channel.name}
+                          #{channel.name}
                         </span>
                         {(channel.unreadCount ?? 0) > 0 && (
                           <Badge variant="destructive" className="text-xs h-5 px-1.5">
                             {channel.unreadCount}
                           </Badge>
                         )}
+                        {channel.isPinned && (
+                          <Pin className="h-3 w-3 text-yellow-400" />
+                        )}
                       </div>
                       <div className="text-xs text-gray-400 truncate">
-                        {channel.memberCount} members
+                        {channel.memberCount} members • {channel.description || 'No description'}
                       </div>
                     </div>
                   </div>
@@ -399,13 +466,48 @@ export function OrgMessagingInterface({
               {/* Messages Area */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
-                  {/* Placeholder for messages */}
-                  <div className="text-center py-8">
-                    <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-400 text-sm">
-                      Start a conversation with {selectedUser.name || selectedUser.email}
-                    </p>
-                  </div>
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                      <p className="text-gray-400 text-sm">Loading messages...</p>
+                    </div>
+                  ) : messages.length > 0 ? (
+                    messages.map((message) => (
+                      <div key={message.id} className="flex gap-3">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={message.sender?.image} />
+                          <AvatarFallback className="bg-indigo-600/20 text-indigo-300 text-sm">
+                            {message.sender?.name?.[0] || message.sender?.email[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-white">
+                              {message.sender?.name || message.sender?.email}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatDistanceToNow(new Date(message.createdAt))} ago
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-300 whitespace-pre-wrap">
+                            {message.content}
+                          </div>
+                          {message.attachments && (
+                            <div className="mt-2 text-xs text-gray-400">
+                              📎 {JSON.parse(message.attachments).length} attachment(s)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                      <p className="text-gray-400 text-sm">
+                        Start a conversation with {selectedUser.name || selectedUser.email}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div ref={messagesEndRef} />
               </ScrollArea>

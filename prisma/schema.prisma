@@ -68,6 +68,16 @@ model User {
   preferences           UserPreferences?
   editedThreadContexts  ThreadContext[] @relation("ThreadContextEditor")
   adminOverrides        OrganizationSettings[] @relation("AdminOverrides")
+
+  // Messaging system relationships
+  createdChannels       MessagingChannel[] @relation("ChannelCreator")
+  channelMemberships    ChannelMember[] @relation("ChannelMemberships")
+  sentMessages          MessagingMessage[] @relation("SentMessages")
+  receivedMessages      MessagingMessage[] @relation("ReceivedMessages")
+  messageReactions      MessageReaction[] @relation("MessageReactions")
+  messageDeliveries     MessageDeliveryStatus[] @relation("MessageDeliveries")
+  dmThreadsAsParticipant1 DirectMessageThread[] @relation("DMParticipant1")
+  dmThreadsAsParticipant2 DirectMessageThread[] @relation("DMParticipant2")
 }
 
 model Organization {
@@ -138,6 +148,8 @@ model Organization {
   activeAlerts      ActiveAlert[]
   threads           Thread[]
   settings          OrganizationSettings?
+  messagingChannels MessagingChannel[]
+  directMessageThreads DirectMessageThread[]
 }
 
 model Department {
@@ -1695,4 +1707,222 @@ model OrganizationSettings {
 
   @@index([organizationId])
   @@index([overriddenBy])
+}
+
+// Messaging System Models for Organizational Communication
+
+model MessagingChannel {
+  id              String    @id @default(cuid())
+  name            String    // Channel name (e.g., "general", "ai-discussions")
+  description     String?   @db.Text
+  type            MessagingChannelType @default(PUBLIC)
+  organizationId  String
+  createdById     String
+
+  // Channel settings
+  isArchived      Boolean   @default(false)
+  isPinned        Boolean   @default(false)
+  isPrivate       Boolean   @default(false)
+  allowThreads    Boolean   @default(true)
+
+  // Metadata
+  topic           String?   @db.Text
+  lastMessageAt   DateTime?
+  messageCount    Int       @default(0)
+  memberCount     Int       @default(0)
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy       User         @relation("ChannelCreator", fields: [createdById], references: [id])
+  members         ChannelMember[]
+  messages        MessagingMessage[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([type, isArchived])
+}
+
+model ChannelMember {
+  id              String    @id @default(cuid())
+  channelId       String
+  userId          String
+  role            ChannelRole @default(MEMBER)
+
+  // Membership settings
+  isAdmin         Boolean   @default(false)
+  isMuted         Boolean   @default(false)
+  notificationsEnabled Boolean @default(true)
+
+  // Activity tracking
+  joinedAt        DateTime  @default(now())
+  lastReadAt      DateTime?
+  lastActiveAt    DateTime?
+  unreadCount     Int       @default(0)
+
+  channel         MessagingChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user            User             @relation("ChannelMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([channelId, userId])
+  @@index([channelId])
+  @@index([userId])
+  @@index([userId, unreadCount])
+}
+
+model MessagingMessage {
+  id              String    @id @default(cuid())
+  channelId       String?   // null for direct messages
+  senderId        String
+  recipientId     String?   // for direct messages
+  threadId        String?   // for threaded messages
+  parentMessageId String?   // for replies
+
+  // Message content
+  content         String    @db.Text
+  type            MessageType @default(TEXT)
+
+  // Message metadata
+  isEdited        Boolean   @default(false)
+  editedAt        DateTime?
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  // Attachments and formatting
+  attachments     Json?     // Array of file attachments
+  mentions        String[]  @default([]) // Array of user IDs mentioned
+  formatting      Json?     // Rich text formatting data
+
+  // Thread/Reply metadata
+  replyCount      Int       @default(0)
+  lastReplyAt     DateTime?
+
+  // Reactions and engagement
+  reactions       Json?     // { emoji: [userId] }
+
+  channel         MessagingChannel? @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender          User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient       User?             @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  parentMessage   MessagingMessage? @relation("MessageReplies", fields: [parentMessageId], references: [id], onDelete: Cascade)
+  replies         MessagingMessage[] @relation("MessageReplies")
+  reactions_rel   MessageReaction[]
+  deliveryStatuses MessageDeliveryStatus[] @relation("MessageDelivery")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([channelId, createdAt])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([threadId])
+  @@index([parentMessageId])
+  @@index([channelId, senderId, createdAt]) // For channel message history
+  @@index([senderId, recipientId, createdAt]) // For direct message history
+}
+
+model MessageReaction {
+  id              String    @id @default(cuid())
+  messageId       String
+  userId          String
+  emoji           String    // Unicode emoji or custom emoji ID
+
+  message         MessagingMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user            User             @relation("MessageReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model DirectMessageThread {
+  id              String    @id @default(cuid())
+  participant1Id  String
+  participant2Id  String
+  organizationId  String
+
+  // Thread metadata
+  lastMessageAt   DateTime?
+  messageCount    Int       @default(0)
+  isArchived      Boolean   @default(false)
+
+  // Participant settings
+  participant1Muted Boolean @default(false)
+  participant2Muted Boolean @default(false)
+  participant1UnreadCount Int @default(0)
+  participant2UnreadCount Int @default(0)
+
+  participant1    User         @relation("DMParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2    User         @relation("DMParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([participant1Id, participant2Id, organizationId])
+  @@index([organizationId])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([lastMessageAt])
+}
+
+model MessageDeliveryStatus {
+  id              String    @id @default(cuid())
+  messageId       String
+  userId          String
+  status          DeliveryStatus @default(SENT)
+
+  // Delivery tracking
+  deliveredAt     DateTime?
+  readAt          DateTime?
+
+  message         MessagingMessage @relation("MessageDelivery", fields: [messageId], references: [id], onDelete: Cascade)
+  user            User             @relation("MessageDeliveries", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Messaging System Enums
+
+enum MessagingChannelType {
+  PUBLIC
+  PRIVATE
+  DIRECT
+  ANNOUNCEMENT
+}
+
+enum ChannelRole {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  VIDEO
+  AUDIO
+  SYSTEM
+  NOTIFICATION
+}
+
+enum DeliveryStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
