@@ -23,10 +23,6 @@ export class SlackWebhookService {
 
   constructor(webhookUrl?: string) {
     this.webhookUrl = webhookUrl || process.env.SLACK_WEBHOOK_URL || ''
-
-    if (!this.webhookUrl) {
-      throw new Error('SLACK_WEBHOOK_URL is required')
-    }
   }
 
   /**
@@ -387,6 +383,11 @@ export class SlackWebhookService {
   }
 
   private async sendWebhookMessage(message: SlackWebhookMessage): Promise<boolean> {
+    if (!this.webhookUrl) {
+      console.error('SLACK_WEBHOOK_URL is required for webhook notifications')
+      return false
+    }
+
     try {
       const response = await fetch(this.webhookUrl, {
         method: 'POST',
