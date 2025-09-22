@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { getAIProviderLogo, getProviderInfo } from '@/components/ui/ai-logos'
-import { Check, X, Loader2, ArrowRight, Shield, Zap, Link2, Settings, Key, AlertCircle, Activity, CheckCircle, Globe } from 'lucide-react'
+import { Check, X, Loader2, ArrowRight, Shield, Zap, Link2, Settings, Key, AlertCircle, Activity, CheckCircle, Globe, MessageSquare, Bell } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { getEnabledProviders, AI_PROVIDER_IDS } from '@/lib/ai-providers-config'
 import Link from 'next/link'
@@ -283,6 +283,121 @@ export default function IntegrationsPage() {
               })}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Slack Integration Section */}
+      <div className="py-16 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <Badge className="mb-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 px-4 py-2">
+              <MessageSquare className="w-4 h-4 mr-2 inline" />
+              Team Notifications
+            </Badge>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Get Notified in Slack
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Connect your Slack workspace to receive real-time alerts about AI costs, usage spikes, and team activities
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="max-w-4xl mx-auto"
+          >
+            <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-500/30 hover:border-blue-400/50 transition-all">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                      <MessageSquare className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white text-xl">Slack Integration</CardTitle>
+                      <CardDescription className="text-gray-300 text-base">
+                        Real-time notifications for your entire team
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/50">
+                    Team Feature
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Features Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <AlertCircle className="w-6 h-6 text-yellow-400" />
+                    </div>
+                    <span className="text-gray-300 text-sm">Cost Alerts</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Activity className="w-6 h-6 text-red-400" />
+                    </div>
+                    <span className="text-gray-300 text-sm">Usage Spikes</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    </div>
+                    <span className="text-gray-300 text-sm">Team Updates</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Bell className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <span className="text-gray-300 text-sm">Weekly Reports</span>
+                  </div>
+                </div>
+
+                {/* Sample notification preview */}
+                <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-300 mb-2 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    Sample Notification
+                  </h4>
+                  <div className="bg-gray-800/50 rounded p-3 text-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                      <span className="font-medium text-white">Cost Threshold Warning</span>
+                    </div>
+                    <p className="text-gray-300">
+                      Daily AI spending is approaching your limit<br />
+                      <span className="text-yellow-400">Current: $127.50</span> • <span className="text-gray-400">Limit: $150.00</span> • <span className="text-yellow-400">85% used</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-4">
+                  <Link href="/integrations/slack" className="flex-1">
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Set Up Slack Integration
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    onClick={() => window.open('https://docs.anthropic.com/claude-code', '_blank')}
+                  >
+                    View Docs
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
 

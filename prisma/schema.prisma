@@ -150,6 +150,7 @@ model Organization {
   settings          OrganizationSettings?
   messagingChannels MessagingChannel[]
   directMessageThreads DirectMessageThread[]
+  integrationConfigs IntegrationConfig[]
 }
 
 model Department {
@@ -1925,4 +1926,20 @@ enum DeliveryStatus {
   DELIVERED
   READ
   FAILED
+}
+
+model IntegrationConfig {
+  id             String    @id @default(cuid())
+  provider       String    // e.g., "SLACK", "DISCORD", "TEAMS"
+  config         Json      // JSON configuration for the integration
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastSyncAt     DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
 }

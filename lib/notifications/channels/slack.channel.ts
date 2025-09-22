@@ -391,10 +391,10 @@ export class SlackNotificationChannel implements NotificationChannel {
 
   private async slackApiCall(method: string, data: any): Promise<any> {
     const url = `${this.config.baseUrl}/${method}`
-    
+
     try {
-      // Simulate HTTP request to Slack API
-      const response = await this.simulateHttpRequest(url, {
+      // Real HTTP request to Slack API
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.config.botToken}`,
@@ -403,13 +403,29 @@ export class SlackNotificationChannel implements NotificationChannel {
         body: JSON.stringify(data)
       })
 
-      if (response.status === 200) {
-        return response.data
+      const result = await response.json()
+
+      if (response.ok && result.ok) {
+        return result
       } else {
-        throw new Error(`HTTP ${response.status}`)
+        throw new Error(`Slack API error: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error(`Slack API call failed (${method}):`, error)
+
+      // Fallback to simulation if real API fails (for development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Falling back to simulated response for development...')
+        return await this.simulateHttpRequest(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.config.botToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        }).then(res => res.data)
+      }
+
       throw error
     }
   }
