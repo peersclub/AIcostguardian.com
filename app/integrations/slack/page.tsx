@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from '@/components/ui/use-toast'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,10 +62,21 @@ export default function SlackIntegrationPage() {
   })
   const [activeTab, setActiveTab] = useState('setup')
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
     loadConfig()
   }, [session])
+
+  // Track changes to config and notifications
+  useEffect(() => {
+    setHasUnsavedChanges(true)
+  }, [config, notifications])
+
+  // Reset unsaved changes after successful save
+  const markAsSaved = () => {
+    setHasUnsavedChanges(false)
+  }
 
   const loadConfig = async () => {
     if (!session?.user?.id) {
@@ -85,6 +97,7 @@ export default function SlackIntegrationPage() {
           systemUpdates: true,
           customEvents: true
         })
+        setHasUnsavedChanges(false)
       }
     } catch (error) {
       console.error('Failed to load Slack config:', error)
@@ -94,7 +107,14 @@ export default function SlackIntegrationPage() {
   }
 
   const saveConfig = async () => {
-    if (!session?.user?.id) return
+    if (!session?.user?.id) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in to save your Slack configuration.',
+        variant: 'destructive'
+      })
+      return
+    }
 
     setSaving(true)
     try {
@@ -104,11 +124,31 @@ export default function SlackIntegrationPage() {
         body: JSON.stringify({ config, notifications })
       })
 
-      if (response.ok) {
-        // Show success
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast({
+          title: '✅ Configuration saved',
+          description: 'Your Slack integration settings have been saved successfully.',
+        })
+
+        // Reload configuration to ensure UI is in sync
+        await loadConfig()
+        markAsSaved()
+      } else {
+        toast({
+          title: '❌ Save failed',
+          description: data.error || 'Failed to save Slack configuration. Please try again.',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('Failed to save config:', error)
+      toast({
+        title: '❌ Save error',
+        description: 'An error occurred while saving your configuration. Please check your connection and try again.',
+        variant: 'destructive'
+      })
     } finally {
       setSaving(false)
     }
@@ -126,12 +166,23 @@ export default function SlackIntegrationPage() {
       const result = await response.json()
 
       if (result.success) {
-        alert(`✅ ${type === 'webhook' ? 'Webhook' : 'Bot'} test successful! Check your Slack workspace.`)
+        toast({
+          title: `✅ ${type === 'webhook' ? 'Webhook' : 'Bot'} test successful!`,
+          description: `Test notification sent successfully. Check your Slack workspace for the message.`,
+        })
       } else {
-        alert(`❌ ${type === 'webhook' ? 'Webhook' : 'Bot'} test failed: ${result.error}`)
+        toast({
+          title: `❌ ${type === 'webhook' ? 'Webhook' : 'Bot'} test failed`,
+          description: result.error || 'The test failed. Please check your configuration and try again.',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
-      alert(`❌ Test failed: ${error}`)
+      toast({
+        title: '❌ Test error',
+        description: `Failed to test ${type} connection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: 'destructive'
+      })
     } finally {
       setTesting(false)
     }
