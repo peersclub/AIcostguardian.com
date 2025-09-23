@@ -1,19 +1,28 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import {
   MessageSquare, FileText, Star, Globe, Settings, Plus, Search,
   ChevronDown, ChevronRight, Users, Headphones, Archive, Bell,
-  Clock, Hash, User, Bot, ExternalLink, AlertTriangle, Edit
+  Clock, Hash, User, Bot, ExternalLink, AlertTriangle, Edit, MoreVertical, Trash2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useSession } from 'next-auth/react'
+import { ThreadCreationDialog } from './thread-creation-dialog'
+import { ThreadManagementDialog } from './thread-management-dialog'
+import { toast } from 'sonner'
 
 interface Thread {
   id: string
@@ -45,21 +54,18 @@ interface EnhancedSidebarProps {
   drafts: Draft[]
   currentThread?: Thread
   isOpen: boolean
+  isLoading?: boolean
   onThreadSelect: (threadId: string) => void
   onCreateThread: () => void
+  onCreateThreadType?: (threadType: string, title?: string) => void
   onToggleStar: (threadId: string) => void
   organizationMembers: any[]
   className?: string
-}
-
-interface SidebarSection {
-  id: string
-  title: string
-  icon: React.ReactNode
-  count?: number
-  items: any[]
-  isCollapsed: boolean
-  onToggle: () => void
+  onUpdateThread?: (threadId: string, updates: any) => Promise<void>
+  onInviteMember?: (threadId: string, memberId: string, role: string) => Promise<void>
+  onRemoveMember?: (threadId: string, memberId: string) => Promise<void>
+  onArchiveThread?: (threadId: string) => Promise<void>
+  onDeleteThread?: (threadId: string) => Promise<void>
 }
 
 export function EnhancedSidebar({
@@ -67,11 +73,18 @@ export function EnhancedSidebar({
   drafts,
   currentThread,
   isOpen,
+  isLoading = false,
   onThreadSelect,
   onCreateThread,
+  onCreateThreadType,
   onToggleStar,
   organizationMembers,
-  className
+  className,
+  onUpdateThread,
+  onInviteMember,
+  onRemoveMember,
+  onArchiveThread,
+  onDeleteThread
 }: EnhancedSidebarProps) {
   const { data: session } = useSession()
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,46 +98,107 @@ export function EnhancedSidebar({
     huddles: false
   })
 
-  // Filter and categorize threads
-  const activeThreads = threads.filter(t => !t.isArchived && t.threadType === 'STANDARD')
-  const starredThreads = threads.filter(t => t.isStarred && !t.isArchived)
-  const externalThreads = threads.filter(t => t.hasExternalUsers && !t.isArchived)
-  const channelThreads = threads.filter(t => t.threadType === 'CHANNEL' && !t.isArchived)
-  const directThreads = threads.filter(t => t.threadType === 'DIRECT' && !t.isArchived)
-  const huddleThreads = threads.filter(t => t.threadType === 'HUDDLE' && !t.isArchived)
+  // Dialog state management
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showManageDialog, setShowManageDialog] = useState(false)
+  const [selectedThreadForManagement, setSelectedThreadForManagement] = useState<Thread | null>(null)
 
-  // Search filtering
-  const filteredThreads = {
-    active: activeThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    starred: starredThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    external: externalThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    channels: channelThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    direct: directThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    huddles: huddleThreads.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }
+  // Optimized filtering with useMemo to prevent unnecessary re-computations
+  const categorizedThreads = useMemo(() => {
+    const active = threads.filter(t => !t.isArchived && t.threadType === 'STANDARD')
+    const starred = threads.filter(t => t.isStarred && !t.isArchived)
+    const external = threads.filter(t => t.hasExternalUsers && !t.isArchived)
+    const channels = threads.filter(t => t.threadType === 'CHANNEL' && !t.isArchived)
+    const direct = threads.filter(t => t.threadType === 'DIRECT' && !t.isArchived)
+    const huddles = threads.filter(t => t.threadType === 'HUDDLE' && !t.isArchived)
 
-  const toggleSection = (sectionId: string) => {
+    return { active, starred, external, channels, direct, huddles }
+  }, [threads])
+
+  // Search filtering with debouncing effect
+  const filteredThreads = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return categorizedThreads
+
+    const filterByQuery = (threadList: Thread[]) =>
+      threadList.filter(t => t.title.toLowerCase().includes(query))
+
+    return {
+      active: filterByQuery(categorizedThreads.active),
+      starred: filterByQuery(categorizedThreads.starred),
+      external: filterByQuery(categorizedThreads.external),
+      channels: filterByQuery(categorizedThreads.channels),
+      direct: filterByQuery(categorizedThreads.direct),
+      huddles: filterByQuery(categorizedThreads.huddles)
+    }
+  }, [categorizedThreads, searchQuery])
+
+  const toggleSection = useCallback((sectionId: string) => {
     setCollapsedSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]
     }))
-  }
+  }, [])
 
-  const getDomainFromEmail = (email: string) => {
-    return email.split('@')[1] || email
-  }
+  // Enhanced thread creation with dialog
+  const handleCreateThreadWithDialog = useCallback(async (data: any) => {
+    try {
+      const response = await fetch('/api/aioptimise/threads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      if (response.ok) {
+        const newThread = await response.json()
+        toast.success(`${data.threadType === 'CHANNEL' ? 'Channel' : 'Thread'} created successfully`)
+        onThreadSelect(newThread.id)
+        // Trigger refresh of threads list
+        window.location.reload()
+      } else {
+        throw new Error('Failed to create thread')
+      }
+    } catch (error) {
+      toast.error('Failed to create thread')
+      throw error
+    }
+  }, [onThreadSelect])
+
+  // Thread management handlers
+  const handleManageThread = useCallback((thread: Thread) => {
+    setSelectedThreadForManagement(thread)
+    setShowManageDialog(true)
+  }, [])
+
+  const handleUpdateThread = useCallback(async (threadId: string, updates: any) => {
+    if (onUpdateThread) {
+      await onUpdateThread(threadId, updates)
+    }
+  }, [onUpdateThread])
+
+  const handleInviteMember = useCallback(async (threadId: string, memberId: string, role: string) => {
+    if (onInviteMember) {
+      await onInviteMember(threadId, memberId, role)
+    }
+  }, [onInviteMember])
+
+  const handleRemoveMember = useCallback(async (threadId: string, memberId: string) => {
+    if (onRemoveMember) {
+      await onRemoveMember(threadId, memberId)
+    }
+  }, [onRemoveMember])
+
+  const handleArchiveThread = useCallback(async (threadId: string) => {
+    if (onArchiveThread) {
+      await onArchiveThread(threadId)
+    }
+  }, [onArchiveThread])
+
+  const handleDeleteThread = useCallback(async (threadId: string) => {
+    if (onDeleteThread) {
+      await onDeleteThread(threadId)
+    }
+  }, [onDeleteThread])
 
   const getThreadIcon = (thread: Thread) => {
     switch (thread.threadType) {
@@ -140,6 +214,21 @@ export function EnhancedSidebar({
         return <MessageSquare className="w-4 h-4" />
     }
   }
+
+  // Loading skeleton component
+  const LoadingSkeletons = ({ count = 3 }: { count?: number }) => (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex items-center gap-2 p-2 rounded-lg animate-pulse">
+          <div className="w-4 h-4 bg-gray-600 rounded" />
+          <div className="flex-1 space-y-1">
+            <div className="h-3 bg-gray-600 rounded w-3/4" />
+            <div className="h-2 bg-gray-700 rounded w-1/2" />
+          </div>
+        </div>
+      ))}
+    </>
+  )
 
   const SidebarSection = ({
     title,
@@ -178,26 +267,19 @@ export function EnhancedSidebar({
           )}
         </div>
       </button>
-      <AnimatePresence>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden ml-6"
-          >
-            {children}
-          </motion.div>
+      <div
+        className={cn(
+          "ml-6 transition-all duration-200 ease-in-out",
+          isCollapsed ? "max-h-0 opacity-0 overflow-hidden" : "max-h-96 opacity-100"
         )}
-      </AnimatePresence>
+      >
+        {children}
+      </div>
     </div>
   )
 
   const ThreadItem = ({ thread }: { thread: Thread }) => (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
+    <div
       className={cn(
         "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-800/50",
         currentThread?.id === thread.id && "bg-indigo-950/20 border border-indigo-500/30"
@@ -226,7 +308,7 @@ export function EnhancedSidebar({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
         <Button
           size="sm"
           variant="ghost"
@@ -243,16 +325,54 @@ export function EnhancedSidebar({
             )}
           />
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+            >
+              <MoreVertical className="w-3 h-3 text-gray-300 hover:text-white transition-colors" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48 bg-gray-800/50 backdrop-blur-xl border-gray-600 text-white">
+            <DropdownMenuItem
+              className="text-white hover:bg-gray-700/50 focus:bg-gray-700/50"
+              onClick={() => handleManageThread(thread)}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit thread
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-white hover:bg-gray-700/50 focus:bg-gray-700/50"
+              onClick={() => handleManageThread(thread)}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Invite members
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-white hover:bg-gray-700/50 focus:bg-gray-700/50"
+              onClick={() => handleArchiveThread(thread.id)}
+            >
+              <Archive className="w-4 h-4 mr-2" />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-gray-600" />
+            <DropdownMenuItem
+              className="text-red-400 hover:bg-red-500/10 focus:bg-red-500/10"
+              onClick={() => handleDeleteThread(thread.id)}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete thread
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </motion.div>
+    </div>
   )
 
   const DraftItem = ({ draft }: { draft: Draft }) => (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-800/50"
-    >
+    <div className="group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-800/50">
       <FileText className="w-4 h-4 text-orange-400" />
       <div className="flex-1 min-w-0">
         <span className="text-sm text-white truncate">
@@ -268,19 +388,16 @@ export function EnhancedSidebar({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 
   if (!isOpen) return null
 
   return (
-    <motion.div
-      initial={{ x: -320 }}
-      animate={{ x: 0 }}
-      exit={{ x: -320 }}
-      transition={{ type: 'spring', damping: 25 }}
+    <div
       className={cn(
-        "w-72 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 flex flex-col h-full",
+        "w-72 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 flex flex-col h-full transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full",
         className
       )}
     >
@@ -303,13 +420,40 @@ export function EnhancedSidebar({
               </p>
             </div>
           </div>
-          <Button
-            onClick={onCreateThread}
-            size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700 flex-shrink-0"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-gray-800/50 backdrop-blur-xl border-gray-600 text-white">
+              <DropdownMenuItem onClick={() => setShowCreateDialog(true)}>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Create New Thread
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onCreateThreadType?.('DIRECT', 'Direct Message')}>
+                <User className="w-4 h-4 mr-2" />
+                Quick Direct Message
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onCreateThreadType?.('CHANNEL', 'New Channel')}>
+                <Hash className="w-4 h-4 mr-2" />
+                Quick Channel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onCreateThreadType?.('HUDDLE', 'Team Huddle')}>
+                <Headphones className="w-4 h-4 mr-2" />
+                Quick Huddle
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onCreateThreadType?.('EXTERNAL', 'External Collaboration')}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Quick External
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Search */}
@@ -318,7 +462,7 @@ export function EnhancedSidebar({
           <Input
             type="text"
             placeholder="Search conversations..."
-            className="pl-9 bg-gray-900 border-gray-800 text-sm"
+            className="pl-9 bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500/20 text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -336,9 +480,21 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('threads')}
         >
           <div className="space-y-1">
-            {filteredThreads.active.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={3} />
+            ) : filteredThreads.active.length > 0 ? (
+              filteredThreads.active.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            ) : searchQuery ? (
+              <div className="text-sm text-gray-400 p-2">
+                No threads found for "{searchQuery}"
+              </div>
+            ) : (
+              <div className="text-sm text-gray-400 p-2">
+                No active threads
+              </div>
+            )}
           </div>
         </SidebarSection>
 
@@ -351,9 +507,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('huddles')}
         >
           <div className="space-y-1">
-            {filteredThreads.huddles.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              filteredThreads.huddles.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -366,9 +526,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('drafts')}
         >
           <div className="space-y-1">
-            {drafts.map((draft) => (
-              <DraftItem key={draft.id} draft={draft} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              drafts.map((draft) => (
+                <DraftItem key={draft.id} draft={draft} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -381,9 +545,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('external')}
         >
           <div className="space-y-1">
-            {filteredThreads.external.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              filteredThreads.external.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -396,9 +564,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('starred')}
         >
           <div className="space-y-1">
-            {filteredThreads.starred.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              filteredThreads.starred.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -411,9 +583,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('channels')}
         >
           <div className="space-y-1">
-            {filteredThreads.channels.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              filteredThreads.channels.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -426,9 +602,13 @@ export function EnhancedSidebar({
           onToggle={() => toggleSection('direct')}
         >
           <div className="space-y-1">
-            {filteredThreads.direct.map((thread) => (
-              <ThreadItem key={thread.id} thread={thread} />
-            ))}
+            {isLoading ? (
+              <LoadingSkeletons count={2} />
+            ) : (
+              filteredThreads.direct.map((thread) => (
+                <ThreadItem key={thread.id} thread={thread} />
+              ))
+            )}
           </div>
         </SidebarSection>
 
@@ -459,6 +639,37 @@ export function EnhancedSidebar({
           </div>
         </SidebarSection>
       </div>
-    </motion.div>
+
+      {/* Thread Creation Dialog */}
+      <ThreadCreationDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreateThread={handleCreateThreadWithDialog}
+        organizationMembers={organizationMembers}
+      />
+
+      {/* Thread Management Dialog */}
+      {selectedThreadForManagement && (
+        <ThreadManagementDialog
+          isOpen={showManageDialog}
+          onClose={() => {
+            setShowManageDialog(false)
+            setSelectedThreadForManagement(null)
+          }}
+          thread={selectedThreadForManagement}
+          organizationMembers={organizationMembers}
+          currentUser={{
+            id: session?.user?.id || '',
+            name: session?.user?.name || '',
+            email: session?.user?.email || ''
+          }}
+          onUpdateThread={handleUpdateThread}
+          onInviteMember={handleInviteMember}
+          onRemoveMember={handleRemoveMember}
+          onArchiveThread={handleArchiveThread}
+          onDeleteThread={handleDeleteThread}
+        />
+      )}
+    </div>
   )
 }

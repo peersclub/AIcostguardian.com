@@ -630,11 +630,69 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       createdAt: now,
       updatedAt: now,
       isPinned: false,
-      isArchived: false
+      isArchived: false,
+      isStarred: false,
+      threadType: 'STANDARD',
+      hasExternalUsers: false
     }
     setThreads(prev => [newThread, ...prev])
     setCurrentThread(newThread)
     setMessages([])
+  }, [])
+
+  const getDefaultTitle = (threadType: string): string => {
+    switch (threadType) {
+      case 'DIRECT':
+        return 'Direct Message';
+      case 'CHANNEL':
+        return 'New Channel';
+      case 'HUDDLE':
+        return 'Team Huddle';
+      case 'EXTERNAL':
+        return 'External Collaboration';
+      case 'PROJECT':
+        return 'Project Discussion';
+      default:
+        return 'New Chat';
+    }
+  }
+
+  const createThreadType = useCallback(async (threadType: string, title?: string) => {
+    const threadTitle = title || getDefaultTitle(threadType)
+
+    try {
+      const response = await fetch('/api/aioptimise/threads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadType, title: threadTitle })
+      })
+
+      if (response.ok) {
+        const newThread = await response.json()
+        setThreads(prev => [newThread, ...prev])
+        setCurrentThread(newThread)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('Error creating thread:', error)
+      // Fallback to local creation
+      const now = new Date()
+      const newThread = {
+        id: `thread-${Date.now()}`,
+        title: threadTitle,
+        messages: [],
+        createdAt: now,
+        updatedAt: now,
+        isPinned: false,
+        isArchived: false,
+        isStarred: false,
+        threadType,
+        hasExternalUsers: false
+      }
+      setThreads(prev => [newThread, ...prev])
+      setCurrentThread(newThread)
+      setMessages([])
+    }
   }, [])
   
   const selectThread = useCallback(async (threadId: string) => {
@@ -1405,6 +1463,7 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
           isOpen={sidebarOpen}
           onThreadSelect={selectThread}
           onCreateThread={createThread}
+          onCreateThreadType={createThreadType}
           onToggleStar={toggleStar}
           organizationMembers={organizationMembers}
         />
