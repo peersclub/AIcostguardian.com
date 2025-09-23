@@ -51,7 +51,34 @@ export default function NotificationSettingsPage() {
   })
 
   // Slack integration state
-  const [slackIntegration, setSlackIntegration] = useState(null)
+  const [slackIntegration, setSlackIntegration] = useState<{
+    botToken?: string
+    webhookUrl?: string
+    appId?: string
+    clientId?: string
+    clientSecret?: string
+    signingSecret?: string
+    appToken?: string
+    defaultChannel?: string
+    workspace?: string
+    enabled: boolean
+    notifications?: {
+      costAlerts: boolean
+      memberActivations: boolean
+      highUsage: boolean
+      weeklyReports: boolean
+      systemUpdates: boolean
+      customEvents: boolean
+    }
+    channels?: {
+      costAlerts: string
+      highUsage: string
+      weeklyReports: string
+      systemUpdates: string
+    }
+    teamId?: string
+    integrationType?: string
+  } | null>(null)
   const [slackChannels, setSlackChannels] = useState({
     costAlerts: '#cost-alerts',
     systemAlerts: '#system-alerts',
@@ -421,7 +448,7 @@ export default function NotificationSettingsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={testSlackIntegration}
+                          onClick={() => testSlackIntegration()}
                           disabled={testing}
                           className="bg-gray-800/50 border-green-500/30 text-green-400 hover:bg-green-500/10"
                         >
@@ -528,17 +555,13 @@ export default function NotificationSettingsPage() {
                       <Badge className={`${slackIntegration ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
                         {slackIntegration ? 'Connected' : 'Not Connected'}
                       </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50"
+                      <Link
+                        href="/integrations/slack"
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-gray-800/50 border border-gray-600 text-gray-300 hover:bg-gray-700/50 transition-colors"
                       >
-                        <Link href="/integrations/slack">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Configure
-                        </Link>
-                      </Button>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configure
+                      </Link>
                     </div>
                   </div>
                 </CardHeader>
@@ -593,7 +616,7 @@ export default function NotificationSettingsPage() {
                             <Label className="text-white font-medium">Last Updated</Label>
                           </div>
                           <p className="text-gray-300 text-sm">
-                            {slackIntegration.setupDate ? new Date(slackIntegration.setupDate).toLocaleString() : 'Recently'}
+                            Recently
                           </p>
                         </div>
                       </div>
@@ -603,12 +626,13 @@ export default function NotificationSettingsPage() {
                       <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-white mb-2">No Slack Integration</h3>
                       <p className="text-gray-400 mb-6">Set up Slack integration to receive notifications in your workspace</p>
-                      <Button asChild className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                        <Link href="/integrations/slack">
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Set Up Slack Integration
-                        </Link>
-                      </Button>
+                      <Link
+                        href="/integrations/slack"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Set Up Slack Integration
+                      </Link>
                     </div>
                   )}
                 </CardContent>
