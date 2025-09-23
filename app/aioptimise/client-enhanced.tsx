@@ -57,6 +57,8 @@ import {
 import { ShareThreadDialog } from './components/share-thread-dialog'
 import { OrgMessagingInterface } from './components/org-messaging-interface'
 import { ThreadEmptyState } from '@/components/ui/thread-empty-state'
+import { EnhancedSidebar } from './components/enhanced-sidebar'
+import { useDraftManager } from './hooks/useDraftManager'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
@@ -605,6 +607,18 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     addCollaborator,
     loadThreads
   } = useThreadManager(threads, setThreads, currentThread, setCurrentThread)
+
+  // Draft management
+  const {
+    drafts,
+    currentDraft,
+    isAutoSaving,
+    setCurrentDraft,
+    clearCurrentDraft,
+    saveDraft,
+    deleteDraft,
+    restoreDraft
+  } = useDraftManager(currentThread?.id)
   
   // Thread helper functions
   const createThread = useCallback(() => {
@@ -651,7 +665,30 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       }
     }
   }, [threads])
-  
+
+  // Star toggle functionality
+  const toggleStar = useCallback(async (threadId: string) => {
+    const thread = threads.find(t => t.id === threadId)
+    if (!thread) return
+
+    try {
+      const method = thread.isStarred ? 'DELETE' : 'POST'
+      const response = await fetch(`/api/aioptimise/threads/${threadId}/star`, {
+        method
+      })
+
+      if (response.ok) {
+        setThreads(prev => prev.map(t =>
+          t.id === threadId
+            ? { ...t, isStarred: !t.isStarred }
+            : t
+        ))
+      }
+    } catch (error) {
+      console.error('Error toggling star:', error)
+    }
+  }, [threads, setThreads])
+
   const archiveThread = useCallback((threadId: string) => {
     setThreads(prev => prev.map(t => 
       t.id === threadId ? { ...t, isArchived: true } : t
@@ -1360,257 +1397,17 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
       )}
       
       <div className="relative z-10 h-full flex">
-        {/* Thread Manager Sidebar */}
-        <AnimatePresence>
-          {sidebarOpen && (
-            <motion.div
-              initial={{ x: -320 }}
-              animate={{ x: 0 }}
-              exit={{ x: -320 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="w-72 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 flex flex-col h-full"
-            >
-              {/* Enhanced Thread Manager */}
-              <div className="p-4 border-b border-gray-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-white">Conversations</h2>
-                  <div className="flex items-center gap-2">
-                    {wsConnected ? (
-                      <MessageSquare className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <MessageSquareOff className="w-4 h-4 text-red-400" />
-                    )}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            onClick={() => setMessagingInterfaceOpen(true)}
-                            size="sm"
-                            variant="outline"
-                            className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 text-gray-300 hover:text-white"
-                          >
-                            <Users className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Team Chat</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <Button
-                      onClick={() => createThread()}
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      New
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <Input
-                    type="text"
-                    placeholder="Search conversations..."
-                    className="pl-9 bg-gray-900 border-gray-800 text-sm"
-                  />
-                </div>
-                
-                {/* Active Collaborators */}
-                {collaborators.length > 0 && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users className="w-3 h-3 text-gray-400" />
-                      <span className="text-xs text-gray-400">Active collaborators</span>
-                    </div>
-                    <div className="flex -space-x-2">
-                      {collaborators.slice(0, 5).map(collaborator => (
-                        <div key={collaborator.id} className="relative">
-                          <Avatar className="w-6 h-6 border-2 border-gray-800">
-                            <AvatarImage src={collaborator.avatar} />
-                            <AvatarFallback>{collaborator.name[0]}</AvatarFallback>
-                          </Avatar>
-                          {collaborator.isOnline && (
-                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full" />
-                          )}
-                        </div>
-                      ))}
-                      {collaborators.length > 5 && (
-                        <div className="w-6 h-6 bg-gray-700 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                          <span className="text-xs text-gray-300">+{collaborators.length - 5}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Thread List */}
-              <div className="flex-1 overflow-y-auto">
-                <AnimatePresence>
-                  {threads.map((thread) => (
-                    <motion.div
-                      key={thread.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className={cn(
-                        "group border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer",
-                        currentThread?.id === thread.id && "bg-indigo-950/20 border-l-2 border-l-indigo-500"
-                      )}
-                      onClick={() => selectThread(thread.id)}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {thread.isPinned && (
-                                <Pin className="w-3 h-3 text-yellow-500 flex-shrink-0" />
-                              )}
-                              <h3 className="text-sm font-medium text-white truncate">
-                                {thread.title}
-                              </h3>
-                            </div>
-                            
-                            <p className="text-xs text-gray-500 truncate mb-1">
-                              {thread.lastMessage || 'No messages yet'}
-                            </p>
-                            
-                            <div className="flex items-center gap-2 text-[10px] text-gray-600">
-                              <span>{thread.messageCount} messages</span>
-                              <span>•</span>
-                              <span>{formatDate(thread.updatedAt)}</span>
-                              {thread.isShared && (
-                                <>
-                                  <span>•</span>
-                                  <div className="flex items-center gap-1">
-                                    <Share2 className="w-3 h-3 text-blue-400" />
-                                    <span className="text-blue-400">shared</span>
-                                  </div>
-                                </>
-                              )}
-                              {thread.collaborators && thread.collaborators.length > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <div className="flex items-center gap-1">
-                                    <div className="flex -space-x-1">
-                                      {thread.collaborators.slice(0, 3).map((collaborator: CollaboratorStatus, index: number) => (
-                                        <TooltipProvider key={collaborator.id}>
-                                          <Tooltip>
-                                            <TooltipTrigger>
-                                              <Avatar className="h-4 w-4 border border-gray-700">
-                                                <AvatarImage src={collaborator.avatar} />
-                                                <AvatarFallback className="text-[8px] bg-indigo-600/20 text-indigo-300">
-                                                  {collaborator.name?.[0] || collaborator.email[0]?.toUpperCase()}
-                                                </AvatarFallback>
-                                              </Avatar>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p className="text-xs">
-                                                {collaborator.name || collaborator.email}
-                                                {collaborator.isOnline && (
-                                                  <span className="text-green-400 ml-1">• online</span>
-                                                )}
-                                              </p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ))}
-                                      {thread.collaborators.length > 3 && (
-                                        <div className="h-4 w-4 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center">
-                                          <span className="text-[8px] text-gray-300">+{thread.collaborators.length - 3}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            
-                            {thread.tags && thread.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {thread.tags.map((tag: string) => (
-                                  <Badge key={tag} variant="secondary" className="text-[10px] px-1 py-0">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Thread Actions */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-70 hover:opacity-100 transition-opacity hover:bg-gray-800/80 backdrop-blur-sm"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreVertical className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 bg-gray-900/95 backdrop-blur-xl border-gray-700">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation()
-                                const newTitle = prompt('Enter new title:', thread.title)
-                                if (newTitle && newTitle.trim()) {
-                                  renameThread(thread.id, newTitle.trim())
-                                }
-                              }}>
-                                <Edit2 className="w-3 h-3 mr-2" />
-                                Rename
-                              </DropdownMenuItem>
-                              
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation()
-                                pinThread(thread.id)
-                              }}>
-                                <Pin className="w-3 h-3 mr-2" />
-                                {thread.isPinned ? 'Unpin' : 'Pin'}
-                              </DropdownMenuItem>
-                              
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation()
-                                archiveThread(thread.id)
-                              }}>
-                                <Archive className="w-3 h-3 mr-2" />
-                                {thread.isArchived ? 'Unarchive' : 'Archive'}
-                              </DropdownMenuItem>
-                              
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation()
-                                setShareDialogOpen(true)
-                              }}>
-                                <Share2 className="w-3 h-3 mr-2" />
-                                Share
-                              </DropdownMenuItem>
-                              
-                              <DropdownMenuSeparator />
-                              
-                              <DropdownMenuItem 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  if (confirm('Are you sure you want to delete this conversation?')) {
-                                    deleteThread(thread.id)
-                                  }
-                                }}
-                                className="text-red-400 focus:text-red-400"
-                              >
-                                <Trash2 className="w-3 h-3 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Enhanced Slack-like Sidebar */}
+        <EnhancedSidebar
+          threads={threads}
+          drafts={drafts}
+          currentThread={currentThread}
+          isOpen={sidebarOpen}
+          onThreadSelect={selectThread}
+          onCreateThread={createThread}
+          onToggleStar={toggleStar}
+          organizationMembers={organizationMembers}
+        />
         
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">

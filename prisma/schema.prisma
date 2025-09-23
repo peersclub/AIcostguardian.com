@@ -78,6 +78,11 @@ model User {
   messageDeliveries     MessageDeliveryStatus[] @relation("MessageDeliveries")
   dmThreadsAsParticipant1 DirectMessageThread[] @relation("DMParticipant1")
   dmThreadsAsParticipant2 DirectMessageThread[] @relation("DMParticipant2")
+
+  // New Slack-like feature relationships
+  drafts                MessageDraft[]
+  contextMemories       AIContextMemory[]
+  starredThreads        UserStarredThread[]
 }
 
 model Organization {
@@ -151,6 +156,7 @@ model Organization {
   messagingChannels MessagingChannel[]
   directMessageThreads DirectMessageThread[]
   integrationConfigs IntegrationConfig[]
+  contextMemories   AIContextMemory[]
 }
 
 model Department {
@@ -755,6 +761,9 @@ model AIThread {
   description       String?
   isArchived        Boolean   @default(false)
   isPinned          Boolean   @default(false)
+  isStarred         Boolean   @default(false)  // New: For starring functionality
+  threadType        ThreadType @default(STANDARD) // New: Thread categorization
+  hasExternalUsers  Boolean   @default(false)     // New: External user tracking
   tags              String[]
   totalCost         Float     @default(0)
   totalTokens       Int       @default(0)
@@ -777,6 +786,9 @@ model AIThread {
   collaborators     ThreadCollaborator[]
   presences         ThreadPresence[]
   context           ThreadContext?
+  drafts            MessageDraft[]
+  memoryEntries     AIContextMemory[] @relation("SourceMemory")
+  starredBy         UserStarredThread[] @relation("StarredThreads")
   
   @@index([userId, isArchived])
   @@index([userId, lastMessageAt])
@@ -1367,6 +1379,15 @@ enum ChatMode {
   CUSTOM      // User-defined
 }
 
+enum ThreadType {
+  STANDARD    // Regular conversation
+  DIRECT      // Direct message (1:1)
+  CHANNEL     // Team/topic-based
+  HUDDLE      // Collaborative session
+  EXTERNAL    // With external users
+  PROJECT     // Project-specific thread
+}
+
 enum VoiceStatus {
   RECORDING
   PROCESSING
@@ -1942,4 +1963,64 @@ model IntegrationConfig {
 
   @@unique([organizationId, provider])
   @@index([organizationId])
+}
+
+// New Models for Slack-like Features
+
+model MessageDraft {
+  id              String    @id @default(cuid())
+  userId          String
+  threadId        String?   // Optional - drafts can exist without threads
+  content         String    @db.Text
+  attachments     Json?     // File/image attachments
+  selectedModel   String?
+  selectedProvider String?
+  reminderAt      DateTime? // For draft reminders
+  isReminded      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread          AIThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([userId, threadId])
+  @@index([reminderAt])
+}
+
+model AIContextMemory {
+  id              String    @id @default(cuid())
+  userId          String
+  organizationId  String?
+  sourceThreadId  String    // Original thread
+  relatedThreadIds String[] // Connected threads
+  keywords        String[]  // Extracted keywords
+  topics          String[]  // Identified topics
+  entities        String[]  // Named entities (people, places, concepts)
+  contextSummary  String    @db.Text // AI-generated summary
+  memoryStrength  Float     @default(1.0) // Relevance/importance score
+  lastAccessedAt  DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  sourceThread    AIThread  @relation("SourceMemory", fields: [sourceThreadId], references: [id], onDelete: Cascade)
+
+  @@index([userId, memoryStrength])
+  @@index([organizationId, lastAccessedAt])
+  @@index([keywords])
+  @@index([topics])
+}
+
+model UserStarredThread {
+  id        String   @id @default(cuid())
+  userId    String
+  threadId  String
+  starredAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread    AIThread @relation("StarredThreads", fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threadId])
+  @@index([userId, starredAt])
 }
