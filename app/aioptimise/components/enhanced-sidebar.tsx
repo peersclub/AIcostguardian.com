@@ -105,14 +105,38 @@ export function EnhancedSidebar({
 
   // Optimized filtering with useMemo to prevent unnecessary re-computations
   const categorizedThreads = useMemo(() => {
-    const active = threads.filter(t => !t.isArchived && t.threadType === 'STANDARD')
-    const starred = threads.filter(t => t.isStarred && !t.isArchived)
-    const external = threads.filter(t => t.hasExternalUsers && !t.isArchived)
-    const channels = threads.filter(t => t.threadType === 'CHANNEL' && !t.isArchived)
-    const direct = threads.filter(t => t.threadType === 'DIRECT' && !t.isArchived)
-    const huddles = threads.filter(t => t.threadType === 'HUDDLE' && !t.isArchived)
+    // Filter out empty threads, duplicates, and organize properly
+    const validThreads = threads.filter(t => 
+      !t.isArchived && 
+      t.title && 
+      t.title.trim() !== '' && 
+      !t.title.includes('New Project Set') && // Remove empty/placeholder threads
+      !t.title.includes('Untitled') && // Remove untitled threads
+      !t.title.startsWith('Thread') && // Remove generic thread names
+      t.title.length > 3 // Ensure meaningful titles
+    )
 
-    return { active, starred, external, channels, direct, huddles }
+    // Remove duplicates by title (keep the most recent one)
+    const uniqueThreads = validThreads.reduce((acc, thread) => {
+      const existing = acc.find(t => t.title === thread.title)
+      if (!existing || (thread.lastMessageAt && (!existing.lastMessageAt || thread.lastMessageAt > existing.lastMessageAt))) {
+        return [...acc.filter(t => t.title !== thread.title), thread]
+      }
+      return acc
+    }, [] as Thread[])
+
+    const active = uniqueThreads.filter(t => t.threadType === 'STANDARD' && t.messageCount > 0)
+    const starred = uniqueThreads.filter(t => t.isStarred)
+    const recent = uniqueThreads
+      .filter(t => t.lastMessageAt)
+      .sort((a, b) => new Date(b.lastMessageAt!).getTime() - new Date(a.lastMessageAt!).getTime())
+      .slice(0, 8) // Show more recent threads
+    const channels = uniqueThreads.filter(t => t.threadType === 'CHANNEL')
+    const direct = uniqueThreads.filter(t => t.threadType === 'DIRECT')
+    const huddles = uniqueThreads.filter(t => t.threadType === 'HUDDLE')
+    const external = uniqueThreads.filter(t => t.hasExternalUsers)
+
+    return { active, starred, recent, channels, direct, huddles, external }
   }, [threads])
 
   // Search filtering with debouncing effect
@@ -126,6 +150,7 @@ export function EnhancedSidebar({
     return {
       active: filterByQuery(categorizedThreads.active),
       starred: filterByQuery(categorizedThreads.starred),
+      recent: filterByQuery(categorizedThreads.recent),
       external: filterByQuery(categorizedThreads.external),
       channels: filterByQuery(categorizedThreads.channels),
       direct: filterByQuery(categorizedThreads.direct),
@@ -471,6 +496,27 @@ export function EnhancedSidebar({
 
       {/* Sidebar Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {/* Recent Activity Section */}
+        {filteredThreads.recent.length > 0 && (
+          <SidebarSection
+            title="Recent"
+            icon={<Clock className="w-4 h-4 text-green-400" />}
+            count={filteredThreads.recent.length}
+            isCollapsed={collapsedSections.recent || false}
+            onToggle={() => toggleSection('recent')}
+          >
+            <div className="space-y-1">
+              {isLoading ? (
+                <LoadingSkeletons count={2} />
+              ) : (
+                filteredThreads.recent.map((thread) => (
+                  <ThreadItem key={thread.id} thread={thread} />
+                ))
+              )}
+            </div>
+          </SidebarSection>
+        )}
+
         {/* Threads Section */}
         <SidebarSection
           title="Threads"
