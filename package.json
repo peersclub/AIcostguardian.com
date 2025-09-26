@@ -84,6 +84,7 @@
     "exponential-backoff": "^3.1.2",
     "express-rate-limit": "^8.0.1",
     "framer-motion": "^12.23.12",
+    "gtag": "^1.0.1",
     "ioredis": "^5.7.0",
     "isomorphic-dompurify": "^2.26.0",
     "lucide-react": "^0.536.0",

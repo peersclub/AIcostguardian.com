@@ -8,6 +8,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import DemoDataProvider from '@/components/DemoDataProvider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
+import { GoogleAnalytics } from '@/lib/analytics'
 import { SiteWideNotificationBanner } from '@/components/notifications/SiteWideNotificationBanner'
 import { CSRFProvider } from '@/components/csrf-provider'
 import { Toaster } from 'sonner'
@@ -109,6 +110,7 @@ export default function RootLayout({
                   {children}
                   <Toaster position="top-right" richColors />
                   <Analytics />
+                  <GoogleAnalytics />
                 </DemoDataProvider>
               </ThemeProvider>
             </CSRFProvider>
