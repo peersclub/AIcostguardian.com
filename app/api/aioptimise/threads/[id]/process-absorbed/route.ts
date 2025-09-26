@@ -98,9 +98,9 @@ Keep the summary concise but comprehensive.`;
 
     try {
       // Get API key for the provider
-      const apiKeyData = await apiKeyService.getDecryptedKey(session.user.id, defaultProvider as Provider);
+      const apiKey = await apiKeyService.getApiKey(session.user.id, defaultProvider as Provider);
       
-      if (!apiKeyData?.key) {
+      if (!apiKey) {
         throw new Error(`No API key found for provider: ${defaultProvider}`);
       }
 
@@ -114,7 +114,7 @@ Keep the summary concise but comprehensive.`;
 
       // Generate summary using the default model
       if (defaultProvider === 'openai') {
-        const openai = new OpenAI({ apiKey: apiKeyData.key });
+        const openai = new OpenAI({ apiKey });
         
         const completion = await openai.chat.completions.create({
           model: defaultModel,
@@ -132,7 +132,7 @@ Keep the summary concise but comprehensive.`;
                 ((completion.usage?.completion_tokens || 0) * 0.0006 / 1000) // GPT-4o-mini pricing
         };
       } else if (defaultProvider === 'anthropic') {
-        const anthropic = new Anthropic({ apiKey: apiKeyData.key });
+        const anthropic = new Anthropic({ apiKey });
         
         const completion = await anthropic.messages.create({
           model: defaultModel.includes('claude') ? defaultModel : 'claude-3-haiku-20240307',
