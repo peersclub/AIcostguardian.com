@@ -85,6 +85,7 @@ export default async function AIOptimiseThreadPage({
         monthlyUsed: monthlyUsage._sum.cost || 0,
         monthlyLimit: 3000, // TODO: Get from organization
       }}
+      initialThreadId={params.id}
     />
   )
 }

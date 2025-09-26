@@ -176,6 +176,7 @@ interface AIOptimiseClientProps {
     dailyUsed: number
     monthlyUsed: number
   }
+  initialThreadId?: string // Optional thread ID to load on initialization
 }
 
 // Constants - Provider logo renderer
@@ -540,7 +541,7 @@ const useWebSocket = (userId: string) => {
   return { connected, collaborators, sendMessage }
 }
 
-export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps) {
+export default function AIOptimiseClient({ user, limits, initialThreadId }: AIOptimiseClientProps) {
   const router = useRouter()
   const { keys, hasValidKey, getHealthyProviders, refreshKeys, isLoading: keysLoading } = useApiKeys()
   
@@ -695,13 +696,18 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
     }
   }, [])
   
-  const selectThread = useCallback(async (threadId: string) => {
+  const selectThread = useCallback(async (threadId: string, updateUrl = true) => {
     const thread = threads.find(t => t.id === threadId)
     if (thread) {
       setCurrentThread(thread)
       setMessages([]) // Clear messages first
       setHasMoreOlderMessages(false)
       setNextCursor(null)
+
+      // Update URL to show thread-specific route
+      if (updateUrl) {
+        router.push(`/aioptimise/thread/${threadId}`)
+      }
 
       try {
         // Fetch initial messages from API (latest first, with pagination)
@@ -847,6 +853,16 @@ export default function AIOptimiseClient({ user, limits }: AIOptimiseClientProps
   useEffect(() => {
     loadThreads()
   }, [loadThreads])
+
+  // Load initial thread if provided
+  useEffect(() => {
+    if (initialThreadId && threads.length > 0) {
+      const thread = threads.find(t => t.id === initialThreadId)
+      if (thread) {
+        selectThread(initialThreadId, false) // Don't update URL since we're already on the thread page
+      }
+    }
+  }, [initialThreadId, threads, selectThread])
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
