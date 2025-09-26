@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 // Google Analytics Measurement ID
@@ -59,7 +59,7 @@ export const trackEvent = (action: string, category: string, label?: string, val
 }
 
 // Component to handle route changes and track page views
-export function GoogleAnalytics() {
+function GoogleAnalyticsInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -68,9 +68,17 @@ export function GoogleAnalytics() {
   }, [])
 
   useEffect(() => {
-    const url = pathname + searchParams.toString()
+    const url = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '')
     trackPageView(url)
   }, [pathname, searchParams])
 
   return null
+}
+
+export function GoogleAnalytics() {
+  return (
+    <Suspense fallback={null}>
+      <GoogleAnalyticsInner />
+    </Suspense>
+  )
 }
