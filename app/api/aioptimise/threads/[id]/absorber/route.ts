@@ -62,6 +62,30 @@ export async function PATCH(
       data: { aiAbsorberMode: absorberMode }
     });
 
+    let processingResult = null;
+
+    // If absorber mode is being turned OFF, process absorbed messages
+    if (!absorberMode) {
+      try {
+        // Call the process-absorbed endpoint internally
+        const processResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/aioptimise/threads/${params.id}/process-absorbed`, {
+          method: 'POST',
+          headers: {
+            'Authorization': req.headers.get('Authorization') || '',
+            'Cookie': req.headers.get('Cookie') || ''
+          }
+        });
+
+        if (processResponse.ok) {
+          processingResult = await processResponse.json();
+        } else {
+          console.error('Failed to process absorbed messages:', await processResponse.text());
+        }
+      } catch (error) {
+        console.error('Error processing absorbed messages:', error);
+      }
+    }
+
     // TODO: Add activity logging when AIThreadActivity model is available
 
     return NextResponse.json({
@@ -69,7 +93,8 @@ export async function PATCH(
       aiAbsorberMode: absorberMode,
       message: absorberMode
         ? 'AI Absorber mode enabled - AI will listen but not respond'
-        : 'AI Absorber mode disabled - AI will respond normally'
+        : `AI Absorber mode disabled - ${processingResult?.summary?.absorbedMessageCount || 0} absorbed messages processed`,
+      processingResult: processingResult || undefined
     });
   } catch (error) {
     console.error('Failed to toggle absorber mode:', error);

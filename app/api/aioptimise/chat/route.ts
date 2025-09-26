@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
         completionTokens: 0,
         totalTokens: 0,
         cost: 0,
+        isAbsorbedMessage: threadData.aiAbsorberMode, // Track if message was created in absorber mode
       },
     });
 

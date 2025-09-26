@@ -83,6 +83,10 @@ model User {
   drafts                MessageDraft[]
   contextMemories       AIContextMemory[]
   starredThreads        UserStarredThread[]
+  threadReplies         ThreadReply[]       @relation("ThreadReplies")
+  replyReactions        ReplyReaction[]     @relation("ReplyReactions")
+  createdHuddles        Huddle[]            @relation("CreatedHuddles")
+  huddleParticipations  HuddleParticipant[] @relation("HuddleParticipants")
 }
 
 model Organization {
@@ -789,6 +793,10 @@ model AIThread {
   drafts            MessageDraft[]
   memoryEntries     AIContextMemory[] @relation("SourceMemory")
   starredBy         UserStarredThread[] @relation("StarredThreads")
+
+  // Slack-like feature relationships
+  threadReplies     ThreadReply[]       @relation("ThreadReplies")
+  huddle            Huddle?             @relation("HuddleThread")
   
   @@index([userId, isArchived])
   @@index([userId, lastMessageAt])
@@ -834,6 +842,9 @@ model AIMessage {
   status            MessageStatus @default(SENT)
   errorMessage      String?
   retryCount        Int       @default(0)
+  
+  // AI Absorber mode tracking
+  isAbsorbedMessage Boolean   @default(false)
   
   // References
   parentMessageId   String?
@@ -2024,3 +2035,101 @@ model UserStarredThread {
   @@unique([userId, threadId])
   @@index([userId, starredAt])
 }
+
+// Thread Replies System (Slack-like threading)
+model ThreadReply {
+  id          String   @id @default(cuid())
+  threadId    String
+  parentId    String?  // For nested replies
+  userId      String
+  content     String   @db.Text
+  isEdited    Boolean  @default(false)
+  mentions    String[] // User IDs mentioned in the reply
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  thread      AIThread @relation("ThreadReplies", fields: [threadId], references: [id], onDelete: Cascade)
+  user        User     @relation("ThreadReplies", fields: [userId], references: [id], onDelete: Cascade)
+  parent      ThreadReply? @relation("NestedReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     ThreadReply[] @relation("NestedReplies")
+  reactions   ReplyReaction[]
+  attachments ReplyAttachment[]
+
+  @@index([threadId, createdAt])
+  @@index([userId, createdAt])
+  @@index([parentId])
+}
+
+// Reactions on thread replies
+model ReplyReaction {
+  id      String @id @default(cuid())
+  replyId String
+  userId  String
+  emoji   String
+  createdAt DateTime @default(now())
+
+  reply   ThreadReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  user    User        @relation("ReplyReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([replyId, userId, emoji])
+  @@index([replyId])
+  @@index([userId])
+}
+
+// Attachments for thread replies
+model ReplyAttachment {
+  id       String @id @default(cuid())
+  replyId  String
+  type     String // 'image', 'file', 'code'
+  name     String
+  url      String
+  size     Int
+  mimeType String?
+  createdAt DateTime @default(now())
+
+  reply    ThreadReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@index([replyId])
+}
+
+// Huddles System
+model Huddle {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  isLive      Boolean  @default(false)
+  isRecording Boolean  @default(false)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdBy   String
+  threadId    String?  @unique  // Optional connection to AIThread
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator     User               @relation("CreatedHuddles", fields: [createdBy], references: [id])
+  participants HuddleParticipant[]
+  thread      AIThread?          @relation("HuddleThread", fields: [threadId], references: [id])
+
+  @@index([createdBy, createdAt])
+  @@index([isActive, isLive])
+}
+
+model HuddleParticipant {
+  id       String @id @default(cuid())
+  huddleId String
+  userId   String
+  role     String @default("participant") // 'host', 'participant'
+  isMuted  Boolean @default(false)
+  isVideoOn Boolean @default(true)
+  joinedAt DateTime @default(now())
+  leftAt   DateTime?
+
+  huddle   Huddle @relation(fields: [huddleId], references: [id], onDelete: Cascade)
+  user     User   @relation("HuddleParticipants", fields: [userId], references: [id])
+
+  @@unique([huddleId, userId])
+  @@index([huddleId])
+  @@index([userId])
+}
+
